@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+
+  <title>Discovery</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #111827;
+    }
+
+    .app {
+      max-width: 720px;
+      margin: auto;
+      min-height: 100vh;
+      padding-bottom: 90px;
+    }
+
+    header {
+      padding: 22px 18px 12px;
+    }
+
+    .brand {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .search {
+      margin: 14px 18px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .search input {
+      flex: 1;
+      border: 0;
+      background: white;
+      border-radius: 15px;
+      padding: 14px;
+      font-size: 15px;
+      outline: none;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    }
+
+    .search button {
+      border: 0;
+      border-radius: 15px;
+      padding: 0 18px;
+      background: #229ed9;
+      color: white;
+      font-weight: bold;
+    }
+
+    .status {
+      margin: 12px 18px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: white;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .feed {
+      padding: 5px 18px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      margin-bottom: 14px;
+      padding: 16px;
+      box-shadow: 0 3px 15px rgba(0,0,0,.05);
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .card p {
+      margin: 0 0 14px;
+      color: #6b7280;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .actions button {
+      flex: 1;
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 8px;
+      background: #eef2f7;
+      font-size: 13px;
+    }
+
+    .actions button.primary {
+      background: #229ed9;
+      color: white;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 50px 20px;
+      color: #6b7280;
+    }
+
+    .bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255,255,255,.96);
+      border-top: 1px solid #e5e7eb;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .bottom span {
+      font-size: 12px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="brand">Discovery</div>
+    <div class="subtitle">
+      محتوای جالب تلگرام را کشف کن
+    </div>
+  </header>
+
+  <div class="search">
+    <input
+      id="searchInput"
+      type="text"
+      placeholder="جستجو..."
+    />
+
+    <button onclick="searchComingSoon()">
+      جستجو
+    </button>
+  </div>
+
+  <div id="status" class="status">
+    در حال اتصال...
+  </div>
+
+  <main id="feed" class="feed">
+    <div class="empty">
+      در حال دریافت محتوا...
+    </div>
+  </main>
+
+</div>
+
+<div class="bottom">
+  <span>Telegram Discovery · نسخه 0.1.0</span>
+</div>
+
+<script>
+
+  // ==========================================
+  // CONFIG
+  // ==========================================
+
+  const API_URL =
+    "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-api";
+
+  // این مقدار را با Supabase ANON / PUBLISHABLE KEY
+  // خودمان جایگزین می‌کنیم.
+  const SUPABASE_ANON_KEY =
+    s"b_publishable_4T6EICAK3XDApqSzisDFLQ_5tLgPNH4";
+
+
+  // ==========================================
+  // TELEGRAM
+  // ==========================================
+
+  const tg = window.Telegram?.WebApp;
+
+  if (tg) {
+    tg.ready();
+    tg.expand();
+  }
+
+
+  // ==========================================
+  // STATE
+  // ==========================================
+
+  let currentUser = null;
+  let feedItems = [];
+
+
+  // ==========================================
+  // API
+  // ==========================================
+
+  async function api(path, options = {}) {
+
+    const headers = {
+      "Content-Type": "application/json",
+
+      "apikey": SUPABASE_ANON_KEY,
+
+      "Authorization":
+        `Bearer ${SUPABASE_ANON_KEY}`,
+
+      ...(options.headers || {})
+    };
+
+    const response = await fetch(
+      API_URL + path,
+      {
+        ...options,
+        headers
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        data.message ||
+        "API Error"
+      );
+    }
+
+    return data;
+  }
+
+
+  // ==========================================
+  // STATUS
+  // ==========================================
+
+  async function checkBackend() {
+
+    try {
+
+      const result = await api("/");
+
+      setStatus(
+        `🟢 ${result.service} · ${result.version}`
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      setStatus(
+        "🔴 اتصال به Backend برقرار نشد"
+      );
+    }
+  }
+
+
+  // ==========================================
+  // TELEGRAM AUTH
+  // ==========================================
+
+  async function authenticateTelegram() {
+
+    if (!tg) {
+
+      setStatus(
+        "⚠️ این صفحه خارج از Telegram باز شده است"
+      );
+
+      return;
+    }
+
+    const initData = tg.initData;
+
+    if (!initData) {
+
+      setStatus(
+        "⚠️ اطلاعات Telegram دریافت نشد"
+      );
+
+      return;
+    }
+
+    try {
+
+      const result = await api(
+        "/auth/telegram",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            initData
+          })
+        }
+      );
+
+      if (!result.authenticated) {
+        throw new Error(
+          result.error ||
+          "Authentication failed"
+        );
+      }
+
+      currentUser = result.user;
+
+      const name =
+        result.user.display_name ||
+        result.user.username ||
+        "کاربر";
+
+      setStatus(
+        `👋 خوش آمدی ${name}`
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      setStatus(
+        "🔴 احراز هویت Telegram ناموفق بود"
+      );
+    }
+  }
+
+
+  // ==========================================
+  // FEED
+  // ==========================================
+
+  async function loadFeed() {
+
+    const feed = document.getElementById("feed");
+
+    feed.innerHTML = `
+      <div class="empty">
+        در حال دریافت محتوا...
+      </div>
+    `;
+
+    try {
+
+      const result =
+        await api("/feed?limit=20");
+
+      feedItems =
+        result.items || [];
+
+      renderFeed();
+
+    } catch (error) {
+
+      console.error(error);
+
+      feed.innerHTML = `
+        <div class="empty">
+          دریافت محتوا ناموفق بود.
+          <br><br>
+          ${escapeHtml(error.message)}
+        </div>
+      `;
+    }
+  }
+
+
+  // ==========================================
+  // RENDER
+  // ==========================================
+
+  function renderFeed() {
+
+    const feed =
+      document.getElementById("feed");
+
+    if (!feedItems.length) {
+
+      feed.innerHTML = `
+        <div class="empty">
+          هنوز محتوایی برای Discovery وجود ندارد.
+        </div>
+      `;
+
+      return;
+    }
+
+    feed.innerHTML =
+      feedItems.map(item => {
+
+        return `
+          <article class="card">
+
+            <h2>
+              ${escapeHtml(
+                item.title ||
+                "بدون عنوان"
+              )}
+            </h2>
+
+            <p>
+              ${escapeHtml(
+                item.description ||
+                "توضیحی برای این محتوا ثبت نشده است."
+              )}
+            </p>
+
+            <div class="meta">
+              ${escapeHtml(
+                item.content_type ||
+                "content"
+              )}
+            </div>
+
+            <div class="actions">
+
+              ${
+                item.source_url
+                  ? `
+                    <button
+                      class="primary"
+                      onclick="openContent('${safeUrl(item.source_url)}')"
+                    >
+                      مشاهده
+                    </button>
+                  `
+                  : ""
+              }
+
+              <button
+                onclick="saveContent('${item.id}')"
+              >
+                ⭐ ذخیره
+              </button>
+
+              <button
+                onclick="sendFeedback('${item.id}', 'not_interested')"
+              >
+                👎
+              </button>
+
+            </div>
+
+          </article>
+        `;
+
+      }).join("");
+  }
+
+
+  // ==========================================
+  // SAVE
+  // ==========================================
+
+  async function saveContent(contentId) {
+
+    if (!currentUser) {
+
+      alert("ابتدا باید داخل Telegram وارد شوید.");
+
+      return;
+    }
+
+    try {
+
+      await api(
+        "/save",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            user_id:
+              currentUser.id,
+
+            content_id:
+              contentId
+          })
+        }
+      );
+
+      setStatus("⭐ ذخیره شد");
+
+    } catch (error) {
+
+      console.error(error);
+
+      setStatus(
+        "🔴 ذخیره ناموفق بود"
+      );
+    }
+  }
+
+
+  // ==========================================
+  // FEEDBACK
+  // ==========================================
+
+  async function sendFeedback(
+    contentId,
+    feedbackType
+  ) {
+
+    if (!currentUser) {
+      return;
+    }
+
+    try {
+
+      await api(
+        "/feedback",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            user_id:
+              currentUser.id,
+
+            content_id:
+              contentId,
+
+            feedback_type:
+              feedbackType
+          })
+        }
+      );
+
+      setStatus(
+        "بازخورد شما ثبت شد 👍"
+      );
+
+    } catch (error) {
+
+      console.error(error);
+    }
+  }
+
+
+  // ==========================================
+  // EVENTS
+  // ==========================================
+
+  async function sendEvent(
+    eventType,
+    contentId = null
+  ) {
+
+    if (!currentUser) {
+      return;
+    }
+
+    try {
+
+      await api(
+        "/events",
+        {
+          method: "POST",
+
+          body: JSON.stringify({
+            user_id:
+              currentUser.id,
+
+            event_type:
+              eventType,
+
+            content_id:
+              contentId
+          })
+        }
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Event error:",
+        error
+      );
+    }
+  }
+
+
+  // ==========================================
+  // SEARCH
+  // ==========================================
+
+  function searchComingSoon() {
+
+    const query =
+      document.getElementById(
+        "searchInput"
+      ).value.trim();
+
+    if (!query) {
+      return;
+    }
+
+    /*
+      Backend فعلی endpoint جستجو ندارد.
+      بنابراین فعلاً جستجوی واقعی را فعال نمی‌کنیم.
+
+      این بخش در نسخه بعدی با endpoint
+      /search
+      متصل خواهد شد.
+    */
+
+    setStatus(
+      "🔎 موتور جستجو در حال توسعه است"
+    );
+  }
+
+
+  // ==========================================
+  // OPEN CONTENT
+  // ==========================================
+
+  function openContent(url) {
+
+    if (!url) return;
+
+    sendEvent(
+      "content_open",
+      null
+    );
+
+    if (tg) {
+      tg.openLink(url);
+    } else {
+      window.open(
+        url,
+        "_blank"
+      );
+    }
+  }
+
+
+  // ==========================================
+  // HELPERS
+  // ==========================================
+
+  function setStatus(text) {
+
+    document.getElementById(
+      "status"
+    ).textContent = text;
+  }
+
+
+  function escapeHtml(value) {
+
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+
+  function safeUrl(value) {
+
+    return String(value)
+      .replaceAll("'", "%27");
+  }
+
+
+  // ==========================================
+  // START
+  // ==========================================
+
+  async function startApp() {
+
+    await checkBackend();
+
+    await authenticateTelegram();
+
+    await loadFeed();
+  }
+
+
+  startApp();
+
+</script>
+
+</body>
+</html>
