@@ -11,6 +11,10 @@
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#f4f6f8">
 
+  <!-- جلوگیری از کش شدن محتوای HTML در مرورگرهای سازگار -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+
   <title>Telegram Discovery</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
@@ -59,6 +63,11 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
     .app {
       width: 100%;
       max-width: 720px;
@@ -87,7 +96,7 @@
     .subtitle {
       margin-top: 6px;
       font-size: 14px;
-      opacity: .68;
+      opacity: 0.68;
     }
 
     /* SEARCH */
@@ -206,14 +215,21 @@
       font-size: 14px;
       line-height: 1.8;
 
-      opacity: .78;
+      opacity: 0.78;
     }
 
     .meta {
       margin-bottom: 12px;
 
       font-size: 12px;
-      opacity: .55;
+      opacity: 0.55;
+    }
+
+    .reason {
+      margin-bottom: 12px;
+
+      font-size: 11px;
+      opacity: 0.45;
     }
 
     .actions {
@@ -240,6 +256,16 @@
       color: #ffffff;
     }
 
+    .action.saved {
+      background: #dff5e7;
+      color: #16803c;
+    }
+
+    .action.disliked {
+      background: #fde4e4;
+      color: #b00020;
+    }
+
     /* EMPTY */
 
     .empty {
@@ -250,7 +276,7 @@
       font-size: 14px;
       line-height: 1.8;
 
-      opacity: .65;
+      opacity: 0.65;
     }
 
     /* ERROR */
@@ -277,11 +303,10 @@
 
       font-size: 11px;
 
-      opacity: .45;
+      opacity: 0.45;
     }
 
     @media (max-width: 380px) {
-
       .brand {
         font-size: 25px;
       }
@@ -294,6 +319,9 @@
         padding: 0 13px;
       }
 
+      .action {
+        font-size: 12px;
+      }
     }
   </style>
 </head>
@@ -303,7 +331,6 @@
 <div class="app">
 
   <header class="header">
-
     <div class="brand">
       کشف
     </div>
@@ -311,9 +338,7 @@
     <div class="subtitle">
       محتوای جالب تلگرام را کشف کن
     </div>
-
   </header>
-
 
   <div class="search">
 
@@ -324,12 +349,14 @@
       placeholder="جستجو..."
     >
 
-    <button id="searchBtn">
+    <button
+      id="searchBtn"
+      type="button"
+    >
       جستجو
     </button>
 
   </div>
-
 
   <div class="tabs">
 
@@ -337,6 +364,7 @@
       id="feedBtn"
       class="tab active"
       type="button"
+      data-mode="feed"
     >
       ✨ پیشنهادهای من
     </button>
@@ -345,6 +373,7 @@
       id="trendBtn"
       class="tab"
       type="button"
+      data-mode="trending"
     >
       🔥 ترندها
     </button>
@@ -353,12 +382,12 @@
       id="exploreBtn"
       class="tab"
       type="button"
+      data-mode="explore"
     >
       🧭 اکسپلور
     </button>
 
   </div>
-
 
   <div
     id="status"
@@ -367,35 +396,33 @@
     در حال آماده‌سازی...
   </div>
 
-
   <main
     id="feed"
     class="feed"
   >
-
     <div class="empty">
       در حال آماده‌سازی Discovery...
     </div>
-
   </main>
 
-
   <div class="footer">
-    Telegram Discovery · نسخه 0.1.0
+    Telegram Discovery · نسخه 0.2.0-feedback-loop
   </div>
 
 </div>
 
-
 <script>
-
 (function () {
+
+  "use strict";
 
   /*
    * =========================================================
    * CONFIG
    * =========================================================
    */
+
+  const APP_VERSION = "0.2.0-feedback-loop";
 
   const API_URL =
     "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-api";
@@ -405,10 +432,6 @@
    * =========================================================
    * TELEGRAM
    * =========================================================
-   *
-   * مهم:
-   * tg را از اول null می‌گذاریم.
-   * بعد صبر می‌کنیم Telegram WebApp واقعاً آماده شود.
    */
 
   let tg = null;
@@ -428,6 +451,9 @@
 
   const searchInput =
     document.getElementById("searchInput");
+
+  const searchBtn =
+    document.getElementById("searchBtn");
 
   const feedBtn =
     document.getElementById("feedBtn");
@@ -451,6 +477,43 @@
 
   let feedItems = [];
 
+  let currentSessionId = null;
+
+
+  /*
+   * =========================================================
+   * UUID
+   * =========================================================
+   */
+
+  function makeUuid() {
+
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+
+    return (
+      "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+    ).replace(
+      /[xy]/g,
+      function (c) {
+
+        const r =
+          Math.random() * 16 | 0;
+
+        const v =
+          c === "x"
+            ? r
+            : (r & 0x3 | 0x8);
+
+        return v.toString(16);
+      }
+    );
+  }
+
 
   /*
    * =========================================================
@@ -463,8 +526,7 @@
     type = ""
   ) {
 
-    statusEl.textContent =
-      text;
+    statusEl.textContent = text;
 
     statusEl.className =
       "status" +
@@ -484,30 +546,12 @@
 
   function escapeHtml(value) {
 
-    return String(
-      value ?? ""
-    )
-      .replaceAll(
-        "&",
-        "&amp;"
-      )
-      .replaceAll(
-        "<",
-        "&lt;"
-      )
-      .replaceAll(
-        ">",
-        "&gt;"
-      )
-      .replaceAll(
-        '"',
-        "&quot;"
-      )
-      .replaceAll(
-        "'",
-        "&#039;"
-      );
-
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
 
@@ -525,24 +569,14 @@
         ? window.Telegram.WebApp
         : null;
 
-
     if (!tg) {
-
       return false;
     }
-
 
     try {
 
       tg.ready();
-
       tg.expand();
-
-
-      /*
-       * ظاهر اپ را مستقل از Dark/Light
-       * تلگرام پایدار نگه می‌داریم.
-       */
 
       try {
 
@@ -550,36 +584,30 @@
           typeof tg.setHeaderColor ===
           "function"
         ) {
-
           tg.setHeaderColor(
             "#f4f6f8"
           );
         }
 
-
         if (
           typeof tg.setBackgroundColor ===
           "function"
         ) {
-
           tg.setBackgroundColor(
             "#f4f6f8"
           );
         }
 
-
         if (
           typeof tg.setBottomBarColor ===
           "function"
         ) {
-
           tg.setBottomBarColor(
             "#f4f6f8"
           );
         }
 
       } catch (_) {}
-
 
       document.documentElement.style.background =
         "#f4f6f8";
@@ -590,9 +618,7 @@
       document.body.style.color =
         "#111827";
 
-
       return true;
-
 
     } catch (error) {
 
@@ -624,20 +650,13 @@
         "در حال آماده‌سازی Telegram..."
       );
 
-
       if (
         initTelegram()
       ) {
 
-        /*
-         * حتی اگر initData هنوز
-         * یک لحظه بعد بیاید،
-         * کمی صبر می‌کنیم.
-         */
-
         for (
           let i = 0;
-          i < 20;
+          i < 30;
           i++
         ) {
 
@@ -649,7 +668,6 @@
             return true;
           }
 
-
           await new Promise(
             resolve =>
               setTimeout(
@@ -659,18 +677,10 @@
           );
         }
 
-
-        /*
-         * داخل Telegram هستیم ولی
-         * initData نیامده.
-         */
-
         if (tg) {
-
           return true;
         }
       }
-
 
       await new Promise(
         resolve =>
@@ -680,7 +690,6 @@
           )
       );
     }
-
 
     return false;
   }
@@ -697,76 +706,61 @@
     options = {}
   ) {
 
-    /*
-     * اگر tg به هر دلیلی
-     * دوباره null شده باشد،
-     * آن را تازه می‌کنیم.
-     */
-
     if (!tg) {
-
-      tg =
-        window.Telegram &&
-        window.Telegram.WebApp
-          ? window.Telegram.WebApp
-          : null;
+      initTelegram();
     }
 
-
     const headers = {
-
       ...(options.headers || {})
-
     };
-
 
     if (
       options.body &&
       !headers["Content-Type"]
     ) {
-
       headers["Content-Type"] =
         "application/json";
     }
 
-
-    /*
-     * Backend فعلی خودش
-     * Telegram Init Data را بررسی می‌کند.
-     */
-
     const initData =
       tg?.initData || "";
 
-
     if (initData) {
-
       headers[
         "X-Telegram-Init-Data"
-      ] =
-        initData;
+      ] = initData;
     }
 
+    /*
+     * هر Request یک ID داشته باشد.
+     * برای trace کردن خطاها مفید است.
+     */
+
+    headers["X-Request-ID"] =
+      makeUuid();
 
     const response =
       await fetch(
         API_URL + path,
         {
           ...options,
-          headers
+          headers,
+
+          /*
+           * جلوگیری از reuse شدن
+           * Responseهای قدیمی مرورگر.
+           */
+
+          cache: "no-store"
         }
       );
-
 
     const raw =
       await response.text();
 
-
     let data = {};
 
-
     try {
-
       data =
         raw
           ? JSON.parse(raw)
@@ -778,7 +772,6 @@
         message: raw
       };
     }
-
 
     if (!response.ok) {
 
@@ -792,14 +785,13 @@
       );
     }
 
-
     return data;
   }
 
 
   /*
    * =========================================================
-   * BACKEND HEALTH CHECK
+   * BACKEND HEALTH
    * =========================================================
    */
 
@@ -810,15 +802,12 @@
       const result =
         await api("/");
 
-
       console.log(
         "Discovery API:",
         result
       );
 
-
       return true;
-
 
     } catch (error) {
 
@@ -827,12 +816,10 @@
         error
       );
 
-
       setStatus(
         "🔴 اتصال به Discovery برقرار نشد",
         "error"
       );
-
 
       return false;
     }
@@ -848,14 +835,11 @@
   async function authenticateTelegram() {
 
     if (!tg) {
-
       return false;
     }
 
-
     const initData =
       tg.initData;
-
 
     if (!initData) {
 
@@ -865,7 +849,6 @@
 
       return false;
     }
-
 
     try {
 
@@ -882,7 +865,6 @@
           }
         );
 
-
       if (
         result &&
         result.authenticated
@@ -892,19 +874,15 @@
           result.user ||
           null;
 
-
         console.log(
           "Telegram authenticated:",
           currentUser
         );
 
-
         return true;
       }
 
-
       return false;
-
 
     } catch (error) {
 
@@ -913,7 +891,6 @@
         error
       );
 
-
       return false;
     }
   }
@@ -921,249 +898,18 @@
 
   /*
    * =========================================================
-   * LOAD FEED
+   * SESSION
    * =========================================================
    */
 
-  async function loadFeed(
-    mode = "feed"
-  ) {
+  function ensureSession() {
 
-    currentMode =
-      mode;
-
-
-    setActiveTab(
-      mode
-    );
-
-
-    setStatus(
-      "در حال دریافت محتوا..."
-    );
-
-
-    feedEl.innerHTML = `
-      <div class="empty">
-        در حال بارگذاری...
-      </div>
-    `;
-
-
-    let path =
-      "/feed?limit=20";
-
-
-    if (
-      mode === "feed"
-    ) {
-
-      path =
-        "/feed?limit=20";
+    if (!currentSessionId) {
+      currentSessionId =
+        makeUuid();
     }
 
-
-    else if (
-      mode === "trending"
-    ) {
-
-      path =
-        "/feed?type=trending&limit=20";
-    }
-
-
-    else if (
-      mode === "explore"
-    ) {
-
-      path =
-        "/feed?type=explore&limit=20";
-    }
-
-
-    try {
-
-      const result =
-        await api(path);
-
-
-      feedItems =
-        Array.isArray(
-          result.items
-        )
-          ? result.items
-          : [];
-
-
-      renderFeed();
-
-
-      setStatus(
-        feedItems.length
-          ? "🟢 آماده"
-          : "🟡 هنوز محتوایی پیدا نشد",
-        feedItems.length
-          ? "success"
-          : ""
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        "Feed error:",
-        error
-      );
-
-
-      feedEl.innerHTML = `
-        <div class="error-card">
-
-          <strong>
-            دریافت محتوا ناموفق بود
-          </strong>
-
-          <div>
-            ${escapeHtml(
-              error.message ||
-              "خطای نامشخص"
-            )}
-          </div>
-
-        </div>
-      `;
-
-
-      setStatus(
-        "🔴 خطا در دریافت محتوا",
-        "error"
-      );
-    }
-  }
-
-
-  /*
-   * =========================================================
-   * RENDER FEED
-   * =========================================================
-   */
-
-  function renderFeed() {
-
-    if (
-      !feedItems.length
-    ) {
-
-      feedEl.innerHTML = `
-        <div class="empty">
-
-          هنوز محتوایی برای نمایش
-          در Discovery وجود ندارد.
-
-        </div>
-      `;
-
-      return;
-    }
-
-
-    feedEl.innerHTML =
-      feedItems
-        .map(
-          function(item) {
-
-            const id =
-              escapeHtml(
-                item.id || ""
-              );
-
-
-            const title =
-              escapeHtml(
-                item.title ||
-                "بدون عنوان"
-              );
-
-
-            const description =
-              escapeHtml(
-                item.description ||
-                "توضیحی برای این محتوا ثبت نشده است."
-              );
-
-
-            const type =
-              escapeHtml(
-                item.content_type ||
-                "content"
-              );
-
-
-            const url =
-              item.source_url
-                ? String(
-                    item.source_url
-                  )
-                : "";
-
-
-            return `
-              <article class="card">
-
-                <h2>
-                  ${title}
-                </h2>
-
-                <p>
-                  ${description}
-                </p>
-
-                <div class="meta">
-                  ${type}
-                </div>
-
-                <div class="actions">
-
-                  ${
-                    url
-                      ? `
-                        <button
-                          class="action primary"
-                          data-url="${escapeHtml(url)}"
-                          onclick="openContent(this.dataset.url)"
-                        >
-                          🔗 مشاهده
-                        </button>
-                      `
-                      : ""
-                  }
-
-
-                  <button
-                    class="action"
-                    data-id="${id}"
-                    onclick="saveContent(this.dataset.id)"
-                  >
-                    ⭐ ذخیره
-                  </button>
-
-
-                  <button
-                    class="action"
-                    data-id="${id}"
-                    onclick="notInterested(this.dataset.id)"
-                  >
-                    👎
-                  </button>
-
-                </div>
-
-              </article>
-            `;
-
-          }
-        )
-        .join("");
+    return currentSessionId;
   }
 
 
@@ -1189,31 +935,19 @@
       "active"
     );
 
-
-    if (
-      mode === "feed"
-    ) {
-
+    if (mode === "feed") {
       feedBtn.classList.add(
         "active"
       );
     }
 
-
-    if (
-      mode === "trending"
-    ) {
-
+    if (mode === "trending") {
       trendBtn.classList.add(
         "active"
       );
     }
 
-
-    if (
-      mode === "explore"
-    ) {
-
+    if (mode === "explore") {
       exploreBtn.classList.add(
         "active"
       );
@@ -1223,19 +957,311 @@
 
   /*
    * =========================================================
-   * OPEN CONTENT
+   * FEED PATH
    * =========================================================
    */
 
-  function openContent(
-    url
+  function getFeedPath(
+    mode
   ) {
 
-    if (!url) {
+    const limit = 20;
+
+    if (mode === "trending") {
+      return (
+        "/trending?limit=" +
+        limit
+      );
+    }
+
+    if (mode === "explore") {
+      return (
+        "/explore?limit=" +
+        limit
+      );
+    }
+
+    return (
+      "/feed?limit=" +
+      limit +
+      "&session_id=" +
+      encodeURIComponent(
+        ensureSession()
+      )
+    );
+  }
+
+
+  /*
+   * =========================================================
+   * LOAD FEED
+   * =========================================================
+   */
+
+  async function loadFeed(
+    mode = "feed"
+  ) {
+
+    currentMode =
+      mode;
+
+    setActiveTab(
+      mode
+    );
+
+    setStatus(
+      "در حال دریافت محتوا..."
+    );
+
+    feedEl.innerHTML = `
+      <div class="empty">
+        در حال بارگذاری...
+      </div>
+    `;
+
+    try {
+
+      const path =
+        getFeedPath(mode);
+
+      const result =
+        await api(path);
+
+      feedItems =
+        Array.isArray(
+          result.items
+        )
+          ? result.items
+          : [];
+
+      renderFeed();
+
+      if (
+        feedItems.length
+      ) {
+
+        setStatus(
+          "🟢 آماده",
+          "success"
+        );
+
+      } else {
+
+        setStatus(
+          "🟡 هنوز محتوایی پیدا نشد"
+        );
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Feed error:",
+        error
+      );
+
+      feedEl.innerHTML = `
+        <div class="error-card">
+
+          <strong>
+            دریافت محتوا ناموفق بود
+          </strong>
+
+          <div>
+            ${escapeHtml(
+              error.message ||
+              "خطای نامشخص"
+            )}
+          </div>
+
+        </div>
+      `;
+
+      setStatus(
+        "🔴 خطا در دریافت محتوا",
+        "error"
+      );
+    }
+  }
+
+
+  /*
+   * =========================================================
+   * RENDER FEED
+   * =========================================================
+   */
+
+  function renderFeed() {
+
+    if (
+      !feedItems.length
+    ) {
+
+      feedEl.innerHTML = `
+        <div class="empty">
+          هنوز محتوایی برای نمایش
+          در Discovery وجود ندارد.
+        </div>
+      `;
 
       return;
     }
 
+    feedEl.innerHTML =
+      feedItems
+        .map(
+          function (item) {
+
+            const id =
+              String(
+                item.id || ""
+              );
+
+            const safeId =
+              escapeHtml(id);
+
+            const title =
+              escapeHtml(
+                item.title ||
+                "بدون عنوان"
+              );
+
+            const description =
+              escapeHtml(
+                item.description ||
+                "توضیحی برای این محتوا ثبت نشده است."
+              );
+
+            const type =
+              escapeHtml(
+                item.content_type ||
+                "content"
+              );
+
+            const reason =
+              escapeHtml(
+                item.reason ||
+                item.explanation ||
+                ""
+              );
+
+            const url =
+              item.source_url
+                ? String(
+                    item.source_url
+                  )
+                : "";
+
+            return `
+              <article
+                class="card"
+                data-id="${safeId}"
+              >
+
+                <h2>
+                  ${title}
+                </h2>
+
+                <p>
+                  ${description}
+                </p>
+
+                <div class="meta">
+                  ${type}
+                </div>
+
+                ${
+                  reason
+                    ? `
+                      <div class="reason">
+                        ${reason}
+                      </div>
+                    `
+                    : ""
+                }
+
+                <div class="actions">
+
+                  ${
+                    url
+                      ? `
+                        <button
+                          class="action primary js-open"
+                          type="button"
+                          data-id="${safeId}"
+                          data-url="${escapeHtml(url)}"
+                        >
+                          🔗 مشاهده
+                        </button>
+                      `
+                      : ""
+                  }
+
+                  <button
+                    class="action js-save"
+                    type="button"
+                    data-id="${safeId}"
+                  >
+                    ⭐ ذخیره
+                  </button>
+
+                  <button
+                    class="action js-dislike"
+                    type="button"
+                    data-id="${safeId}"
+                  >
+                    👎
+                  </button>
+
+                </div>
+
+              </article>
+            `;
+          }
+        )
+        .join("");
+  }
+
+
+  /*
+   * =========================================================
+   * OPEN CONTENT
+   * =========================================================
+   */
+
+  async function openContent(
+    url,
+    contentId,
+    button
+  ) {
+
+    if (!url) {
+      return;
+    }
+
+    if (button) {
+      button.disabled = true;
+    }
+
+    try {
+
+      await recordEvent(
+        contentId,
+        "VIEW",
+        1,
+        {
+          source:
+            "mini_app",
+          url
+        }
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "View event:",
+        error
+      );
+    }
 
     try {
 
@@ -1258,13 +1284,68 @@
         "Telegram openLink:",
         error
       );
-    }
 
+    } finally {
+
+      if (button) {
+        button.disabled = false;
+      }
+    }
 
     window.open(
       url,
       "_blank",
       "noopener,noreferrer"
+    );
+
+    if (button) {
+      button.disabled = false;
+    }
+  }
+
+
+  /*
+   * =========================================================
+   * RECORD EVENT
+   * =========================================================
+   */
+
+  async function recordEvent(
+    contentId,
+    eventType,
+    value = 1,
+    metadata = {}
+  ) {
+
+    if (!contentId) {
+      throw new Error(
+        "content_id is required"
+      );
+    }
+
+    return api(
+      "/event",
+      {
+        method: "POST",
+
+        body:
+          JSON.stringify({
+            content_id:
+              contentId,
+
+            event_type:
+              eventType,
+
+            value:
+              value,
+
+            metadata:
+              metadata,
+
+            session_id:
+              ensureSession()
+          })
+      }
     );
   }
 
@@ -1276,49 +1357,66 @@
    */
 
   async function saveContent(
-    contentId
+    contentId,
+    button
   ) {
 
     if (!contentId) {
-
       return;
     }
-
 
     if (!currentUser) {
 
       setStatus(
-        "ℹ️ برای ذخیره، ابتدا Telegram را احراز هویت کن"
+        "ℹ️ کاربر Telegram احراز نشده است"
       );
 
       return;
     }
 
+    if (button) {
+      button.disabled = true;
+    }
 
     try {
 
-      await api(
-        "/save",
-        {
-          method: "POST",
+      const result =
+        await api(
+          "/save",
+          {
+            method: "POST",
 
-          body:
-            JSON.stringify({
-              user_id:
-                currentUser.id,
+            body:
+              JSON.stringify({
+                content_id:
+                  contentId,
 
-              content_id:
-                contentId
-            })
+                user_id:
+                  currentUser.id
+              })
+          }
+        );
+
+      if (
+        result &&
+        result.saved
+      ) {
+
+        if (button) {
+
+          button.classList.add(
+            "saved"
+          );
+
+          button.textContent =
+            "✅ ذخیره شد";
         }
-      );
 
-
-      setStatus(
-        "⭐ ذخیره شد",
-        "success"
-      );
-
+        setStatus(
+          "⭐ ذخیره شد",
+          "success"
+        );
+      }
 
     } catch (error) {
 
@@ -1327,11 +1425,20 @@
         error
       );
 
-
       setStatus(
-        "🔴 ذخیره ناموفق بود",
+        "🔴 ذخیره ناموفق بود: " +
+        (
+          error.message ||
+          "خطای نامشخص"
+        ),
         "error"
       );
+
+    } finally {
+
+      if (button) {
+        button.disabled = false;
+      }
     }
   }
 
@@ -1343,46 +1450,83 @@
    */
 
   async function notInterested(
-    contentId
+    contentId,
+    button
   ) {
+
+    if (!contentId) {
+      return;
+    }
 
     if (!currentUser) {
 
       setStatus(
-        "ℹ️ برای ثبت بازخورد، ابتدا Telegram را احراز هویت کن"
+        "ℹ️ کاربر Telegram احراز نشده است"
       );
 
       return;
     }
 
+    if (button) {
+      button.disabled = true;
+    }
 
     try {
 
-      await api(
-        "/feedback",
-        {
-          method: "POST",
+      const result =
+        await api(
+          "/feedback",
+          {
+            method: "POST",
 
-          body:
-            JSON.stringify({
-              user_id:
-                currentUser.id,
+            body:
+              JSON.stringify({
+                content_id:
+                  contentId,
 
-              content_id:
-                contentId,
+                user_id:
+                  currentUser.id,
 
-              feedback_type:
-                "not_interested"
-            })
+                feedback_type:
+                  "not_interested"
+              })
+          }
+        );
+
+      if (
+        result &&
+        result.recorded
+      ) {
+
+        if (button) {
+
+          button.classList.add(
+            "disliked"
+          );
+
+          button.textContent =
+            "✅ ثبت شد";
         }
-      );
 
+        setStatus(
+          "👍 بازخورد ثبت شد",
+          "success"
+        );
 
-      setStatus(
-        "👍 بازخورد ثبت شد",
-        "success"
-      );
+        /*
+         * بعد از بازخورد منفی،
+         * آیتم را از Feed فعلی حذف می‌کنیم.
+         */
 
+        feedItems =
+          feedItems.filter(
+            item =>
+              String(item.id) !==
+              String(contentId)
+          );
+
+        renderFeed();
+      }
 
     } catch (error) {
 
@@ -1390,6 +1534,21 @@
         "Feedback:",
         error
       );
+
+      setStatus(
+        "🔴 ثبت بازخورد ناموفق بود: " +
+        (
+          error.message ||
+          "خطای نامشخص"
+        ),
+        "error"
+      );
+
+    } finally {
+
+      if (button) {
+        button.disabled = false;
+      }
     }
   }
 
@@ -1400,11 +1559,10 @@
    * =========================================================
    */
 
-  function doSearch() {
+  async function doSearch() {
 
     const query =
       searchInput.value.trim();
-
 
     if (!query) {
 
@@ -1415,16 +1573,176 @@
       return;
     }
 
-
     setStatus(
-      `🔎 جستجو برای «${query}» در حال توسعه است`
+      `🔎 جستجو برای «${query}»...`
     );
+
+    feedEl.innerHTML = `
+      <div class="empty">
+        در حال جستجو...
+      </div>
+    `;
+
+    try {
+
+      const result =
+        await api(
+          "/search?q=" +
+          encodeURIComponent(
+            query
+          ) +
+          "&limit=20"
+        );
+
+      feedItems =
+        Array.isArray(
+          result.items
+        )
+          ? result.items
+          : [];
+
+      renderFeed();
+
+      setStatus(
+        feedItems.length
+          ? `🔎 ${feedItems.length} نتیجه پیدا شد`
+          : "🟡 نتیجه‌ای پیدا نشد",
+        feedItems.length
+          ? "success"
+          : ""
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Search:",
+        error
+      );
+
+      feedEl.innerHTML = `
+        <div class="error-card">
+
+          <strong>
+            جستجو ناموفق بود
+          </strong>
+
+          <div>
+            ${escapeHtml(
+              error.message ||
+              "خطای نامشخص"
+            )}
+          </div>
+
+        </div>
+      `;
+
+      setStatus(
+        "🔴 خطا در جستجو",
+        "error"
+      );
+    }
   }
 
 
   /*
    * =========================================================
-   * EVENTS
+   * FEED CLICK DELEGATION
+   *
+   * مهم‌ترین اصلاح نسخه جدید:
+   *
+   * دیگر onclick="..."
+   * داخل HTML نداریم.
+   *
+   * همه چیز از اینجا مدیریت می‌شود.
+   * =========================================================
+   */
+
+  feedEl.addEventListener(
+    "click",
+    async function (event) {
+
+      const button =
+        event.target.closest(
+          "button"
+        );
+
+      if (!button) {
+        return;
+      }
+
+      const contentId =
+        button.dataset.id ||
+        button
+          .closest(".card")
+          ?.dataset.id ||
+        "";
+
+      /*
+       * مشاهده
+       */
+
+      if (
+        button.classList.contains(
+          "js-open"
+        )
+      ) {
+
+        const url =
+          button.dataset.url ||
+          "";
+
+        await openContent(
+          url,
+          contentId,
+          button
+        );
+
+        return;
+      }
+
+      /*
+       * ذخیره
+       */
+
+      if (
+        button.classList.contains(
+          "js-save"
+        )
+      ) {
+
+        await saveContent(
+          contentId,
+          button
+        );
+
+        return;
+      }
+
+      /*
+       * عدم علاقه
+       */
+
+      if (
+        button.classList.contains(
+          "js-dislike"
+        )
+      ) {
+
+        await notInterested(
+          contentId,
+          button
+        );
+
+        return;
+      }
+
+    }
+  );
+
+
+  /*
+   * =========================================================
+   * TAB EVENTS
    * =========================================================
    */
 
@@ -1464,12 +1782,16 @@
   );
 
 
-  document
-    .getElementById("searchBtn")
-    .addEventListener(
-      "click",
-      doSearch
-    );
+  /*
+   * =========================================================
+   * SEARCH EVENTS
+   * =========================================================
+   */
+
+  searchBtn.addEventListener(
+    "click",
+    doSearch
+  );
 
 
   searchInput.addEventListener(
@@ -1481,11 +1803,23 @@
         "Enter"
       ) {
 
+        event.preventDefault();
+
         doSearch();
-
       }
-
     }
+  );
+
+
+  /*
+   * =========================================================
+   * DEBUG / VERSION
+   * =========================================================
+   */
+
+  console.log(
+    "Telegram Discovery:",
+    APP_VERSION
   );
 
 
@@ -1499,12 +1833,11 @@
 
     /*
      * 1
-     * صبر برای Telegram
+     * Telegram
      */
 
     const telegramReady =
       await waitForTelegram();
-
 
     if (
       !telegramReady
@@ -1530,6 +1863,14 @@
 
     /*
      * 2
+     * Session
+     */
+
+    ensureSession();
+
+
+    /*
+     * 3
      * Backend
      */
 
@@ -1537,10 +1878,8 @@
       "در حال اتصال به Discovery..."
     );
 
-
     const backendOK =
       await checkBackend();
-
 
     if (!backendOK) {
 
@@ -1563,13 +1902,16 @@
 
 
     /*
-     * 3
-     * Telegram Authentication
+     * 4
+     * Telegram Auth
      */
+
+    setStatus(
+      "در حال احراز هویت..."
+    );
 
     const authenticated =
       await authenticateTelegram();
-
 
     if (!authenticated) {
 
@@ -1592,26 +1934,37 @@
 
 
     /*
-     * 4
-     * Feed
+     * 5
+     * Initial Feed
      */
 
     await loadFeed(
       "feed"
     );
-
   }
 
 
   /*
-   * شروع
+   * Start
    */
 
-  startApp();
+  startApp()
+    .catch(
+      function (error) {
 
+        console.error(
+          "Fatal startup error:",
+          error
+        );
+
+        setStatus(
+          "🔴 خطای راه‌اندازی برنامه",
+          "error"
+        );
+      }
+    );
 
 })();
-
 </script>
 
 </body>
