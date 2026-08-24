@@ -244,9 +244,6 @@
     const API_URL =
       "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-api-live";
 
-    const SUPABASE_KEY =
-      "sb_publishable_4T6EICAK3XDApqSzisDFLQ_5tLgPNH4";
-
     const tg =
       window.Telegram && window.Telegram.WebApp
         ? window.Telegram.WebApp
@@ -304,11 +301,21 @@
 
     async function api(path, options = {}) {
       const headers = {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_KEY,
-        "Authorization": "Bearer " + SUPABASE_KEY,
         ...(options.headers || {})
       };
+
+      /*
+       * discovery-api-live has verify_jwt=false and performs
+       * Telegram authentication itself from initData.
+       * Therefore the browser must NOT send the Supabase
+       * Authorization/publishable-key headers here.
+       *
+       * Removing them also avoids an unnecessary Supabase
+       * gateway/preflight dependency for the health check.
+       */
+      if (!headers["Content-Type"] && options.body) {
+        headers["Content-Type"] = "application/json";
+      }
 
       const initData = tg?.initData || "";
       if (initData) {
@@ -347,6 +354,10 @@
         return result?.ok === true;
       } catch (error) {
         console.error("Backend health:", error);
+        setStatus(
+          "🔴 Health check ناموفق: " + (error?.message || "Network/CORS error"),
+          "error"
+        );
         return false;
       }
     }
