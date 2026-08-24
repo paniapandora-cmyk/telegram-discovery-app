@@ -1,0 +1,86 @@
+name: Telegram Discovery Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify frontend exists
+        run: test -s index.html
+
+      - name: Verify Supabase discovery API
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          grep -Eq \
+            'https://[a-z0-9-]+\.supabase\.co/functions/v1/discovery-api' \
+            index.html
+
+          echo "Supabase discovery-api reference found."
+
+      - name: Start frontend locally
+        run: |
+          python3 -m http.server 8080 \
+            --bind 127.0.0.1 \
+            >/tmp/telegram-discovery-http.log 2>&1 &
+
+          echo $! > /tmp/server.pid
+
+      - name: Wait for frontend
+        run: |
+          set -e
+
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/ >/tmp/index.html; then
+              echo "Frontend is reachable."
+              exit 0
+            fi
+
+            sleep 1
+          done
+
+          cat /tmp/telegram-discovery-http.log
+          exit 1
+
+      - name: Verify Telegram Mini App
+        run: |
+          set -euo pipefail
+
+          grep -qi "Telegram" /tmp/index.html
+          grep -q "Telegram.WebApp" index.html
+
+          echo "Telegram WebApp integration found."
+
+      - name: Verify Discovery API integration
+        run: |
+          set -euo pipefail
+
+          grep -q "discovery-api" index.html
+
+          echo "Discovery API integration found."
+
+      - name: Verify discovery features
+        run: |
+          set -euo pipefail
+
+          grep -Eiq \
+            "feed|search|trending|explore" \
+            index.html
+
+          echo "Discovery feature markers found."
+
+      - name: Final result
+        run: |
+          echo "======================================"
+          echo "Telegram Discovery smoke test PASSED"
+          echo "======================================"
