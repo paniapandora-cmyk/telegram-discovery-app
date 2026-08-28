@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "teleproto": "^1.229.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.127.0"
+  }
+}
