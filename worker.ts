@@ -23,7 +23,7 @@ async function telegramHealth(env: Env) {
   const apiHash = env.TELEGRAM_API_HASH;
   const session = env.TELEGRAM_STRING_SESSION;
 
-  if (!apiId  !apiHash  !session) {
+  if (!apiId || !apiHash || !session) {
     return json({
       ok: false,
       error: "Telegram Cloudflare secrets are not configured"
