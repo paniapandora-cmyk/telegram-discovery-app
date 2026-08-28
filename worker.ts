@@ -1,5 +1,5 @@
-import { TelegramClient } from "npm:teleproto@1.229.0";
-import { StringSession } from "npm:teleproto@1.229.0/sessions";
+import { TelegramClient } from "teleproto";
+import { StringSession } from "teleproto/sessions";
 
 interface Env {
   ASSETS: Fetcher;
