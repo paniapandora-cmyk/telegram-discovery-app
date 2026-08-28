@@ -1,9 +1,8 @@
-Telegram Discovery — index.html
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
@@ -349,11 +348,17 @@ Telegram Discovery — index.html
      * ============================
      * CONFIG
      * ============================
+     *
+     * مهم:
+     * Frontend دیگر مستقیماً به Supabase
+     * وصل نمی‌شود.
+     *
+     * همه درخواست‌ها ابتدا به
+     * Cloudflare Worker می‌روند.
      */
 
     const API_URL =
-    window.location.origin + "/
-    api/discovery";
+      window.location.origin + "/api/discovery";
 
 
     /*
@@ -363,7 +368,7 @@ Telegram Discovery — index.html
      */
 
     const tg =
-     window.Telegram &&
+      window.Telegram &&
       window.Telegram.WebApp
         ? window.Telegram.WebApp
         : null;
@@ -525,11 +530,10 @@ Telegram Discovery — index.html
      * API
      * ============================
      *
-     * discovery-api-live خودش
-     * Telegram initData را احراز هویت می‌کند.
-     *
-     * بنابراین Authorization مربوط
-     * به Supabase اینجا ارسال نمی‌شود.
+     * Cloudflare Worker
+     * درخواست‌ها را به
+     * discovery-api-live
+     * منتقل می‌کند.
      */
 
     async function api(
@@ -757,12 +761,6 @@ Telegram Discovery — index.html
      * ============================
      * NORMALIZE CONTENT
      * ============================
-     *
-     * مهم:
-     * is_saved را از Backend نگه می‌داریم.
-     *
-     * این همان چیزی است که باعث می‌شود
-     * بعد از Reload وضعیت Saved باقی بماند.
      */
 
     function normalizeItem(item) {
@@ -808,10 +806,6 @@ Telegram Discovery — index.html
           item.reason ||
           "",
 
-        /*
-         * Backend باید is_saved را برای
-         * کاربر فعلی برگرداند.
-         */
         is_saved:
           item.is_saved === true ||
           item.is_saved === 1 ||
@@ -1158,6 +1152,11 @@ Telegram Discovery — index.html
 
       try {
 
+        /*
+         * فعلاً فقط برای محتواهای
+         * پایگاه Discovery استفاده می‌شود.
+         */
+
         await api(
           "/impression",
           {
@@ -1230,13 +1229,6 @@ Telegram Discovery — index.html
      * ============================
      * SAVE CONTENT
      * ============================
-     *
-     * بعد از موفقیت:
-     *
-     * 1. رکورد در Backend ذخیره می‌شود.
-     * 2. is_saved محلی true می‌شود.
-     * 3. renderFeed دوباره اجرا می‌شود.
-     * 4. در Reload نیز is_saved از Backend خوانده می‌شود.
      */
 
     async function saveContent(
@@ -1295,10 +1287,6 @@ Telegram Discovery — index.html
           }
         );
 
-
-        /*
-         * تغییر فوری UI
-         */
 
         if (item) {
           item.is_saved = true;
@@ -1653,13 +1641,8 @@ Telegram Discovery — index.html
 
 
       /*
-       * مهم:
-       * اول احراز هویت،
-       * بعد feed.
-       *
-       * بنابراین Backend می‌تواند
-       * is_saved را برای همان کاربر
-       * محاسبه کند.
+       * ابتدا احراز هویت
+       * سپس دریافت Feed
        */
 
       await loadFeed(
