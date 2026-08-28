@@ -12,6 +12,9 @@ interface Env {
 const DISCOVERY_API_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-api-live";
 
+const UNIFIED_SEARCH_URL =
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v2";
+
 function corsHeaders(request?: Request): Headers {
   const headers = new Headers();
 
@@ -64,8 +67,8 @@ function json(
 }
 
 /* =========================================================
-   TELEGRAM CLIENT
-   ========================================================= */
+   TELEGRAM CONFIG
+========================================================= */
 
 function getTelegramConfig(env: Env) {
   const missing: string[] = [];
@@ -127,7 +130,7 @@ function createTelegramClient(env: Env) {
 
 /* =========================================================
    TELEGRAM HEALTH
-   ========================================================= */
+========================================================= */
 
 async function telegramHealth(
   env: Env,
@@ -203,8 +206,126 @@ async function telegramHealth(
 }
 
 /* =========================================================
-   TELEGRAM SEARCH
-   ========================================================= */
+   SEARCH HELPERS
+========================================================= */
+
+function normalizeSearchQuery(
+  input: string,
+): string {
+  return input
+    .trim()
+    .replace(/^@+/, "")
+    .replace(/\s+/g, " ");
+}
+
+function normalizedKey(
+  value: unknown,
+): string {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+/* =========================================================
+   INTERNAL DISCOVERY SEARCH
+========================================================= */
+
+async function indexedSearch(
+  request: Request,
+  query: string,
+  limit: number,
+  requestId: string,
+) {
+  const initData =
+    request.headers.get(
+      "x-telegram-init-data",
+    ) || "";
+
+  /*
+   * Search داخلی به Telegram identity
+   * نیاز دارد تا discovery API بتواند
+   * user را شناسایی کند.
+   *
+   * اگر initData موجود نباشد:
+   * فقط internal search را skip می‌کنیم
+   * و Global Telegram Search همچنان کار می‌کند.
+   */
+
+  if (!initData) {
+    console.warn(
+      "Indexed search skipped: Telegram initData missing",
+    );
+
+    return [];
+  }
+
+  const url =
+    new URL(
+      UNIFIED_SEARCH_URL,
+    );
+
+  url.searchParams.set(
+    "q",
+    query,
+  );
+
+  url.searchParams.set(
+    "limit",
+    String(limit),
+  );
+
+  const response =
+    await fetch(
+      url.toString(),
+      {
+        method: "GET",
+
+        headers: {
+          "x-telegram-init-data":
+            initData,
+
+          "x-request-id":
+            requestId,
+        },
+      },
+    );
+
+  const raw =
+    await response.text();
+
+  let data: any = {};
+
+  try {
+    data =
+      raw
+        ? JSON.parse(raw)
+        : {};
+  } catch {
+    data = {
+      error: raw,
+    };
+  }
+
+  if (
+    !response.ok ||
+    data?.ok === false
+  ) {
+    throw new Error(
+      data?.error ||
+        `Unified search ${response.status}`,
+    );
+  }
+
+  return Array.isArray(
+    data?.items,
+  )
+    ? data.items
+    : [];
+}
+
+/* =========================================================
+   TELEGRAM GLOBAL SEARCH
+========================================================= */
 
 function buildTelegramLink(
   username: string | null,
@@ -220,72 +341,24 @@ function buildTelegramLink(
   return `https://t.me/${username}/${messageId}`;
 }
 
-async function telegramSearch(
+async function telegramGlobalSearch(
   env: Env,
   request: Request,
+  query: string,
+  limit: number,
 ) {
-  const url =
-    new URL(request.url);
-
-  const query =
-    (
-      url.searchParams.get("q") ||
-      ""
-    ).trim();
-
-  const requestedLimit =
-    Number(
-      url.searchParams.get("limit") ||
-        "20",
-    );
-
-  const limit =
-    Math.min(
-      Math.max(
-        Number.isFinite(requestedLimit)
-          ? requestedLimit
-          : 20,
-        1,
-      ),
-      50,
-    );
-
-  if (!query) {
-    return json(
-      {
-        ok: false,
-        error:
-          "Search query is required",
-        results: [],
-      },
-      400,
-      request,
-    );
-  }
-
-  if (query.length > 200) {
-    return json(
-      {
-        ok: false,
-        error:
-          "Search query is too long",
-        results: [],
-      },
-      400,
-      request,
-    );
-  }
-
   let client:
     | TelegramClient<any>
     | null = null;
+
+  const results: any[] = [];
 
   try {
     client =
       createTelegramClient(env);
 
     console.log(
-      "Telegram search starting",
+      "Telegram global search starting",
       {
         query,
         limit,
@@ -298,28 +371,18 @@ async function telegramSearch(
       await client.checkAuthorization();
 
     if (!authorized) {
-      return json(
-        {
-          ok: false,
-          authorized: false,
-          error:
-            "Telegram session is not authorized",
-          results: [],
-        },
-        401,
-        request,
+      throw new Error(
+        "Telegram session is not authorized",
       );
     }
 
-    const results: unknown[] = [];
-
     /*
-     * Global Telegram search.
-     *
      * entity = undefined
-     * باعث می‌شود teleproto از
-     * messages.searchGlobal استفاده کند.
+     *
+     * یعنی جستجوی Global واقعی Telegram
+     * نه فقط یک کانال خاص.
      */
+
     for await (
       const message of client.iterMessages(
         undefined,
@@ -335,13 +398,13 @@ async function telegramSearch(
         }
 
         const text =
-          message.text ||
-          "";
+          message.text || "";
 
         const messageId =
           Number(message.id);
 
-        let chat: any = null;
+        let chat: any =
+          null;
 
         try {
           chat =
@@ -350,7 +413,8 @@ async function telegramSearch(
           chat = null;
         }
 
-        let sender: any = null;
+        let sender: any =
+          null;
 
         try {
           sender =
@@ -380,15 +444,22 @@ async function telegramSearch(
         const link =
           buildTelegramLink(
             username,
-            Number.isFinite(messageId)
+            Number.isFinite(
+              messageId,
+            )
               ? messageId
               : null,
           );
 
         results.push({
+          result_type:
+            "telegram_message",
+
           id:
-            Number.isFinite(messageId)
-              ? messageId
+            Number.isFinite(
+              messageId,
+            )
+              ? String(messageId)
               : null,
 
           text,
@@ -439,12 +510,16 @@ async function telegramSearch(
             Boolean(
               message.media,
             ),
+
+          source:
+            "telegram",
         });
       } catch (itemError) {
         /*
-         * اگر یک نتیجه خراب بود،
-         * کل Search را متوقف نکن.
+         * خراب بودن یک نتیجه نباید
+         * کل Global Search را خراب کند.
          */
+
         console.error(
           "Telegram search item error",
           itemError,
@@ -453,50 +528,15 @@ async function telegramSearch(
     }
 
     console.log(
-      "Telegram search completed",
+      "Telegram global search completed",
       {
         query,
-        count: results.length,
-      },
-    );
-
-    return json(
-      {
-        ok: true,
-
-        query,
-
         count:
           results.length,
-
-        results,
       },
-      200,
-      request,
-    );
-  } catch (error) {
-    console.error(
-      "Telegram search error",
-      error,
     );
 
-    let message =
-      "Telegram search failed";
-
-    if (error instanceof Error) {
-      message =
-        error.message;
-    }
-
-    return json(
-      {
-        ok: false,
-        error: message,
-        results: [],
-      },
-      500,
-      request,
-    );
+    return results;
   } finally {
     if (client) {
       try {
@@ -509,8 +549,681 @@ async function telegramSearch(
 }
 
 /* =========================================================
-   DISCOVERY API PATH
-   ========================================================= */
+   MERGE + DEDUPLICATION
+========================================================= */
+
+function searchResultKey(
+  item: any,
+): string {
+  const type =
+    String(
+      item?.result_type ||
+        item?.source ||
+        "",
+    );
+
+  /*
+   * Channel:
+   * با creator_id / peer id / username
+   *
+   * Content:
+   * با content_id
+   *
+   * Telegram:
+   * با chat_id + message id
+   */
+
+  if (
+    type ===
+    "channel"
+  ) {
+    return [
+      "channel",
+      normalizedKey(
+        item?.channel_peer_id ??
+          item?.peer_id ??
+          item?.result_id ??
+          item?.channel_username,
+      ),
+    ].join(":");
+  }
+
+  if (
+    item?.content_id
+  ) {
+    return [
+      "content",
+      normalizedKey(
+        item.content_id,
+      ),
+    ].join(":");
+  }
+
+  if (
+    item?.source ===
+      "telegram" ||
+    type ===
+      "telegram_message"
+  ) {
+    return [
+      "telegram",
+      normalizedKey(
+        item?.chat_id,
+      ),
+      normalizedKey(
+        item?.telegram_message_id ??
+          item?.id,
+      ),
+    ].join(":");
+  }
+
+  return [
+    type,
+    normalizedKey(
+      item?.id ??
+        item?.result_id ??
+        item?.source_url,
+    ),
+  ].join(":");
+}
+
+function scoreSearchResult(
+  item: any,
+  query: string,
+): number {
+  const q =
+    normalizedKey(
+      normalizeSearchQuery(
+        query,
+      ),
+    );
+
+  const title =
+    normalizedKey(
+      item?.title ??
+        item?.channel_title,
+    );
+
+  const username =
+    normalizedKey(
+      item?.channel_username ??
+        item?.username,
+    );
+
+  const peerId =
+    normalizedKey(
+      item?.channel_peer_id ??
+        item?.chat_id,
+    );
+
+  const sourceId =
+    normalizedKey(
+      item?.source_id,
+    );
+
+  const text =
+    normalizedKey(
+      item?.description ??
+        item?.text ??
+        item?.message,
+    );
+
+  let score =
+    Number(
+      item?.score ?? 0,
+    );
+
+  /*
+   * Exact Channel username
+   */
+
+  if (
+    username &&
+    username === q
+  ) {
+    score += 5;
+  }
+
+  /*
+   * Exact peer id
+   */
+
+  if (
+    peerId &&
+    peerId ===
+      normalizedKey(q)
+  ) {
+    score += 5;
+  }
+
+  /*
+   * Exact source id
+   */
+
+  if (
+    sourceId &&
+    sourceId ===
+      normalizedKey(q)
+  ) {
+    score += 4;
+  }
+
+  /*
+   * Exact channel title
+   */
+
+  if (
+    title &&
+    title === q
+  ) {
+    score += 4;
+  }
+
+  /*
+   * Prefix match
+   */
+
+  if (
+    username &&
+    username.startsWith(q)
+  ) {
+    score += 3;
+  }
+
+  if (
+    title &&
+    title.startsWith(q)
+  ) {
+    score += 2.5;
+  }
+
+  /*
+   * Partial match
+   */
+
+  if (
+    username &&
+    username.includes(q)
+  ) {
+    score += 2;
+  }
+
+  if (
+    title &&
+    title.includes(q)
+  ) {
+    score += 1.5;
+  }
+
+  if (
+    text &&
+    text.includes(q)
+  ) {
+    score += 1;
+  }
+
+  /*
+   * Channel results should be
+   * preferred for exact channel queries.
+   */
+
+  if (
+    item?.result_type ===
+    "channel"
+  ) {
+    score += 1;
+  }
+
+  return score;
+}
+
+function mergeSearchResults(
+  indexed: any[],
+  telegram: any[],
+  query: string,
+  limit: number,
+) {
+  const map =
+    new Map<
+      string,
+      any
+    >();
+
+  /*
+   * Internal Discovery results
+   * همیشه ابتدا اضافه می‌شوند.
+   */
+
+  for (
+    const item of indexed
+  ) {
+    if (!item) {
+      continue;
+    }
+
+    const copy = {
+      ...item,
+    };
+
+    copy.search_source =
+      "discovery";
+
+    copy._score =
+      scoreSearchResult(
+        copy,
+        query,
+      );
+
+    const key =
+      searchResultKey(copy);
+
+    if (
+      !map.has(key)
+    ) {
+      map.set(
+        key,
+        copy,
+      );
+    }
+  }
+
+  /*
+   * Global Telegram results
+   */
+
+  for (
+    const item of telegram
+  ) {
+    if (!item) {
+      continue;
+    }
+
+    const copy = {
+      ...item,
+    };
+
+    copy.search_source =
+      "telegram_global";
+
+    copy._score =
+      scoreSearchResult(
+        copy,
+        query,
+      );
+
+    const key =
+      searchResultKey(copy);
+
+    if (
+      map.has(key)
+    ) {
+      /*
+       * اگر همان نتیجه قبلاً
+       * از DB آمده باشد، نسخه DB
+       * را ترجیح می‌دهیم.
+       */
+
+      const existing =
+        map.get(key);
+
+      if (
+        existing?.search_source !==
+          "discovery"
+      ) {
+        map.set(
+          key,
+          copy,
+        );
+      }
+
+      continue;
+    }
+
+    map.set(
+      key,
+      copy,
+    );
+  }
+
+  const merged =
+    Array.from(
+      map.values(),
+    );
+
+  /*
+   * امتیاز بالاتر ابتدا
+   */
+
+  merged.sort(
+    (
+      a,
+      b,
+    ) => {
+      const scoreDiff =
+        Number(
+          b._score ??
+            0,
+        ) -
+        Number(
+          a._score ??
+            0,
+        );
+
+      if (
+        scoreDiff !== 0
+      ) {
+        return scoreDiff;
+      }
+
+      const ad =
+        String(
+          a.date ??
+            a.published_at ??
+            "",
+        );
+
+      const bd =
+        String(
+          b.date ??
+            b.published_at ??
+            "",
+        );
+
+      return bd.localeCompare(
+        ad,
+      );
+    },
+  );
+
+  /*
+   * فیلد داخلی امتیاز
+   * را به کاربر نمی‌دهیم.
+   */
+
+  return merged
+    .slice(
+      0,
+      limit,
+    )
+    .map(
+      (item) => {
+        const {
+          _score,
+          ...clean
+        } = item;
+
+        return {
+          ...clean,
+
+          search_score:
+            Number(
+              _score ??
+                0,
+            ),
+        };
+      },
+    );
+}
+
+/* =========================================================
+   UNIFIED TELEGRAM SEARCH
+========================================================= */
+
+async function telegramSearch(
+  env: Env,
+  request: Request,
+) {
+  const url =
+    new URL(
+      request.url,
+    );
+
+  const rawQuery =
+    (
+      url.searchParams.get(
+        "q",
+      ) || ""
+    ).trim();
+
+  const query =
+    normalizeSearchQuery(
+      rawQuery,
+    );
+
+  const requestedLimit =
+    Number(
+      url.searchParams.get(
+        "limit",
+      ) ||
+        "20",
+    );
+
+  const limit =
+    Math.min(
+      Math.max(
+        Number.isFinite(
+          requestedLimit,
+        )
+          ? Math.floor(
+              requestedLimit,
+            )
+          : 20,
+        1,
+      ),
+      50,
+    );
+
+  const requestId =
+    request.headers.get(
+      "x-request-id",
+    ) ||
+    crypto.randomUUID();
+
+  if (!query) {
+    return json(
+      {
+        ok: false,
+        error:
+          "Search query is required",
+        results: [],
+      },
+      400,
+      request,
+    );
+  }
+
+  if (
+    query.length > 200
+  ) {
+    return json(
+      {
+        ok: false,
+        error:
+          "Search query is too long",
+        results: [],
+      },
+      400,
+      request,
+    );
+  }
+
+  let indexedResults: any[] =
+    [];
+
+  let globalResults: any[] =
+    [];
+
+  let indexedError:
+    | string
+    | null =
+    null;
+
+  let globalError:
+    | string
+    | null =
+    null;
+
+  /*
+   * مرحله اول:
+   * Search دیتابیس/Discovery
+   */
+
+  try {
+    indexedResults =
+      await indexedSearch(
+        request,
+        query,
+        Math.min(
+          limit,
+          50,
+        ),
+        requestId,
+      );
+
+    console.log(
+      "Indexed search result",
+      {
+        query,
+        count:
+          indexedResults.length,
+      },
+    );
+  } catch (error) {
+    indexedError =
+      error instanceof Error
+        ? error.message
+        : String(error);
+
+    console.error(
+      "Indexed search failed",
+      error,
+    );
+  }
+
+  /*
+   * مرحله دوم:
+   * Global Telegram Search
+   *
+   * خیلی مهم:
+   * حتی اگر Search داخلی
+   * نتیجه بدهد هم اجرا می‌شود.
+   */
+
+  try {
+    globalResults =
+      await telegramGlobalSearch(
+        env,
+        request,
+        query,
+        limit,
+      );
+
+    console.log(
+      "Global search result",
+      {
+        query,
+        count:
+          globalResults.length,
+      },
+    );
+  } catch (error) {
+    globalError =
+      error instanceof Error
+        ? error.message
+        : String(error);
+
+    console.error(
+      "Global Telegram search failed",
+      error,
+    );
+  }
+
+  /*
+   * ادغام
+   */
+
+  const results =
+    mergeSearchResults(
+      indexedResults,
+      globalResults,
+      query,
+      limit,
+    );
+
+  /*
+   * اگر هیچ نتیجه‌ای نداریم
+   * ولی یکی از سرویس‌ها خطا داده،
+   * خطای واقعی را هم برگردان.
+   */
+
+  if (
+    !results.length
+  ) {
+    const error =
+      indexedError ||
+      globalError;
+
+    if (error) {
+      return json(
+        {
+          ok: false,
+
+          error,
+
+          results: [],
+
+          query,
+
+          sources: {
+            discovery:
+              Boolean(
+                !indexedError,
+              ),
+            telegram:
+              Boolean(
+                !globalError,
+              ),
+          },
+
+          request_id:
+            requestId,
+        },
+        500,
+        request,
+      );
+    }
+  }
+
+  return json(
+    {
+      ok: true,
+
+      query,
+
+      count:
+        results.length,
+
+      results,
+
+      sources: {
+        discovery_count:
+          indexedResults.length,
+
+        telegram_global_count:
+          globalResults.length,
+      },
+
+      request_id:
+        requestId,
+    },
+    200,
+    request,
+  );
+}
+
+/* =========================================================
+   DISCOVERY API PROXY
+========================================================= */
 
 function discoveryPath(
   url: URL,
@@ -531,24 +1244,26 @@ function discoveryPath(
       prefix.length,
     ) || "/";
 
-  return remainder.startsWith("/")
+  return remainder.startsWith(
+    "/",
+  )
     ? remainder
     : `/${remainder}`;
 }
-
-/* =========================================================
-   DISCOVERY API PROXY
-   ========================================================= */
 
 async function proxyDiscovery(
   request: Request,
   path: string,
 ): Promise<Response> {
   const incomingUrl =
-    new URL(request.url);
+    new URL(
+      request.url,
+    );
 
   const targetUrl =
-    new URL(DISCOVERY_API_URL);
+    new URL(
+      DISCOVERY_API_URL,
+    );
 
   targetUrl.pathname =
     `${targetUrl.pathname}${path}`;
@@ -572,7 +1287,9 @@ async function proxyDiscovery(
     const name of forwardHeaders
   ) {
     const value =
-      request.headers.get(name);
+      request.headers.get(
+        name,
+      );
 
     if (value) {
       headers.set(
@@ -598,14 +1315,17 @@ async function proxyDiscovery(
     | undefined;
 
   if (
-    request.method !== "GET" &&
-    request.method !== "HEAD"
+    request.method !==
+      "GET" &&
+    request.method !==
+      "HEAD"
   ) {
     body =
       await request.arrayBuffer();
   }
 
-  let response: Response;
+  let response:
+    Response;
 
   try {
     response =
@@ -619,7 +1339,8 @@ async function proxyDiscovery(
 
           body,
 
-          redirect: "follow",
+          redirect:
+            "follow",
         },
       );
   } catch (error) {
@@ -674,7 +1395,8 @@ async function proxyDiscovery(
     "X-Request-Id",
     response.headers.get(
       "X-Request-Id",
-    ) || requestId,
+    ) ||
+      requestId,
   );
 
   responseHeaders.set(
@@ -699,7 +1421,7 @@ async function proxyDiscovery(
 
 /* =========================================================
    MAIN WORKER
-   ========================================================= */
+========================================================= */
 
 export default {
   async fetch(
@@ -707,11 +1429,14 @@ export default {
     env: Env,
   ): Promise<Response> {
     const url =
-      new URL(request.url);
+      new URL(
+        request.url,
+      );
 
     /*
-     * CORS preflight
+     * CORS
      */
+
     if (
       request.method ===
       "OPTIONS"
@@ -720,6 +1445,7 @@ export default {
         null,
         {
           status: 204,
+
           headers:
             corsHeaders(
               request,
@@ -731,6 +1457,7 @@ export default {
     /*
      * Telegram health
      */
+
     if (
       url.pathname ===
       "/api/telegram/health"
@@ -761,11 +1488,14 @@ export default {
     }
 
     /*
-     * Telegram global search
+     * Unified Telegram Search
      *
-     * GET:
-     * /api/telegram/search?q=...
+     * This endpoint now does BOTH:
+     *
+     * 1. Discovery database search
+     * 2. Telegram Global Search
      */
+
     if (
       url.pathname ===
       "/api/telegram/search"
@@ -777,17 +1507,19 @@ export default {
         );
       } catch (error) {
         console.error(
-          "Telegram search fatal error",
+          "Telegram unified search fatal error",
           error,
         );
 
         return json(
           {
             ok: false,
+
             error:
               error instanceof Error
                 ? error.message
                 : "Telegram search failed",
+
             results: [],
           },
           500,
@@ -798,20 +1530,12 @@ export default {
 
     /*
      * Discovery API proxy
-     *
-     * Examples:
-     *
-     * /api/discovery/health
-     * /api/discovery/search?q=...
-     * /api/discovery/feed
-     * /api/discovery/trending
-     * /api/discovery/explore
-     * /api/discovery/auth/telegram
-     * /api/discovery/save
-     * /api/discovery/feedback
      */
+
     const path =
-      discoveryPath(url);
+      discoveryPath(
+        url,
+      );
 
     if (path) {
       return proxyDiscovery(
@@ -823,6 +1547,7 @@ export default {
     /*
      * Static frontend
      */
+
     return env.ASSETS.fetch(
       request,
     );
