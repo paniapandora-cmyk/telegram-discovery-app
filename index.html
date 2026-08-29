@@ -1,21 +1,13 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<!DOCTYPE html><html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8"><meta
+name="viewport"
+content="width=device-width, initial-scale=1, viewport-fit=cover"
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  >
+«»
 
-  <title>Telegram Discovery</title>
-
-  <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#f4f6f8">
-
-  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
-
-  <style>
+  <title>Telegram Discovery</title>  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f4f6f8">  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>  <style>
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
@@ -111,6 +103,10 @@
       color: #111827;
     }
 
+    .search input::placeholder {
+      color: #6b7280;
+    }
+
     .search button,
     .tab.active,
     .action.primary {
@@ -188,11 +184,17 @@
       border-right: 4px solid #229ed9;
     }
 
+    .card.channel-card {
+      border-right: 4px solid #16a34a;
+    }
+
     .card h2 {
       margin: 0 0 8px;
 
       font-size: 18px;
       line-height: 1.5;
+
+      overflow-wrap: anywhere;
     }
 
     .card p {
@@ -215,7 +217,7 @@
       margin-bottom: 12px;
 
       font-size: 12px;
-      opacity: .58;
+      opacity: .65;
     }
 
     .chip {
@@ -223,11 +225,20 @@
       border-radius: 999px;
 
       background: #eef2f7;
+
+      max-width: 100%;
+      overflow-wrap: anywhere;
     }
 
     .chip.telegram {
       background: #e4f5fc;
       color: #1685b5;
+      opacity: 1;
+    }
+
+    .chip.channel {
+      background: #e9f8ee;
+      color: #16803c;
       opacity: 1;
     }
 
@@ -292,14 +303,6 @@
       margin-bottom: 8px;
     }
 
-    .telegram-source {
-      font-size: 12px;
-      margin-top: 5px;
-      opacity: .6;
-      direction: ltr;
-      text-align: right;
-    }
-
     .footer {
       text-align: center;
 
@@ -326,120 +329,70 @@
         grid-template-columns: 1fr 1fr 1fr;
       }
     }
-  </style>
-</head>
-
-<body>
-
-<div class="app">
-
-  <header class="header">
+  </style></head><body><div class="app">  <header class="header">
     <div class="brand">
       کشف
-    </div>
+    </div><div class="subtitle">
+  محتوای جالب تلگرام را کشف کن
+</div>
 
-    <div class="subtitle">
-      محتوای جالب تلگرام را کشف کن
-    </div>
-  </header>
+  </header>  <!-- SEARCH -->  <div class="search"><input
+  id="searchInput"
+  type="search"
+  autocomplete="off"
+  enterkeyhint="search"
+  placeholder="نام کانال، @username، شناسه یا کلمه..."
+>
 
+<button
+  id="searchBtn"
+  type="button"
+>
+  جستجو
+</button>
 
-  <!-- SEARCH -->
+  </div>  <!-- TABS -->  <div class="tabs"><button
+  id="feedBtn"
+  class="tab active"
+  type="button"
+>
+  ✨ پیشنهادهای من
+</button>
 
-  <div class="search">
+<button
+  id="trendBtn"
+  class="tab"
+  type="button"
+>
+  🔥 ترندها
+</button>
 
-    <input
-      id="searchInput"
-      type="search"
-      autocomplete="off"
-      placeholder="جستجو در تلگرام..."
-    >
+<button
+  id="exploreBtn"
+  class="tab"
+  type="button"
+>
+  🧭 اکسپلور
+</button>
 
-    <button
-      id="searchBtn"
-      type="button"
-    >
-      جستجو
-    </button>
-
-  </div>
-
-
-  <!-- TABS -->
-
-  <div class="tabs">
-
-    <button
-      id="feedBtn"
-      class="tab active"
-      type="button"
-    >
-      ✨ پیشنهادهای من
-    </button>
-
-    <button
-      id="trendBtn"
-      class="tab"
-      type="button"
-    >
-      🔥 ترندها
-    </button>
-
-    <button
-      id="exploreBtn"
-      class="tab"
-      type="button"
-    >
-      🧭 اکسپلور
-    </button>
-
-  </div>
-
-
-  <!-- STATUS -->
-
-  <div
+  </div>  <!-- STATUS -->  <div
     id="status"
     class="status"
   >
     در حال اتصال...
-  </div>
-
-
-  <!-- FEED -->
-
-  <main
+  </div>  <!-- FEED -->  <main
     id="feed"
     class="feed"
   >
     <div class="empty">
       در حال آماده‌سازی Discovery...
     </div>
-  </main>
-
-
-  <div class="footer">
+  </main>  <div class="footer">
     Telegram Discovery · MVP
-  </div>
-
-</div>
-
-
-<script>
+  </div></div><script>
 
 /* =========================================================
    CONFIG
-   =========================================================
-
-   Discovery و Telegram دو API جدا دارند.
-
-   Discovery:
-   /api/discovery/...
-
-   Telegram:
-   /api/telegram/...
-
-   هر دو از همین Cloudflare Worker سرو می‌شوند.
 ========================================================= */
 
 const DISCOVERY_API_URL =
@@ -491,9 +444,7 @@ const exploreBtn =
 ========================================================= */
 
 let currentMode = "feed";
-
 let feedItems = [];
-
 let currentUser = null;
 
 
@@ -505,14 +456,15 @@ function setStatus(
   text,
   type = ""
 ) {
-
   statusEl.textContent = text;
 
   statusEl.className =
     "status" +
-    (type
-      ? " " + type
-      : "");
+    (
+      type
+        ? " " + type
+        : ""
+    );
 }
 
 
@@ -532,6 +484,60 @@ function escapeHtml(value) {
 
 
 /* =========================================================
+   SAFE URL
+========================================================= */
+
+function safeTelegramUrl(value) {
+
+  if (!value) {
+    return "";
+  }
+
+  try {
+
+    const url =
+      new URL(
+        String(value),
+        window.location.origin,
+      );
+
+    const protocol =
+      url.protocol.toLowerCase();
+
+    if (
+      protocol !== "https:" &&
+      protocol !== "http:"
+    ) {
+      return "";
+    }
+
+    /*
+     * فقط Telegram links را برای
+     * نتایج Telegram قبول می‌کنیم.
+     */
+
+    const hostname =
+      url.hostname.toLowerCase();
+
+    const telegramHost =
+      hostname === "t.me" ||
+      hostname === "telegram.me" ||
+      hostname === "www.telegram.me";
+
+    if (!telegramHost) {
+      return "";
+    }
+
+    return url.toString();
+
+  } catch (_) {
+
+    return "";
+  }
+}
+
+
+/* =========================================================
    TELEGRAM INIT
 ========================================================= */
 
@@ -541,36 +547,38 @@ function initTelegram() {
 
     setStatus(
       "⚠️ این برنامه باید داخل Telegram باز شود",
-      "error"
+      "error",
     );
 
     return false;
   }
 
-
   try {
 
     tg.ready();
-
     tg.expand();
-
 
     try {
 
       if (tg.setHeaderColor) {
-        tg.setHeaderColor("#f4f6f8");
+        tg.setHeaderColor(
+          "#f4f6f8",
+        );
       }
 
       if (tg.setBackgroundColor) {
-        tg.setBackgroundColor("#f4f6f8");
+        tg.setBackgroundColor(
+          "#f4f6f8",
+        );
       }
 
       if (tg.setBottomBarColor) {
-        tg.setBottomBarColor("#f4f6f8");
+        tg.setBottomBarColor(
+          "#f4f6f8",
+        );
       }
 
     } catch (_) {}
-
 
     document.documentElement.style.background =
       "#f4f6f8";
@@ -581,19 +589,18 @@ function initTelegram() {
     document.body.style.color =
       "#111827";
 
-
     return true;
 
   } catch (error) {
 
     console.error(
       "Telegram init:",
-      error
+      error,
     );
 
     setStatus(
       "⚠️ Telegram WebApp آماده نشد",
-      "error"
+      "error",
     );
 
     return false;
@@ -608,61 +615,44 @@ function initTelegram() {
 async function requestApi(
   baseUrl,
   path,
-  options = {}
+  options = {},
 ) {
 
   const headers = {
-    ...(options.headers || {})
+    ...(options.headers || {}),
   };
-
 
   if (
     !headers["Content-Type"] &&
     options.body
   ) {
-
     headers["Content-Type"] =
       "application/json";
   }
 
-
-  /*
-   * Telegram WebApp initData
-   *
-   * Discovery Backend می‌تواند
-   * برای Auth از آن استفاده کند.
-   *
-   * Telegram Search نیز آن را دریافت می‌کند
-   * ولی برای خود teleproto لازم نیست.
-   */
-
   const initData =
     tg?.initData || "";
 
-
   if (initData) {
 
-    headers["X-Telegram-Init-Data"] =
-      initData;
+    headers[
+      "X-Telegram-Init-Data"
+    ] = initData;
   }
-
 
   const response =
     await fetch(
       baseUrl + path,
       {
         ...options,
-        headers
-      }
+        headers,
+      },
     );
-
 
   const raw =
     await response.text();
 
-
   let data = {};
-
 
   try {
 
@@ -674,10 +664,9 @@ async function requestApi(
   } catch (_) {
 
     data = {
-      message: raw
+      message: raw,
     };
   }
-
 
   if (!response.ok) {
 
@@ -685,9 +674,8 @@ async function requestApi(
       new Error(
         data.error ||
         data.message ||
-        `HTTP ${response.status}`
+        `HTTP ${response.status}`,
       );
-
 
     error.status =
       response.status;
@@ -697,7 +685,6 @@ async function requestApi(
 
     throw error;
   }
-
 
   return data;
 }
@@ -709,13 +696,13 @@ async function requestApi(
 
 async function discoveryApi(
   path,
-  options = {}
+  options = {},
 ) {
 
   return requestApi(
     DISCOVERY_API_URL,
     path,
-    options
+    options,
   );
 }
 
@@ -726,99 +713,19 @@ async function discoveryApi(
 
 async function telegramApi(
   path,
-  options = {}
+  options = {},
 ) {
 
   return requestApi(
     TELEGRAM_API_URL,
     path,
-    options
+    options,
   );
 }
 
 
 /* =========================================================
-   BACKEND HEALTH
-========================================================= */
-
-async function checkBackend() {
-
-  try {
-
-    const result =
-      await discoveryApi(
-        "/health"
-      );
-
-
-    console.log(
-      "Discovery API health:",
-      result
-    );
-
-
-    return result?.ok === true;
-
-  } catch (error) {
-
-    console.error(
-      "Backend health:",
-      error
-    );
-
-
-    setStatus(
-      "🔴 Health check ناموفق: " +
-      (
-        error?.message ||
-        "Network/CORS error"
-      ),
-      "error"
-    );
-
-
-    return false;
-  }
-}
-
-
-/* =========================================================
-   TELEGRAM SERVER HEALTH
-========================================================= */
-
-async function checkTelegramServer() {
-
-  try {
-
-    const result =
-      await telegramApi(
-        "/health"
-      );
-
-
-    console.log(
-      "Telegram server health:",
-      result
-    );
-
-
-    return result?.ok === true;
-
-  } catch (error) {
-
-    console.error(
-      "Telegram server health:",
-      error
-    );
-
-
-    return false;
-  }
-}
-
-
-/* =========================================================
-   TELEGRAM AUTH
+   AUTH
 ========================================================= */
 
 async function authenticateTelegram() {
@@ -827,12 +734,11 @@ async function authenticateTelegram() {
 
     setStatus(
       "⚠️ اطلاعات Telegram در دسترس نیست",
-      "error"
+      "error",
     );
 
     return false;
   }
-
 
   try {
 
@@ -844,21 +750,19 @@ async function authenticateTelegram() {
 
           body: JSON.stringify({
             initData:
-              tg.initData
-          })
-        }
+              tg.initData,
+          }),
+        },
       );
-
 
     console.log(
       "Telegram authentication:",
-      result
+      result,
     );
-
 
     if (
       result?.authenticated &&
-      result.user
+      result?.user
     ) {
 
       currentUser =
@@ -867,12 +771,10 @@ async function authenticateTelegram() {
       return true;
     }
 
-
     setStatus(
       "🔴 احراز هویت Telegram ناموفق بود",
-      "error"
+      "error",
     );
-
 
     return false;
 
@@ -880,15 +782,13 @@ async function authenticateTelegram() {
 
     console.error(
       "Telegram auth:",
-      error
+      error,
     );
-
 
     setStatus(
       "🔴 احراز هویت Telegram ناموفق بود",
-      "error"
+      "error",
     );
-
 
     return false;
   }
@@ -896,87 +796,116 @@ async function authenticateTelegram() {
 
 
 /* =========================================================
-   ACTIVE TAB
+   HEALTH
+========================================================= */
+
+async function checkBackend() {
+
+  try {
+
+    const result =
+      await discoveryApi(
+        "/health",
+      );
+
+    return result?.ok === true;
+
+  } catch (error) {
+
+    console.error(
+      "Discovery health:",
+      error,
+    );
+
+    return false;
+  }
+}
+
+
+/* =========================================================
+   TABS
 ========================================================= */
 
 function setActiveTab(
-  mode
+  mode,
 ) {
 
   feedBtn.classList.toggle(
     "active",
-    mode === "feed"
+    mode === "feed",
   );
 
   trendBtn.classList.toggle(
     "active",
-    mode === "trending"
+    mode === "trending",
   );
 
   exploreBtn.classList.toggle(
     "active",
-    mode === "explore"
+    mode === "explore",
   );
 }
 
 
 /* =========================================================
-   NORMALIZE DISCOVERY ITEM
+   NORMALIZE DISCOVERY RESULT
 ========================================================= */
 
 function normalizeDiscoveryItem(
-  item
+  item,
 ) {
 
   return {
 
     id:
-      item.id ||
-      item.content_id ||
-      "",
+      String(
+        item?.id ||
+        item?.content_id ||
+        "",
+      ),
 
     title:
-      item.title ||
+      item?.title ||
       "بدون عنوان",
 
     description:
-      item.description ||
-      item.text_content ||
+      item?.description ||
+      item?.text_content ||
       "توضیحی برای این محتوا ثبت نشده است.",
 
     source_url:
-      item.source_url ||
-      item.url ||
+      item?.source_url ||
+      item?.url ||
       "",
 
     content_type:
-      item.content_type ||
+      item?.content_type ||
       "content",
 
     creator_name:
-      item.creator_name ||
-      item.creator_username ||
+      item?.creator_name ||
+      item?.creator_username ||
       "",
 
     score:
       Number(
-        item.score ??
-        item.final_score ??
-        0
+        item?.score ??
+        item?.final_score ??
+        0,
       ),
 
     reason:
-      item.reason ||
+      item?.reason ||
       "",
 
     is_saved:
-      item.is_saved === true ||
-      item.is_saved === 1 ||
-      item.is_saved === "true" ||
-      item.is_saved === "1",
+      item?.is_saved === true ||
+      item?.is_saved === 1 ||
+      item?.is_saved === "true" ||
+      item?.is_saved === "1",
 
     source:
-      "discovery"
+      "discovery",
   };
 }
 
@@ -987,7 +916,7 @@ function normalizeDiscoveryItem(
 
 function normalizeTelegramItem(
   item,
-  index
+  index,
 ) {
 
   const isChannel =
@@ -998,33 +927,52 @@ function normalizeTelegramItem(
     item?.text ??
     item?.message ??
     item?.rawText ??
+    item?.description ??
     "";
 
   const username =
-    item?.channel_username ??
-    item?.chat_username ??
-    item?.username ??
-    "";
+    String(
+      item?.channel_username ??
+      item?.chat_username ??
+      item?.username ??
+      "",
+    ).replace(/^@+/, "");
 
   const title =
     item?.channel_title ??
     item?.title ??
-    username ??
-    "Telegram";
-
-  const channelUrl =
-    item?.channel_url ??
     (
       username
-        ? `https://t.me/${username}`
+        ? "@" + username
+        : "Telegram",
+    );
+
+  const channelUrl =
+    safeTelegramUrl(
+      item?.channel_url,
+    ) ||
+    (
+      username
+        ? `https://t.me/${encodeURIComponent(username)}`
         : ""
     );
 
   const messageUrl =
-    item?.message_url ??
-    item?.link ??
-    item?.url ??
-    "";
+    safeTelegramUrl(
+      item?.message_url,
+    ) ||
+    safeTelegramUrl(
+      item?.link,
+    ) ||
+    safeTelegramUrl(
+      item?.url,
+    ) ||
+    (
+      username &&
+      item?.id
+        ? `https://t.me/${encodeURIComponent(username)}/${encodeURIComponent(String(item.id))}`
+        : ""
+    );
 
   return {
 
@@ -1048,19 +996,19 @@ function normalizeTelegramItem(
           : null
       ),
 
-    title,
+    title:
+      String(
+        title || "Telegram",
+      ),
 
     description:
-
       isChannel
-
         ? (
             item?.description ||
             "کانال تلگرام"
           )
-
         : (
-            text.trim() ||
+            String(text).trim() ||
             (
               item?.has_media
                 ? "📎 این پست شامل رسانه است."
@@ -1111,7 +1059,9 @@ function normalizeTelegramItem(
       username,
 
     channel_title:
-      title,
+      String(
+        title || "Telegram",
+      ),
 
     chat_id:
       item?.chat_id ??
@@ -1133,36 +1083,32 @@ function normalizeTelegramItem(
   };
 }
 
+
 /* =========================================================
-   LOAD DISCOVERY FEED
+   LOAD FEED
 ========================================================= */
 
 async function loadFeed(
-  mode = "feed"
+  mode = "feed",
 ) {
 
   currentMode =
     mode;
 
-
   setActiveTab(
-    mode
+    mode,
   );
-
 
   setStatus(
-    "در حال دریافت محتوا..."
+    "در حال دریافت محتوا...",
   );
-
 
   feedEl.innerHTML =
     '<div class="empty">در حال بارگذاری...</div>';
 
-
   try {
 
     let result;
-
 
     if (
       mode ===
@@ -1171,7 +1117,7 @@ async function loadFeed(
 
       result =
         await discoveryApi(
-          "/feed?limit=20"
+          "/feed?limit=20",
         );
 
     } else if (
@@ -1181,91 +1127,74 @@ async function loadFeed(
 
       result =
         await discoveryApi(
-          "/trending?limit=20"
+          "/trending?limit=20",
         );
 
     } else {
 
       result =
         await discoveryApi(
-          "/explore?limit=20"
+          "/explore?limit=20",
         );
     }
 
-
     console.log(
       "Discovery response:",
-      result
+      result,
     );
-
 
     feedItems =
       Array.isArray(
-        result?.items
+        result?.items,
       )
-
         ? result.items.map(
-            normalizeDiscoveryItem
+            normalizeDiscoveryItem,
           )
-
         : [];
-
 
     renderFeed();
 
-
     setStatus(
-
       feedItems.length
-
         ? `🟢 ${feedItems.length} محتوا آماده است`
-
         : "🟡 هنوز محتوایی برای نمایش پیدا نشد",
-
       feedItems.length
         ? "success"
-        : ""
-
+        : "",
     );
 
   } catch (error) {
 
     console.error(
       "Discovery feed:",
-      error
+      error,
     );
 
-
     feedEl.innerHTML = `
-
       <div class="error-card">
-
         <strong>
           دریافت محتوا ناموفق بود
         </strong>
 
         <div>
           ${escapeHtml(
-            error.message ||
-            "خطای نامشخص"
+            error?.message ||
+            "خطای نامشخص",
           )}
         </div>
-
       </div>
-
     `;
-
 
     setStatus(
       "🔴 خطا در دریافت محتوا",
-      "error"
+      "error",
     );
   }
 }
 
 
 /* =========================================================
-   TELEGRAM GLOBAL SEARCH
+   SEARCH
 ========================================================= */
 
 async function doTelegramSearch() {
@@ -1273,11 +1202,10 @@ async function doTelegramSearch() {
   const query =
     searchInput.value.trim();
 
-
   if (!query) {
 
     setStatus(
-      "عبارت جستجو را وارد کن"
+      "عبارت جستجو را وارد کن",
     );
 
     searchInput.focus();
@@ -1285,94 +1213,55 @@ async function doTelegramSearch() {
     return;
   }
 
-
-  /*
-   * حداکثر طول
-   */
-
-  if (query.length > 200) {
+  if (
+    query.length >
+    200
+  ) {
 
     setStatus(
       "🔴 عبارت جستجو بیش از حد طولانی است",
-      "error"
+      "error",
     );
 
     return;
   }
 
-
-  /*
-   * حالت Search
-   */
-
   currentMode =
     "telegram-search";
 
-
-  feedBtn.classList.remove(
-    "active"
+  setActiveTab(
+    "telegram-search",
   );
-
-  trendBtn.classList.remove(
-    "active"
-  );
-
-  exploreBtn.classList.remove(
-    "active"
-  );
-
 
   searchBtn.disabled =
     true;
 
-
   setStatus(
-    "🔎 در حال جستجوی آنلاین در Telegram..."
+    "🔎 در حال جستجو در Discovery و Telegram...",
   );
 
-
   feedEl.innerHTML = `
-
     <div class="empty">
-      🔎 در حال جستجوی واقعی در Telegram...<br>
+      🔎 در حال جستجوی کانال‌ها، محتوا و Telegram Global...<br>
       لطفاً چند لحظه صبر کن.
     </div>
-
   `;
 
-
   try {
-
-    /*
-     * این مهم‌ترین تغییر است:
-     *
-     * قبلاً:
-     *
-     * /api/discovery/search
-     *
-     * اکنون:
-     *
-     * /api/telegram/search
-     *
-     * و Worker آن را به teleproto
-     * و Telegram Global Search می‌دهد.
-     */
 
     const result =
       await telegramApi(
         "/search?q=" +
         encodeURIComponent(
-          query
+          query,
         ) +
-        "&limit=20"
+        "&limit=20",
       );
 
-
     console.log(
-      "Telegram Search response:",
-      result
+      "Unified Telegram Search:",
+      result,
     );
-
 
     if (
       result?.ok !== true
@@ -1380,64 +1269,85 @@ async function doTelegramSearch() {
 
       throw new Error(
         result?.error ||
-        "Telegram search failed"
+        "Telegram search failed",
       );
     }
 
-
-    const telegramResults =
+    const rawResults =
       Array.isArray(
-        result?.results
+        result?.results,
       )
         ? result.results
-        : [];
-
-
-    /*
-     * تبدیل results به ساختار کارت
-     */
+        : (
+            Array.isArray(
+              result?.items,
+            )
+              ? result.items
+              : []
+          );
 
     feedItems =
-      telegramResults.map(
-        normalizeTelegramItem
+      rawResults.map(
+        item => {
+
+          /*
+           * Result داخلی Discovery
+           */
+
+          if (
+            item?.source ===
+              "discovery" &&
+            item?.result_type !==
+              "channel"
+          ) {
+
+            return normalizeDiscoveryItem(
+              item,
+            );
+          }
+
+          /*
+           * Resultهای Telegram
+           */
+
+          return normalizeTelegramItem(
+            item,
+            feedItems.length,
+          );
+        },
       );
 
-
     renderFeed();
-
 
     if (
       feedItems.length
     ) {
 
       setStatus(
-        `🟢 ${feedItems.length} نتیجه واقعی از Telegram برای «${query}»`,
-        "success"
+        `🟢 ${feedItems.length} نتیجه برای «${query}»`,
+        "success",
       );
 
     } else {
 
       setStatus(
-        `🟡 برای «${query}» نتیجه‌ای در Telegram پیدا نشد`
+        `🟡 برای «${query}» نتیجه‌ای پیدا نشد`,
       );
     }
 
   } catch (error) {
 
     console.error(
-      "Telegram global search:",
-      error
+      "Unified Telegram Search:",
+      error,
     );
-
 
     const status =
       error?.status;
 
-
     let message =
       error?.message ||
       "Telegram search failed";
-
 
     if (
       status === 401
@@ -1451,20 +1361,18 @@ async function doTelegramSearch() {
     ) {
 
       message =
-        "مسیر جستجوی Telegram روی Worker پیدا نشد. Worker را دوباره Deploy کن.";
+        "مسیر Search روی Worker پیدا نشد.";
 
     } else if (
       status === 502
     ) {
 
       message =
-        "Worker نتوانست به سرویس مقصد متصل شود.";
+        "Worker نتوانست به Search Backend متصل شود.";
 
     }
 
-
     feedEl.innerHTML = `
-
       <div class="error-card">
 
         <strong>
@@ -1473,7 +1381,7 @@ async function doTelegramSearch() {
 
         <div>
           ${escapeHtml(
-            message
+            message,
           )}
         </div>
 
@@ -1481,20 +1389,20 @@ async function doTelegramSearch() {
           status
             ? `
               <div style="margin-top:8px;font-size:12px;opacity:.65">
-                HTTP ${escapeHtml(status)}
+                HTTP ${escapeHtml(
+                  String(status),
+                )}
               </div>
             `
             : ""
         }
 
       </div>
-
     `;
 
-
     setStatus(
-      "🔴 خطا در جستجوی Telegram",
-      "error"
+      "🔴 خطا در جستجو",
+      "error",
     );
 
   } finally {
@@ -1511,53 +1419,45 @@ async function doTelegramSearch() {
 
 function renderFeed() {
 
-  if (!feedItems.length) {
+  if (
+    !feedItems.length
+  ) {
 
     feedEl.innerHTML = `
-
       <div class="empty">
-
-        هنوز محتوایی برای نمایش
-        وجود ندارد.
-
+        هنوز نتیجه‌ای برای نمایش وجود ندارد.
       </div>
-
     `;
 
     return;
   }
 
-
   feedEl.innerHTML =
-    feedItems.map(
-      (item, index) => {
-
-        /*
-         * Telegram result
-         */
-
-        if (
-          item.source ===
-          "telegram"
-        ) {
-
-          return renderTelegramCard(
-            item,
-            index
-          );
-        }
-
-
-        /*
-         * Discovery result
-         */
-
-        return renderDiscoveryCard(
+    feedItems
+      .map(
+        (
           item,
-          index
-        );
-      }
-    ).join("");
+          index,
+        ) => {
+
+          if (
+            item?.source ===
+            "telegram"
+          ) {
+
+            return renderTelegramCard(
+              item,
+              index,
+            );
+          }
+
+          return renderDiscoveryCard(
+            item,
+            index,
+          );
+        },
+      )
+      .join("");
 }
 
 
@@ -1567,130 +1467,7 @@ function renderFeed() {
 
 function renderTelegramCard(
   item,
-  index
-) {
-
-  const id =
-    escapeHtml(
-      item.id
-    );
-
-
-  const url =
-    escapeHtml(
-      item.source_url
-    );
-
-
-  const username =
-    escapeHtml(
-      item.channel_username
-        ? "@" +
-          item.channel_username
-        : ""
-    );
-
-
-  const channelTitle =
-    escapeHtml(
-      item.channel_title ||
-      item.title ||
-      "Telegram"
-    );
-
-
-  let dateText =
-    "";
-
-
-  if (item.date) {
-
-    try {
-
-      dateText =
-        new Date(
-          item.date
-        ).toLocaleString(
-          "fa-IR"
-        );
-
-    } catch (_) {
-
-      dateText =
-        String(
-          item.date
-        );
-    }
-  }
-
-
-  return `
-
-    <article
-      class="card telegram-card"
-    >
-
-      <h2>
-        ${escapeHtml(
-          item.title
-        )}
-      </h2>
-
-
-      <p>
-        ${escapeHtml(
-          item.description
-        )}
-      </p>
-
-
-      <div class="meta">
-
-        <span
-          class="chip telegram"
-        >
-          Telegram
-        </span>
-
-
-        ${
-          channelTitle
-
-            ? `
-              <span class="chip">
-                ${channelTitle}
-              </span>
-            `
-
-            : ""
-        }
-
-
-        ${
-          username
-
-            ? `
-              <span class="chip">
-                ${username}
-              </span>
-            `
-
-            : ""
-        }
-
-
-        ${
-          dateText
-
-            ? `
-              <span class="chip">
-                ${escapeHtml(
-                  dateText
-                )}
-              </span>
-function renderTelegramCard(
-  item,
-  index
+  index,
 ) {
 
   const isChannel =
@@ -1716,27 +1493,41 @@ function renderTelegramCard(
       (
         isChannel
           ? "کانال تلگرام"
-          : "این پست متن قابل نمایش ندارد."
+          : (
+              item?.has_media
+                ? "📎 این پست شامل رسانه است."
+                : "این پست متن قابل نمایش ندارد."
+            )
       ),
     );
 
   const channelUrl =
-    item?.channel_url ||
+    safeTelegramUrl(
+      item?.channel_url,
+    ) ||
     (
       item?.channel_username
-        ? `https://t.me/${item.channel_username}`
+        ? `https://t.me/${encodeURIComponent(item.channel_username)}`
         : ""
     );
 
   const messageUrl =
-    item?.message_url ||
-    item?.source_url ||
-    "";
+    safeTelegramUrl(
+      item?.message_url,
+    ) ||
+    safeTelegramUrl(
+      item?.source_url,
+    );
 
   const targetUrl =
     isChannel
       ? channelUrl
       : messageUrl;
+
+  const buttonLabel =
+    isChannel
+      ? "📢 ورود به کانال"
+      : "🔗 مشاهده پست";
 
   let dateText =
     "";
@@ -1744,110 +1535,41 @@ function renderTelegramCard(
   if (
     item?.date
   ) {
+
     try {
 
-      dateText =
+      const date =
         new Date(
           item.date,
-        ).toLocaleString(
-          "fa-IR",
         );
 
-    } catch (_) {
+      if (
+        !Number.isNaN(
+          date.getTime(),
+        )
+      ) {
 
-      dateText =
-        String(
-          item.date,
-        );
-    }
+        dateText =
+          date.toLocaleString(
+            "fa-IR",
+          );
+      }
+
+    } catch (_) {}
   }
 
+  const peerId =
+    item?.channel_peer_id ??
+    item?.chat_id ??
+    null;
+
   return `
-
     <article
-      class="card telegram-card"
-    >
-
-      <h2>
-        ${title}
-function renderTelegramCard(
-  item,
-  index
-) {
-
-  const isChannel =
-    item?.result_type ===
-    "channel";
-
-  const title =
-    escapeHtml(
-      item?.channel_title ||
-      item?.title ||
-      "Telegram",
-    );
-
-  const username =
-    item?.channel_username
-      ? "@" +
-        item.channel_username
-      : "";
-
-  const description =
-    escapeHtml(
-      item?.description ||
-      (
+      class="card telegram-card ${
         isChannel
-          ? "کانال تلگرام"
-          : "این پست متن قابل نمایش ندارد."
-      ),
-    );
-
-  const channelUrl =
-    item?.channel_url ||
-    (
-      item?.channel_username
-        ? `https://t.me/${item.channel_username}`
-        : ""
-    );
-
-  const messageUrl =
-    item?.message_url ||
-    item?.source_url ||
-    "";
-
-  const targetUrl =
-    isChannel
-      ? channelUrl
-      : messageUrl;
-
-  let dateText =
-    "";
-
-  if (
-    item?.date
-  ) {
-    try {
-
-      dateText =
-        new Date(
-          item.date,
-        ).toLocaleString(
-          "fa-IR",
-        );
-
-    } catch (_) {
-
-      dateText =
-        String(
-          item.date,
-        );
-    }
-  }
-
-  return `
-
-    <article
-      class="card telegram-card"
+          ? "channel-card"
+          : ""
+      }"
     >
 
       <h2>
@@ -1861,29 +1583,38 @@ function renderTelegramCard(
       <div class="meta">
 
         <span
-          class="chip telegram"
+          class="chip ${
+            isChannel
+              ? "channel"
+              : "telegram"
+          }"
         >
-          Telegram
+          ${
+            isChannel
+              ? "📢 کانال"
+              : "Telegram"
+          }
         </span>
 
         ${
           username
             ? `
               <span class="chip">
-                ${escapeHtml(username)}
+                ${escapeHtml(
+                  username,
+                )}
               </span>
             `
             : ""
         }
 
         ${
-          item?.channel_peer_id
+          peerId !== null &&
+          peerId !== undefined
             ? `
               <span class="chip">
                 ${escapeHtml(
-                  String(
-                    item.channel_peer_id,
-                  ),
+                  String(peerId),
                 )}
               </span>
             `
@@ -1908,10 +1639,10 @@ function renderTelegramCard(
         targetUrl
 
           ? `
-
             <div class="actions single">
 
               <button
+                type="button"
                 class="action primary"
                 data-url="${escapeHtml(
                   targetUrl,
@@ -1922,37 +1653,28 @@ function renderTelegramCard(
                   )
                 "
               >
-
-                ${
-                  isChannel
-                    ? "📢 ورود به کانال"
-                    : "🔗 مشاهده پست"
-                }
-
+                ${buttonLabel}
               </button>
 
             </div>
-
           `
 
           : `
-
             <div class="actions single">
 
               <button
+                type="button"
                 class="action"
                 disabled
               >
-                لینک در دسترس نیست
+                لینک Telegram در دسترس نیست
               </button>
 
             </div>
-
           `
       }
 
     </article>
-
   `;
 }
 
@@ -1963,107 +1685,99 @@ function renderTelegramCard(
 
 function renderDiscoveryCard(
   item,
-  index
+  index,
 ) {
 
   const id =
     escapeHtml(
-      item.id
+      item?.id ||
+      "",
     );
-
 
   const url =
-    escapeHtml(
-      item.source_url
+    safeTelegramUrl(
+      item?.source_url,
+    ) ||
+    (
+      item?.source_url
+        ? String(
+            item.source_url,
+          )
+        : ""
     );
 
-
   const saved =
-    item.is_saved === true;
-
+    item?.is_saved === true;
 
   const saveClass =
     saved
       ? " saved"
       : "";
 
-
   const saveText =
     saved
       ? "✅ ذخیره شد"
       : "⭐ ذخیره";
 
-
   return `
-
     <article class="card">
 
       <h2>
         ${escapeHtml(
-          item.title
+          item?.title ||
+          "بدون عنوان",
         )}
       </h2>
 
-
       <p>
         ${escapeHtml(
-          item.description
+          item?.description ||
+          "",
         )}
       </p>
-
 
       <div class="meta">
 
         <span class="chip">
           ${escapeHtml(
-            item.content_type
+            item?.content_type ||
+            "content",
           )}
         </span>
 
-
         ${
-          item.creator_name
-
+          item?.creator_name
             ? `
               <span class="chip">
                 ${escapeHtml(
-                  item.creator_name
+                  item.creator_name,
                 )}
               </span>
             `
-
             : ""
         }
 
-
         ${
-          item.score
-
+          Number.isFinite(
+            Number(
+              item?.score,
+            ),
+          ) &&
+          Number(
+            item?.score,
+          ) > 0
             ? `
               <span class="chip">
                 امتیاز
-                ${item.score.toFixed(3)}
+                ${Number(
+                  item.score,
+                ).toFixed(3)}
               </span>
             `
-
-            : ""
-        }
-
-
-        ${
-          saved
-
-            ? `
-              <span class="chip">
-                personalized
-              </span>
-            `
-
             : ""
         }
 
       </div>
-
 
       <div class="actions">
 
@@ -2071,11 +1785,13 @@ function renderDiscoveryCard(
           url
 
             ? `
-
               <button
+                type="button"
                 class="action primary"
                 data-id="${id}"
-                data-url="${url}"
+                data-url="${escapeHtml(
+                  url,
+                )}"
                 onclick="
                   openContent(
                     this.dataset.id,
@@ -2085,23 +1801,21 @@ function renderDiscoveryCard(
               >
                 🔗 مشاهده
               </button>
-
             `
 
             : `
-
               <button
+                type="button"
                 class="action"
                 disabled
               >
                 لینک ندارد
               </button>
-
             `
         }
 
-
         <button
+          type="button"
           class="action${saveClass}"
           data-id="${id}"
           onclick="
@@ -2113,8 +1827,8 @@ function renderDiscoveryCard(
           ${saveText}
         </button>
 
-
         <button
+          type="button"
           class="action"
           data-id="${id}"
           onclick="
@@ -2129,7 +1843,6 @@ function renderDiscoveryCard(
       </div>
 
     </article>
-
   `;
 }
 
@@ -2139,13 +1852,17 @@ function renderDiscoveryCard(
 ========================================================= */
 
 function openTelegramContent(
-  url
+  url,
 ) {
 
-  if (!url) {
+  const safeUrl =
+    safeTelegramUrl(
+      url,
+    );
+
+  if (!safeUrl) {
     return;
   }
-
 
   try {
 
@@ -2154,7 +1871,7 @@ function openTelegramContent(
     ) {
 
       tg.openLink(
-        url
+        safeUrl,
       );
 
       return;
@@ -2164,15 +1881,14 @@ function openTelegramContent(
 
     console.warn(
       "Telegram openLink:",
-      error
+      error,
     );
   }
 
-
   window.open(
-    url,
+    safeUrl,
     "_blank",
-    "noopener,noreferrer"
+    "noopener,noreferrer",
   );
 }
 
@@ -2183,7 +1899,7 @@ function openTelegramContent(
 
 async function openContent(
   contentId,
-  url
+  url,
 ) {
 
   if (
@@ -2193,8 +1909,18 @@ async function openContent(
     return;
   }
 
-
   try {
+
+    const position =
+      feedItems.findIndex(
+        item =>
+          String(
+            item?.id,
+          ) ===
+          String(
+            contentId,
+          ),
+      );
 
     await discoveryApi(
       "/impression",
@@ -2207,34 +1933,39 @@ async function openContent(
             contentId,
 
           position:
-            feedItems.findIndex(
-              x =>
-                x.id ===
-                contentId
-            ),
+
+            position >= 0
+              ? position
+              : 0,
 
           score:
-            feedItems.find(
-              x =>
-                x.id ===
-                contentId
-            )?.score || 0,
+            Number(
+              feedItems.find(
+                item =>
+                  String(
+                    item?.id,
+                  ) ===
+                  String(
+                    contentId,
+                  ),
+              )?.score ||
+              0,
+            ),
 
           reason:
-            currentMode
+            currentMode,
 
-        })
-      }
+        }),
+      },
     );
 
   } catch (error) {
 
     console.warn(
       "Impression:",
-      error
+      error,
     );
   }
-
 
   try {
 
@@ -2243,7 +1974,7 @@ async function openContent(
     ) {
 
       tg.openLink(
-        url
+        url,
       );
 
       return;
@@ -2253,55 +1984,50 @@ async function openContent(
 
     console.warn(
       "Telegram openLink:",
-      error
+      error,
     );
   }
-
 
   window.open(
     url,
     "_blank",
-    "noopener,noreferrer"
+    "noopener,noreferrer",
   );
 }
 
 
 /* =========================================================
-   SAVE DISCOVERY CONTENT
+   SAVE CONTENT
 ========================================================= */
 
 async function saveContent(
-  contentId
+  contentId,
 ) {
 
   if (!contentId) {
     return;
   }
 
-
   if (!currentUser) {
 
     setStatus(
       "⚠️ برای ذخیره باید داخل Telegram احراز هویت شوی",
-      "error"
+      "error",
     );
 
     return;
   }
 
-
   const item =
     feedItems.find(
-      x =>
-        x.id ===
-        contentId
+      currentItem =>
+        String(
+          currentItem?.id,
+        ) ===
+        String(
+          contentId,
+        ),
     );
-
-
-  /*
-   * Telegram results نباید
-   * به endpoint ذخیره Discovery بروند.
-   */
 
   if (
     item?.source ===
@@ -2309,27 +2035,24 @@ async function saveContent(
   ) {
 
     setStatus(
-      "ℹ️ این نتیجه مستقیماً از Telegram آمده است",
-      "info"
+      "ℹ️ این نتیجه مستقیماً از Telegram آمده و هنوز ذخیره Discovery نیست",
+      "info",
     );
 
     return;
   }
 
-
   if (
-    item &&
-    item.is_saved
+    item?.is_saved
   ) {
 
     setStatus(
       "✅ این محتوا قبلاً ذخیره شده است",
-      "success"
+      "success",
     );
 
     return;
   }
-
 
   try {
 
@@ -2340,32 +2063,28 @@ async function saveContent(
 
         body: JSON.stringify({
           content_id:
-            contentId
-        })
-      }
+            contentId,
+        }),
+      },
     );
-
 
     if (item) {
       item.is_saved = true;
     }
 
-
     renderFeed();
-
 
     setStatus(
       "⭐ ذخیره شد",
-      "success"
+      "success",
     );
 
   } catch (error) {
 
     console.error(
       "Save:",
-      error
+      error,
     );
-
 
     setStatus(
       "🔴 ذخیره ناموفق بود: " +
@@ -2373,7 +2092,7 @@ async function saveContent(
         error?.message ||
         ""
       ),
-      "error"
+      "error",
     );
   }
 }
@@ -2384,37 +2103,33 @@ async function saveContent(
 ========================================================= */
 
 async function notInterested(
-  contentId
+  contentId,
 ) {
 
   if (!contentId) {
     return;
   }
 
-
   if (!currentUser) {
 
     setStatus(
       "⚠️ برای ثبت بازخورد باید داخل Telegram احراز هویت شوی",
-      "error"
+      "error",
     );
 
     return;
   }
 
-
   const item =
     feedItems.find(
-      x =>
-        x.id ===
-        contentId
+      currentItem =>
+        String(
+          currentItem?.id,
+        ) ===
+        String(
+          contentId,
+        ),
     );
-
-
-  /*
-   * Telegram Search نتیجه خام است.
-   * هنوز content_id دیتابیس نیست.
-   */
 
   if (
     item?.source ===
@@ -2422,13 +2137,12 @@ async function notInterested(
   ) {
 
     setStatus(
-      "ℹ️ بازخورد برای نتایج مستقیم Telegram فعلاً ثبت نمی‌شود",
-      "info"
+      "ℹ️ بازخورد برای نتیجه مستقیم Telegram فعلاً ثبت نمی‌شود",
+      "info",
     );
 
     return;
   }
-
 
   try {
 
@@ -2443,40 +2157,40 @@ async function notInterested(
             contentId,
 
           feedback_type:
-            "NOT_INTERESTED"
+            "NOT_INTERESTED",
 
-        })
-      }
+        }),
+      },
     );
-
-
-    setStatus(
-      "👍 بازخورد ثبت شد",
-      "success"
-    );
-
 
     feedItems =
       feedItems.filter(
-        item =>
-          item.id !==
-          contentId
+        currentItem =>
+          String(
+            currentItem?.id,
+          ) !==
+          String(
+            contentId,
+          ),
       );
 
-
     renderFeed();
+
+    setStatus(
+      "👍 بازخورد ثبت شد",
+      "success",
+    );
 
   } catch (error) {
 
     console.error(
       "Feedback:",
-      error
+      error,
     );
-
 
     setStatus(
       "🔴 ثبت بازخورد ناموفق بود",
-      "error"
+      "error",
     );
   }
 }
@@ -2489,29 +2203,31 @@ async function notInterested(
 feedBtn.addEventListener(
   "click",
   () =>
-    loadFeed("feed")
+    loadFeed(
+      "feed",
+    ),
 );
-
 
 trendBtn.addEventListener(
   "click",
   () =>
-    loadFeed("trending")
+    loadFeed(
+      "trending",
+    ),
 );
-
 
 exploreBtn.addEventListener(
   "click",
   () =>
-    loadFeed("explore")
+    loadFeed(
+      "explore",
+    ),
 );
-
 
 searchBtn.addEventListener(
   "click",
-  doTelegramSearch
+  doTelegramSearch,
 );
-
 
 searchInput.addEventListener(
   "keydown",
@@ -2526,8 +2242,7 @@ searchInput.addEventListener(
 
       doTelegramSearch();
     }
-
-  }
+  },
 );
 
 
@@ -2537,34 +2252,23 @@ searchInput.addEventListener(
 
 async function startApp() {
 
-  /*
-   * Telegram WebApp
-   */
-
-  if (!initTelegram()) {
+  if (
+    !initTelegram()
+  ) {
     return;
   }
 
-
   setStatus(
-    "در حال اتصال به Discovery..."
+    "در حال اتصال به Discovery...",
   );
-
-
-  /*
-   * 1. Discovery Backend
-   */
 
   const healthy =
     await checkBackend();
 
-
   if (!healthy) {
 
     feedEl.innerHTML = `
-
       <div class="error-card">
-
         <strong>
           Discovery API در دسترس نیست
         </strong>
@@ -2572,36 +2276,24 @@ async function startApp() {
         <div>
           اتصال به Backend برقرار نشد.
         </div>
-
       </div>
-
     `;
-
 
     setStatus(
       "🔴 Backend در دسترس نیست",
-      "error"
+      "error",
     );
-
 
     return;
   }
 
-
-  /*
-   * 2. Telegram WebApp Auth
-   */
-
   const authenticated =
     await authenticateTelegram();
-
 
   if (!authenticated) {
 
     feedEl.innerHTML = `
-
       <div class="error-card">
-
         <strong>
           احراز هویت Telegram ناموفق بود
         </strong>
@@ -2609,56 +2301,19 @@ async function startApp() {
         <div>
           برنامه را از داخل Telegram باز کن.
         </div>
-
       </div>
-
     `;
-
 
     return;
   }
 
-
-  /*
-   * 3. بررسی Telegram Search Server
-   *
-   * این مرحله فقط برای تشخیص مشکل است.
-   */
-
-  const telegramHealthy =
-    await checkTelegramServer();
-
-
-  if (!telegramHealthy) {
-
-    console.warn(
-      "Telegram search server health check failed"
-    );
-
-
-    /*
-     * فعلاً برنامه را متوقف نمی‌کنیم.
-     *
-     * چون ممکن است health endpoint
-     * به هر دلیل پاسخ ندهد ولی search
-     * کار کند.
-     */
-
-  }
-
-
   setStatus(
     "🟢 آماده",
-    "success"
+    "success",
   );
 
-
-  /*
-   * 4. Feed
-   */
-
   await loadFeed(
-    "feed"
+    "feed",
   );
 }
 
@@ -2669,7 +2324,5 @@ async function startApp() {
 
 startApp();
 
-</script>
-
-</body>
+</script></body>
 </html>
