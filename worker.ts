@@ -6,7 +6,10 @@ const DISCOVERY_API_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-api-live";
 
 const SEARCH_API_URL =
-  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v4";
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v6";
+
+const SEARCH_FALLBACK_URL =
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v5";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +27,8 @@ const CORS_HEADERS = {
 };
 
 function corsHeaders(request: Request): Headers {
-  const headers = new Headers(CORS_HEADERS);
+  const headers =
+    new Headers(CORS_HEADERS);
 
   const origin =
     request.headers.get("Origin");
@@ -66,10 +70,6 @@ function json(
   );
 }
 
-/* =========================================================
-   REQUEST ID
-========================================================= */
-
 function requestId(
   request: Request,
 ): string {
@@ -85,21 +85,73 @@ function requestId(
    TELEGRAM SEARCH
 ========================================================= */
 
-/*
- * این endpoint عمداً دیگر teleproto را اجرا نمی‌کند.
- *
- * تمام Search به Supabase Search Gateway می‌رود.
- *
- * آن Gateway:
- *
- * 1. Search داخلی Discovery
- * 2. Telegram Global Search
- * 3. Merge
- * 4. Deduplicate
- * 5. Ranking
- *
- * را انجام می‌دهد.
- */
+async function callSearchBackend(
+  baseUrl: string,
+  request: Request,
+  query: string,
+  limit: string,
+  id: string,
+): Promise<Response> {
+  const target =
+    new URL(baseUrl);
+
+  target.searchParams.set(
+    "q",
+    query,
+  );
+
+  target.searchParams.set(
+    "limit",
+    limit,
+  );
+
+  const headers =
+    new Headers();
+
+  const initData =
+    request.headers.get(
+      "x-telegram-init-data",
+    );
+
+  if (initData) {
+    headers.set(
+      "x-telegram-init-data",
+      initData,
+    );
+  }
+
+  headers.set(
+    "x-request-id",
+    id,
+  );
+
+  for (
+    const name of [
+      "authorization",
+      "apikey",
+      "x-client-info",
+    ]
+  ) {
+    const value =
+      request.headers.get(name);
+
+    if (value) {
+      headers.set(
+        name,
+        value,
+      );
+    }
+  }
+
+  return fetch(
+    target.toString(),
+    {
+      method: "GET",
+      headers,
+      redirect: "follow",
+    },
+  );
+}
 
 async function telegramSearch(
   request: Request,
@@ -132,8 +184,8 @@ async function telegramSearch(
         ok: false,
         error:
           "Search query is required",
-        results: [],
         items: [],
+        results: [],
         request_id: id,
       },
       400,
@@ -141,118 +193,105 @@ async function telegramSearch(
     );
   }
 
-  const target =
-    new URL(
-      SEARCH_API_URL,
-    );
+  let response:
+    | Response
+    | null = null;
 
-  target.searchParams.set(
-    "q",
-    query,
-  );
-
-  target.searchParams.set(
-    "limit",
-    limit,
-  );
-
-  const headers =
-    new Headers();
+  let firstError:
+    | string
+    | null = null;
 
   /*
-   * Telegram Mini App identity
-   *
-   * این header برای Search داخلی
-   * استفاده می‌شود.
+   * Backend اصلی
    */
-
-  const initData =
-    request.headers.get(
-      "x-telegram-init-data",
-    );
-
-  if (initData) {
-    headers.set(
-      "x-telegram-init-data",
-      initData,
-    );
-  }
-
-  headers.set(
-    "x-request-id",
-    id,
-  );
-
-  /*
-   * در صورت وجود، request metadata
-   * را عبور می‌دهیم.
-   */
-
-  for (
-    const name of [
-      "authorization",
-      "apikey",
-      "x-client-info",
-    ]
-  ) {
-    const value =
-      request.headers.get(name);
-
-    if (value) {
-      headers.set(
-        name,
-        value,
-      );
-    }
-  }
 
   try {
-    const response =
-      await fetch(
-        target.toString(),
-        {
-          method: "GET",
-          headers,
-          redirect: "follow",
-        },
+    response =
+      await callSearchBackend(
+        SEARCH_API_URL,
+        request,
+        query,
+        limit,
+        id,
       );
+  } catch (error) {
+    firstError =
+      error instanceof Error
+        ? error.message
+        : String(error);
+  }
 
-    const raw =
-      await response.text();
+  /*
+   * Fallback
+   *
+   * فقط در صورتی که backend اصلی
+   * در دسترس نباشد.
+   */
 
-    let data: any = {};
-
+  if (
+    !response ||
+    !response.ok
+  ) {
     try {
-      data =
-        raw
-          ? JSON.parse(raw)
-          : {};
-    } catch {
-      data = {
-        ok: false,
-        error: raw,
-      };
+      response =
+        await callSearchBackend(
+          SEARCH_FALLBACK_URL,
+          request,
+          query,
+          limit,
+          id,
+        );
+    } catch (error) {
+      return json(
+        {
+          ok: false,
+          error:
+            firstError ||
+            (
+              error instanceof Error
+                ? error.message
+                : "Search service unreachable"
+            ),
+          items: [],
+          results: [],
+          request_id: id,
+        },
+        502,
+        request,
+      );
     }
+  }
 
-    /*
-     * API جدید از items استفاده می‌کند.
-     *
-     * برای سازگاری با frontend قدیمی،
-     * results هم برمی‌گردانیم.
-     */
+  const raw =
+    await response.text();
 
-    const items =
-      Array.isArray(
-        data?.items,
-      )
-        ? data.items
-        : Array.isArray(
-            data?.results,
-          )
-          ? data.results
-          : [];
+  let data: any = {};
 
-    const normalized = {
+  try {
+    data =
+      raw
+        ? JSON.parse(raw)
+        : {};
+  } catch {
+    data = {
+      ok: false,
+      error: raw,
+    };
+  }
+
+  const items =
+    Array.isArray(
+      data?.items,
+    )
+      ? data.items
+      : Array.isArray(
+          data?.results,
+        )
+        ? data.results
+        : [];
+
+  return json(
+    {
       ...data,
 
       ok:
@@ -272,43 +311,10 @@ async function telegramSearch(
       request_id:
         data?.request_id ||
         id,
-    };
-
-    return json(
-      normalized,
-      response.status,
-      request,
-    );
-  } catch (error) {
-    console.error(
-      "Unified search proxy error",
-      id,
-      error,
-    );
-
-    return json(
-      {
-        ok: false,
-
-        error:
-          error instanceof Error
-            ? error.message
-            : "Search service unreachable",
-
-        query,
-
-        count: 0,
-
-        items: [],
-
-        results: [],
-
-        request_id: id,
-      },
-      502,
-      request,
-    );
-  }
+    },
+    response.status,
+    request,
+  );
 }
 
 /* =========================================================
@@ -318,28 +324,15 @@ async function telegramSearch(
 async function telegramHealth(
   request: Request,
 ): Promise<Response> {
-  const id =
-    requestId(request);
-
-  /*
-   * Cloudflare دیگر Telegram Client
-   * را اجرا نمی‌کند.
-   *
-   * Telegram Search Gateway در
-   * Supabase مسئول اتصال MTProto است.
-   *
-   * بنابراین این endpoint فقط
-   * وضعیت proxy را اعلام می‌کند.
-   */
-
   return json(
     {
       ok: true,
       service:
         "telegram-search-proxy",
       backend:
-        "telegram-mtproto-v2",
-      request_id: id,
+        "discovery-search-v6",
+      request_id:
+        requestId(request),
     },
     200,
     request,
@@ -347,7 +340,7 @@ async function telegramHealth(
 }
 
 /* =========================================================
-   DISCOVERY API PROXY
+   DISCOVERY PROXY
 ========================================================= */
 
 function getDiscoveryPath(
@@ -527,10 +520,8 @@ async function proxyDiscovery(
     return json(
       {
         ok: false,
-
         error:
           "Discovery API is unreachable",
-
         request_id: id,
       },
       502,
@@ -540,7 +531,7 @@ async function proxyDiscovery(
 }
 
 /* =========================================================
-   MAIN
+   MAIN WORKER
 ========================================================= */
 
 export default {
@@ -553,10 +544,6 @@ export default {
         request.url,
       );
 
-    /*
-     * CORS
-     */
-
     if (
       request.method ===
       "OPTIONS"
@@ -565,7 +552,6 @@ export default {
         null,
         {
           status: 204,
-
           headers:
             corsHeaders(
               request,
@@ -573,10 +559,6 @@ export default {
         },
       );
     }
-
-    /*
-     * Telegram Search
-     */
 
     if (
       url.pathname ===
@@ -587,10 +569,6 @@ export default {
       );
     }
 
-    /*
-     * Telegram health
-     */
-
     if (
       url.pathname ===
       "/api/telegram/health"
@@ -599,10 +577,6 @@ export default {
         request,
       );
     }
-
-    /*
-     * Discovery API
-     */
 
     const path =
       getDiscoveryPath(
@@ -615,10 +589,6 @@ export default {
         path,
       );
     }
-
-    /*
-     * Frontend
-     */
 
     return env.ASSETS.fetch(
       request,
