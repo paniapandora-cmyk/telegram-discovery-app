@@ -3,8 +3,7 @@
   <meta charset="UTF-8"><meta
 name="viewport"
 content="width=device-width, initial-scale=1, viewport-fit=cover"
-
-«»
+>
 
   <title>Telegram Discovery</title>  <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#f4f6f8">  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>  <style>
@@ -162,59 +161,91 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       color: #1769aa;
     }
 
+    /* =========================================================
+       FEED — GRID LAYOUT (was a single-column list)
+    ========================================================= */
+
     .feed {
       width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    /* آیتم‌های تمام‌عرض (empty / error) باید کل عرض گرید را بگیرند */
+    .feed > .empty,
+    .feed > .error-card {
+      grid-column: 1 / -1;
     }
 
     .card {
       width: 100%;
-      margin-bottom: 12px;
+      min-width: 0;
 
-      padding: 16px;
-      border-radius: 18px;
+      padding: 10px;
+      border-radius: 14px;
 
       background: #ffffff;
+
+      display: flex;
+      flex-direction: column;
     }
 
     .card.telegram-card {
-      border-right: 4px solid #229ed9;
+      border-right: 3px solid #229ed9;
     }
 
     .card h2 {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
 
-      font-size: 18px;
-      line-height: 1.5;
+      font-size: 13px;
+      line-height: 1.4;
+      font-weight: 700;
+
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .card p {
-      margin: 0 0 11px;
+      margin: 0 0 8px;
 
-      font-size: 14px;
-      line-height: 1.8;
+      font-size: 11.5px;
+      line-height: 1.5;
 
-      opacity: .78;
+      opacity: .72;
 
-      white-space: pre-wrap;
       overflow-wrap: anywhere;
+
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 5px;
 
-      margin-bottom: 12px;
+      margin-bottom: 8px;
 
-      font-size: 12px;
+      font-size: 10px;
       opacity: .58;
     }
 
     .chip {
-      padding: 4px 8px;
+      max-width: 100%;
+      padding: 3px 7px;
       border-radius: 999px;
 
       background: #eef2f7;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .chip.telegram {
@@ -225,8 +256,9 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
 
     .actions {
       display: grid;
-      grid-template-columns: 1.3fr 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      margin-top: auto;
     }
 
     .actions.single {
@@ -237,14 +269,19 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       min-width: 0;
 
       border: 0;
-      border-radius: 12px;
+      border-radius: 10px;
 
-      padding: 11px 8px;
+      padding: 9px 4px;
 
-      font-size: 13px;
+      font-size: 12px;
+      line-height: 1.3;
 
       background: #eef2f7;
       color: #111827;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .action.saved {
@@ -314,8 +351,24 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
         padding: 0 13px;
       }
 
-      .actions {
-        grid-template-columns: 1fr 1fr 1fr;
+      .card h2 {
+        font-size: 12.5px;
+      }
+
+      .card p {
+        font-size: 11px;
+      }
+
+      .action {
+        font-size: 11px;
+        padding: 8px 3px;
+      }
+    }
+
+    /* گرید تک‌ستونه روی صفحه‌های خیلی باریک (مثلاً حالت split-view تلگرام) */
+    @media (max-width: 300px) {
+      .feed {
+        grid-template-columns: 1fr;
       }
     }
   </style></head><body><div class="app">  <header class="header">
@@ -540,13 +593,6 @@ function initTelegram() {
 
 /* =========================================================
    GENERIC API REQUEST
-   =========================================================
-   
-   اصلاح شماره 1:
-   timeout پانزده ثانیه‌ای اضافه شده.
-   
-   اگر Backend پاسخ ندهد، برنامه دیگر
-   برای همیشه روی «در حال اتصال» نمی‌ماند.
 ========================================================= */
 
 async function requestApi(
@@ -1433,6 +1479,7 @@ function renderFeed() {
 
 /* =========================================================
    RENDER TELEGRAM CARD
+   (چیپ‌ها برای کارت‌های کوچیک‌تر گرید جمع‌وجورتر شدند)
 ========================================================= */
 
 function renderTelegramCard(
@@ -1485,31 +1532,6 @@ function renderTelegramCard(
       ? channelUrl
       : messageUrl;
 
-  let dateText =
-    "";
-
-  if (
-    item?.date
-  ) {
-
-    try {
-
-      dateText =
-        new Date(
-          item.date
-        ).toLocaleString(
-          "fa-IR"
-        );
-
-    } catch (_) {
-
-      dateText =
-        String(
-          item.date
-        );
-    }
-  }
-
   return `
 
     <article
@@ -1537,32 +1559,6 @@ function renderTelegramCard(
             ? `
               <span class="chip">
                 ${escapeHtml(username)}
-              </span>
-            `
-            : ""
-        }
-
-        ${
-          item?.channel_peer_id
-            ? `
-              <span class="chip">
-                ${escapeHtml(
-                  String(
-                    item.channel_peer_id
-                  )
-                )}
-              </span>
-            `
-            : ""
-        }
-
-        ${
-          dateText
-            ? `
-              <span class="chip">
-                ${escapeHtml(
-                  dateText
-                )}
               </span>
             `
             : ""
@@ -1625,6 +1621,7 @@ function renderTelegramCard(
 
 /* =========================================================
    RENDER DISCOVERY CARD
+   (دکمه‌ها فقط آیکون شدند تا در کارت باریک‌تر جا شوند)
 ========================================================= */
 
 function renderDiscoveryCard(
@@ -1652,8 +1649,8 @@ function renderDiscoveryCard(
 
   const saveText =
     saved
-      ? "✅ ذخیره شد"
-      : "⭐ ذخیره";
+      ? "✅"
+      : "⭐";
 
   return `
 
@@ -1691,27 +1688,6 @@ function renderDiscoveryCard(
             : ""
         }
 
-        ${
-          item.score
-            ? `
-              <span class="chip">
-                امتیاز
-                ${item.score.toFixed(3)}
-              </span>
-            `
-            : ""
-        }
-
-        ${
-          saved
-            ? `
-              <span class="chip">
-                personalized
-              </span>
-            `
-            : ""
-        }
-
       </div>
 
       <div class="actions">
@@ -1731,7 +1707,7 @@ function renderDiscoveryCard(
                   )
                 "
               >
-                🔗 مشاهده
+                🔗
               </button>
 
             `
@@ -1741,7 +1717,7 @@ function renderDiscoveryCard(
                 class="action"
                 disabled
               >
-                لینک ندارد
+                —
               </button>
 
             `
@@ -2142,32 +2118,6 @@ searchInput.addEventListener(
 
 /* =========================================================
    START APP
-   =========================================================
-   
-   اصلاح شماره 2:
-   
-   Health دیگر دروازه ورود برنامه نیست.
-   
-   قبلاً:
-   
-   checkBackend()
-       ↓
-   اگر fail شد
-       ↓
-   return
-   
-   بنابراین Mini App می‌توانست روی
-   «در حال اتصال» متوقف شود.
-   
-   اکنون:
-   
-   Telegram init
-       ↓
-   Auth
-       ↓
-   Feed
-   
-   Health فقط برای Diagnostic است.
 ========================================================= */
 
 async function startApp() {
