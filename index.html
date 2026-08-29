@@ -990,62 +990,99 @@ function normalizeTelegramItem(
   index
 ) {
 
-  const text =
-    item.text ||
-    item.message ||
-    "";
+  const isChannel =
+    item?.result_type ===
+    "channel";
 
+  const text =
+    item?.text ??
+    item?.message ??
+    item?.rawText ??
+    "";
 
   const username =
-    item.channel_username ||
-    item.chat_username ||
-    item.username ||
+    item?.channel_username ??
+    item?.chat_username ??
+    item?.username ??
     "";
-
 
   const title =
-    item.channel_title ||
-    item.title ||
-    username ||
+    item?.channel_title ??
+    item?.title ??
+    username ??
     "Telegram";
 
+  const channelUrl =
+    item?.channel_url ??
+    (
+      username
+        ? `https://t.me/${username}`
+        : ""
+    );
 
-  const url =
-    item.message_url ||
-    item.link ||
-    item.url ||
+  const messageUrl =
+    item?.message_url ??
+    item?.link ??
+    item?.url ??
     "";
-
 
   return {
 
-    /*
-     * Telegram message ID
-     *
-     * این ID فقط برای Telegram است.
-     * نباید به عنوان content_id دیتابیس استفاده شود.
-     */
-
     id:
       String(
-        item.id ??
-        `telegram-${index}`
+        item?.id ??
+        item?.result_id ??
+        `telegram-${index}`,
       ),
 
+    result_type:
+      isChannel
+        ? "channel"
+        : "telegram_message",
+
     telegram_message_id:
-      item.id ?? null,
+      item?.telegram_message_id ??
+      (
+        !isChannel
+          ? item?.id ?? null
+          : null
+      ),
 
     title,
 
     description:
-      text ||
-      "این پیام متن قابل نمایش ندارد.",
+
+      isChannel
+
+        ? (
+            item?.description ||
+            "کانال تلگرام"
+          )
+
+        : (
+            text.trim() ||
+            (
+              item?.has_media
+                ? "📎 این پست شامل رسانه است."
+                : "این پست متن قابل نمایش ندارد."
+            )
+          ),
 
     source_url:
-      url,
+      isChannel
+        ? channelUrl
+        : messageUrl,
+
+    channel_url:
+      channelUrl,
+
+    message_url:
+      messageUrl,
 
     content_type:
-      "telegram",
+      isChannel
+        ? "telegram-channel"
+        : "telegram",
 
     creator_name:
       username
@@ -1053,10 +1090,16 @@ function normalizeTelegramItem(
         : "",
 
     score:
-      0,
+      Number(
+        item?.search_score ??
+        item?.score ??
+        0,
+      ),
 
     reason:
-      "telegram_global_search",
+      isChannel
+        ? "telegram_channel_search"
+        : "telegram_global_search",
 
     is_saved:
       false,
@@ -1070,16 +1113,25 @@ function normalizeTelegramItem(
     channel_title:
       title,
 
-    date:
-      item.date ||
+    chat_id:
+      item?.chat_id ??
+      item?.channel_peer_id ??
       null,
 
-    chat_id:
-      item.chat_id ||
-      null
+    channel_peer_id:
+      item?.channel_peer_id ??
+      null,
+
+    date:
+      item?.date ??
+      null,
+
+    has_media:
+      Boolean(
+        item?.has_media,
+      ),
   };
 }
-
 
 /* =========================================================
    LOAD DISCOVERY FEED
@@ -1636,16 +1688,224 @@ function renderTelegramCard(
                   dateText
                 )}
               </span>
-            `
+function renderTelegramCard(
+  item,
+  index
+) {
 
+  const isChannel =
+    item?.result_type ===
+    "channel";
+
+  const title =
+    escapeHtml(
+      item?.channel_title ||
+      item?.title ||
+      "Telegram",
+    );
+
+  const username =
+    item?.channel_username
+      ? "@" +
+        item.channel_username
+      : "";
+
+  const description =
+    escapeHtml(
+      item?.description ||
+      (
+        isChannel
+          ? "کانال تلگرام"
+          : "این پست متن قابل نمایش ندارد."
+      ),
+    );
+
+  const channelUrl =
+    item?.channel_url ||
+    (
+      item?.channel_username
+        ? `https://t.me/${item.channel_username}`
+        : ""
+    );
+
+  const messageUrl =
+    item?.message_url ||
+    item?.source_url ||
+    "";
+
+  const targetUrl =
+    isChannel
+      ? channelUrl
+      : messageUrl;
+
+  let dateText =
+    "";
+
+  if (
+    item?.date
+  ) {
+    try {
+
+      dateText =
+        new Date(
+          item.date,
+        ).toLocaleString(
+          "fa-IR",
+        );
+
+    } catch (_) {
+
+      dateText =
+        String(
+          item.date,
+        );
+    }
+  }
+
+  return `
+
+    <article
+      class="card telegram-card"
+    >
+
+      <h2>
+        ${title}
+function renderTelegramCard(
+  item,
+  index
+) {
+
+  const isChannel =
+    item?.result_type ===
+    "channel";
+
+  const title =
+    escapeHtml(
+      item?.channel_title ||
+      item?.title ||
+      "Telegram",
+    );
+
+  const username =
+    item?.channel_username
+      ? "@" +
+        item.channel_username
+      : "";
+
+  const description =
+    escapeHtml(
+      item?.description ||
+      (
+        isChannel
+          ? "کانال تلگرام"
+          : "این پست متن قابل نمایش ندارد."
+      ),
+    );
+
+  const channelUrl =
+    item?.channel_url ||
+    (
+      item?.channel_username
+        ? `https://t.me/${item.channel_username}`
+        : ""
+    );
+
+  const messageUrl =
+    item?.message_url ||
+    item?.source_url ||
+    "";
+
+  const targetUrl =
+    isChannel
+      ? channelUrl
+      : messageUrl;
+
+  let dateText =
+    "";
+
+  if (
+    item?.date
+  ) {
+    try {
+
+      dateText =
+        new Date(
+          item.date,
+        ).toLocaleString(
+          "fa-IR",
+        );
+
+    } catch (_) {
+
+      dateText =
+        String(
+          item.date,
+        );
+    }
+  }
+
+  return `
+
+    <article
+      class="card telegram-card"
+    >
+
+      <h2>
+        ${title}
+      </h2>
+
+      <p>
+        ${description}
+      </p>
+
+      <div class="meta">
+
+        <span
+          class="chip telegram"
+        >
+          Telegram
+        </span>
+
+        ${
+          username
+            ? `
+              <span class="chip">
+                ${escapeHtml(username)}
+              </span>
+            `
+            : ""
+        }
+
+        ${
+          item?.channel_peer_id
+            ? `
+              <span class="chip">
+                ${escapeHtml(
+                  String(
+                    item.channel_peer_id,
+                  ),
+                )}
+              </span>
+            `
+            : ""
+        }
+
+        ${
+          dateText
+            ? `
+              <span class="chip">
+                ${escapeHtml(
+                  dateText,
+                )}
+              </span>
+            `
             : ""
         }
 
       </div>
 
-
       ${
-        url
+        targetUrl
 
           ? `
 
@@ -1653,14 +1913,22 @@ function renderTelegramCard(
 
               <button
                 class="action primary"
-                data-url="${url}"
+                data-url="${escapeHtml(
+                  targetUrl,
+                )}"
                 onclick="
                   openTelegramContent(
                     this.dataset.url
                   )
                 "
               >
-                🔗 مشاهده در Telegram
+
+                ${
+                  isChannel
+                    ? "📢 ورود به کانال"
+                    : "🔗 مشاهده پست"
+                }
+
               </button>
 
             </div>
@@ -1675,7 +1943,7 @@ function renderTelegramCard(
                 class="action"
                 disabled
               >
-                لینک مستقیم در دسترس نیست
+                لینک در دسترس نیست
               </button>
 
             </div>
