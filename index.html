@@ -4,7 +4,6 @@
 name="viewport"
 content="width=device-width, initial-scale=1, viewport-fit=cover"
 >
-
   <title>Telegram Discovery</title>  <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#f4f6f8">  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>  <style>
     * {
@@ -123,8 +122,8 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
       margin-bottom: 14px;
     }
 
@@ -162,7 +161,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
     }
 
     /* =========================================================
-       FEED — GRID LAYOUT (was a single-column list)
+       FEED — GRID LAYOUT (2 columns)
     ========================================================= */
 
     .feed {
@@ -173,7 +172,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       align-items: stretch;
     }
 
-    /* آیتم‌های تمام‌عرض (empty / error) باید کل عرض گرید را بگیرند */
+    /* پیام‌های خالی/خطا نباید توی گرید نصفه بشن */
     .feed > .empty,
     .feed > .error-card {
       grid-column: 1 / -1;
@@ -181,7 +180,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
 
     .card {
       width: 100%;
-      min-width: 0;
+      margin-bottom: 0;
 
       padding: 10px;
       border-radius: 14px;
@@ -218,6 +217,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       opacity: .72;
 
       overflow-wrap: anywhere;
+      white-space: normal;
 
       display: -webkit-box;
       -webkit-line-clamp: 3;
@@ -228,21 +228,21 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
     .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 4px;
 
       margin-bottom: 8px;
 
       font-size: 10px;
-      opacity: .58;
+      opacity: .55;
     }
 
     .chip {
-      max-width: 100%;
-      padding: 3px 7px;
+      padding: 3px 6px;
       border-radius: 999px;
 
       background: #eef2f7;
 
+      max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -256,8 +256,9 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
 
     .actions {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 5px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+
       margin-top: auto;
     }
 
@@ -271,10 +272,9 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       border: 0;
       border-radius: 10px;
 
-      padding: 9px 4px;
+      padding: 8px 4px;
 
-      font-size: 12px;
-      line-height: 1.3;
+      font-size: 10.5px;
 
       background: #eef2f7;
       color: #111827;
@@ -303,6 +303,142 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       line-height: 1.8;
 
       opacity: .65;
+    }
+
+    /* =========================================================
+       CREATOR DASHBOARD
+    ========================================================= */
+
+    .dash-wrap {
+      grid-column: 1 / -1;
+    }
+
+    .dash-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .dash-stat-card {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .dash-stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #229ed9;
+    }
+
+    .dash-stat-label {
+      margin-top: 4px;
+      font-size: 12px;
+      opacity: .65;
+    }
+
+    .dash-creator-name {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .dash-content-row {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 12.5px;
+    }
+
+    .dash-content-row .row-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .dash-content-row .row-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 11.5px;
+      opacity: .65;
+    }
+
+    .claim-form {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .claim-form p {
+      font-size: 13px;
+      opacity: .7;
+      margin: 0 0 14px;
+      line-height: 1.8;
+    }
+
+    .claim-form input {
+      width: 100%;
+      border: 0;
+      outline: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      background: #eef2f7;
+      color: #111827;
+      margin-bottom: 10px;
+      text-align: center;
+      direction: ltr;
+    }
+
+    .claim-form button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      background: #229ed9;
+      color: #ffffff;
+    }
+
+    .claim-status-row {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .claim-badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef2f7;
+    }
+
+    .claim-badge.pending {
+      background: #fff6db;
+      color: #a16a00;
+    }
+
+    .claim-badge.approved {
+      background: #dff5e7;
+      color: #16803c;
+    }
+
+    .claim-badge.rejected {
+      background: #fde2e2;
+      color: #b00020;
     }
 
     .error-card {
@@ -344,31 +480,24 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       }
 
       .tab {
-        font-size: 12px;
+        font-size: 10.5px;
+        padding: 11px 4px;
       }
 
       .search button {
         padding: 0 13px;
       }
 
+      .actions {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
       .card h2 {
-        font-size: 12.5px;
+        font-size: 12px;
       }
 
       .card p {
         font-size: 11px;
-      }
-
-      .action {
-        font-size: 11px;
-        padding: 8px 3px;
-      }
-    }
-
-    /* گرید تک‌ستونه روی صفحه‌های خیلی باریک (مثلاً حالت split-view تلگرام) */
-    @media (max-width: 300px) {
-      .feed {
-        grid-template-columns: 1fr;
       }
     }
   </style></head><body><div class="app">  <header class="header">
@@ -416,6 +545,14 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
   🧭 اکسپلور
 </button>
 
+<button
+  id="creatorBtn"
+  class="tab"
+  type="button"
+>
+  👤 داشبورد
+</button>
+
   </div>  <div
     id="status"
     class="status"
@@ -441,6 +578,9 @@ const DISCOVERY_API_URL =
 
 const TELEGRAM_API_URL =
   window.location.origin + "/api/telegram";
+
+const CREATOR_API_URL =
+  window.location.origin + "/api/creator";
 
 
 /* =========================================================
@@ -479,6 +619,9 @@ const trendBtn =
 const exploreBtn =
   document.getElementById("exploreBtn");
 
+const creatorBtn =
+  document.getElementById("creatorBtn");
+
 
 /* =========================================================
    STATE
@@ -489,6 +632,10 @@ let currentMode = "feed";
 let feedItems = [];
 
 let currentUser = null;
+
+let creatorDashboards = [];
+
+let creatorClaims = [];
 
 
 /* =========================================================
@@ -593,6 +740,13 @@ function initTelegram() {
 
 /* =========================================================
    GENERIC API REQUEST
+   =========================================================
+   
+   اصلاح شماره 1:
+   timeout پانزده ثانیه‌ای اضافه شده.
+   
+   اگر Backend پاسخ ندهد، برنامه دیگر
+   برای همیشه روی «در حال اتصال» نمی‌ماند.
 ========================================================= */
 
 async function requestApi(
@@ -736,6 +890,23 @@ async function telegramApi(
 
   return requestApi(
     TELEGRAM_API_URL,
+    path,
+    options
+  );
+}
+
+
+/* =========================================================
+   CREATOR API
+========================================================= */
+
+async function creatorApi(
+  path,
+  options = {}
+) {
+
+  return requestApi(
+    CREATOR_API_URL,
     path,
     options
   );
@@ -899,12 +1070,40 @@ function setActiveTab(
     "active",
     mode === "explore"
   );
+
+  creatorBtn.classList.toggle(
+    "active",
+    mode === "creator"
+  );
 }
 
 
 /* =========================================================
    NORMALIZE DISCOVERY ITEM
 ========================================================= */
+
+function titleForContentType(
+  contentType
+) {
+
+  const map = {
+    IMAGE: "🖼️ تصویر",
+    VIDEO: "🎥 ویدیو",
+    AUDIO: "🎧 صوت",
+    DOCUMENT: "📄 فایل",
+    MIXED: "📎 رسانه"
+  };
+
+  return (
+    map[
+      String(
+        contentType || ""
+      ).toUpperCase()
+    ] ||
+    "بدون عنوان"
+  );
+}
+
 
 function normalizeDiscoveryItem(
   item
@@ -919,7 +1118,9 @@ function normalizeDiscoveryItem(
 
     title:
       item.title ||
-      "بدون عنوان",
+      titleForContentType(
+        item.content_type
+      ),
 
     description:
       item.description ||
@@ -1236,6 +1437,310 @@ async function loadFeed(
 
 
 /* =========================================================
+   CREATOR DASHBOARD
+========================================================= */
+
+async function loadCreatorDashboard() {
+
+  currentMode = "creator";
+
+  setActiveTab("creator");
+
+  if (!currentUser) {
+
+    feedEl.innerHTML = `
+      <div class="empty">
+        برای دیدن داشبورد باید داخل Telegram احراز هویت شوی.
+      </div>
+    `;
+
+    return;
+  }
+
+  setStatus(
+    "در حال دریافت داشبورد..."
+  );
+
+  feedEl.innerHTML =
+    '<div class="empty">در حال بارگذاری...</div>';
+
+  try {
+
+    const [dashResult, claimsResult] =
+      await Promise.all([
+        creatorApi("/dashboard"),
+        creatorApi("/claims")
+      ]);
+
+    creatorDashboards =
+      Array.isArray(dashResult?.creators)
+        ? dashResult.creators
+        : [];
+
+    creatorClaims =
+      Array.isArray(claimsResult?.claims)
+        ? claimsResult.claims
+        : [];
+
+    await renderCreatorDashboard();
+
+    setStatus(
+      "🟢 آماده",
+      "success"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Creator dashboard:",
+      error
+    );
+
+    feedEl.innerHTML = `
+      <div class="error-card">
+        <strong>دریافت داشبورد ناموفق بود</strong>
+        <div>${escapeHtml(error.message || "خطای نامشخص")}</div>
+      </div>
+    `;
+
+    setStatus(
+      "🔴 خطا در دریافت داشبورد",
+      "error"
+    );
+  }
+}
+
+
+async function renderCreatorDashboard() {
+
+  // حالت ۱: هیچ کانالی تایید‌شده نداره -> فرم درخواست مالکیت + وضعیت درخواست‌های قبلی
+  if (!creatorDashboards.length) {
+
+    const claimsHtml =
+      creatorClaims.length
+        ? creatorClaims.map(
+            claim => `
+              <div class="claim-status-row">
+                <span>
+                  ${escapeHtml(
+                    claim.creator_name ||
+                    claim.creator_username ||
+                    "کانال"
+                  )}
+                </span>
+                <span class="claim-badge ${escapeHtml(
+                  String(claim.status || "").toLowerCase()
+                )}">
+                  ${
+                    claim.status === "APPROVED"
+                      ? "✅ تایید شد"
+                      : claim.status === "REJECTED"
+                        ? "رد شد"
+                        : "⏳ در انتظار بررسی"
+                  }
+                </span>
+              </div>
+            `
+          ).join("")
+        : "";
+
+    feedEl.innerHTML = `
+      <div class="dash-wrap">
+        <div class="claim-form">
+          <p>
+            اگه صاحب یکی از کانال‌هایی هستی که توی Discovery ثبت شده،
+            نام کاربری کانالت رو وارد کن تا مالکیتش رو ادعا کنی.
+            بعد از تایید دستی، آمار کانالت رو اینجا می‌بینی.
+          </p>
+          <input
+            id="claimUsernameInput"
+            type="text"
+            placeholder="@channel_username"
+            autocomplete="off"
+          >
+          <button
+            id="claimSubmitBtn"
+            type="button"
+            onclick="submitCreatorClaim()"
+          >
+            درخواست مالکیت
+          </button>
+        </div>
+        ${
+          claimsHtml
+            ? `<div style="margin-top:14px">${claimsHtml}</div>`
+            : ""
+        }
+      </div>
+    `;
+
+    return;
+  }
+
+  // حالت ۲: حداقل یه کانال تایید‌شده داره -> نمایش آمار + لیست محتوا
+  const parts = [];
+
+  for (const creator of creatorDashboards) {
+
+    let contentRows = [];
+
+    try {
+
+      const result =
+        await creatorApi(
+          "/content?creator_id=" +
+          encodeURIComponent(creator.creator_id) +
+          "&limit=10"
+        );
+
+      contentRows =
+        Array.isArray(result?.items)
+          ? result.items
+          : [];
+
+    } catch (error) {
+
+      console.warn(
+        "Creator content stats:",
+        error
+      );
+    }
+
+    parts.push(`
+      <div class="dash-wrap">
+        <div class="dash-creator-name">
+          📡 ${escapeHtml(
+            creator.creator_name ||
+            creator.creator_username ||
+            "کانال"
+          )}
+        </div>
+
+        <div class="dash-stats">
+          <div class="dash-stat-card">
+            <div class="dash-stat-value">${escapeHtml(String(creator.content_count ?? 0))}</div>
+            <div class="dash-stat-label">تعداد محتوا</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-value">${escapeHtml(String(creator.total_impressions ?? 0))}</div>
+            <div class="dash-stat-label">نمایش کل</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-value">${escapeHtml(String(creator.total_saves ?? 0))}</div>
+            <div class="dash-stat-label">ذخیره شده</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-value">${escapeHtml(String(creator.total_follows ?? 0))}</div>
+            <div class="dash-stat-label">دنبال‌کننده</div>
+          </div>
+        </div>
+
+        ${
+          contentRows.length
+            ? contentRows.map(
+                row => `
+                  <div class="dash-content-row">
+                    <div class="row-title">
+                      ${escapeHtml(
+                        row.title ||
+                        titleForContentType(row.content_type)
+                      )}
+                    </div>
+                    <div class="row-meta">
+                      <span>👁️ ${escapeHtml(String(row.impressions ?? 0))}</span>
+                      <span>⭐ ${escapeHtml(String(row.saves ?? 0))}</span>
+                    </div>
+                  </div>
+                `
+              ).join("")
+            : '<div class="empty">هنوز محتوایی برای این کانال ثبت نشده.</div>'
+        }
+      </div>
+    `);
+  }
+
+  feedEl.innerHTML = parts.join("");
+}
+
+
+async function submitCreatorClaim() {
+
+  const input =
+    document.getElementById("claimUsernameInput");
+
+  const username =
+    (input?.value || "").trim();
+
+  if (!username) {
+
+    setStatus(
+      "نام کاربری کانال رو وارد کن"
+    );
+
+    input?.focus();
+
+    return;
+  }
+
+  if (!currentUser) {
+
+    setStatus(
+      "⚠️ برای ثبت درخواست باید داخل Telegram احراز هویت شوی",
+      "error"
+    );
+
+    return;
+  }
+
+  const btn =
+    document.getElementById("claimSubmitBtn");
+
+  if (btn) btn.disabled = true;
+
+  setStatus(
+    "در حال ثبت درخواست..."
+  );
+
+  try {
+
+    await creatorApi(
+      "/claim",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          username
+        })
+      }
+    );
+
+    setStatus(
+      "✅ درخواست ثبت شد، منتظر تایید بمون",
+      "success"
+    );
+
+    await loadCreatorDashboard();
+
+  } catch (error) {
+
+    console.error(
+      "Submit claim:",
+      error
+    );
+
+    setStatus(
+      "🔴 ثبت درخواست ناموفق بود: " +
+      (error?.message || ""),
+      "error"
+    );
+
+  } finally {
+
+    if (btn) btn.disabled = false;
+  }
+}
+
+
+/* =========================================================
    TELEGRAM GLOBAL SEARCH
 ========================================================= */
 
@@ -1479,7 +1984,6 @@ function renderFeed() {
 
 /* =========================================================
    RENDER TELEGRAM CARD
-   (چیپ‌ها برای کارت‌های کوچیک‌تر گرید جمع‌وجورتر شدند)
 ========================================================= */
 
 function renderTelegramCard(
@@ -1531,6 +2035,31 @@ function renderTelegramCard(
     isChannel
       ? channelUrl
       : messageUrl;
+
+  let dateText =
+    "";
+
+  if (
+    item?.date
+  ) {
+
+    try {
+
+      dateText =
+        new Date(
+          item.date
+        ).toLocaleString(
+          "fa-IR"
+        );
+
+    } catch (_) {
+
+      dateText =
+        String(
+          item.date
+        );
+    }
+  }
 
   return `
 
@@ -1621,7 +2150,6 @@ function renderTelegramCard(
 
 /* =========================================================
    RENDER DISCOVERY CARD
-   (دکمه‌ها فقط آیکون شدند تا در کارت باریک‌تر جا شوند)
 ========================================================= */
 
 function renderDiscoveryCard(
@@ -1649,8 +2177,8 @@ function renderDiscoveryCard(
 
   const saveText =
     saved
-      ? "✅"
-      : "⭐";
+      ? "✅ ذخیره‌شده"
+      : "⭐ ذخیره";
 
   return `
 
@@ -1707,7 +2235,7 @@ function renderDiscoveryCard(
                   )
                 "
               >
-                🔗
+                🔗 مشاهده
               </button>
 
             `
@@ -1717,7 +2245,7 @@ function renderDiscoveryCard(
                 class="action"
                 disabled
               >
-                —
+                بدون لینک
               </button>
 
             `
@@ -2093,6 +2621,12 @@ exploreBtn.addEventListener(
     loadFeed("explore")
 );
 
+creatorBtn.addEventListener(
+  "click",
+  () =>
+    loadCreatorDashboard()
+);
+
 searchBtn.addEventListener(
   "click",
   doTelegramSearch
@@ -2118,6 +2652,32 @@ searchInput.addEventListener(
 
 /* =========================================================
    START APP
+   =========================================================
+   
+   اصلاح شماره 2:
+   
+   Health دیگر دروازه ورود برنامه نیست.
+   
+   قبلاً:
+   
+   checkBackend()
+       ↓
+   اگر fail شد
+       ↓
+   return
+   
+   بنابراین Mini App می‌توانست روی
+   «در حال اتصال» متوقف شود.
+   
+   اکنون:
+   
+   Telegram init
+       ↓
+   Auth
+       ↓
+   Feed
+   
+   Health فقط برای Diagnostic است.
 ========================================================= */
 
 async function startApp() {
