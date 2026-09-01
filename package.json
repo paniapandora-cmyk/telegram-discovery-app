@@ -1,12 +1,15 @@
 {
   "private": true,
   "scripts": {
+    "check": "tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --lib ES2022,WebWorker worker.ts",
+    "smoke": "bash scripts/smoke.sh",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
     "teleproto": "^1.229.0"
   },
   "devDependencies": {
+    "typescript": "5.9.2",
     "wrangler": "^4.127.0"
   }
 }
