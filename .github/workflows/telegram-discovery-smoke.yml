@@ -17,16 +17,16 @@ jobs:
       - name: Verify frontend exists
         run: test -s index.html
 
-      - name: Verify Supabase discovery API
+      - name: Verify discovery proxy configuration
         shell: bash
         run: |
           set -euo pipefail
 
-          grep -Eq \
-            'https://[a-z0-9-]+\.supabase\.co/functions/v1/discovery-api' \
-            index.html
+          grep -q "'/api/discovery'" index.html
+          grep -q 'discovery-api-live' worker.ts
+          grep -q 'discovery-search-v6' worker.ts
 
-          echo "Supabase discovery-api reference found."
+          echo "Cloudflare-to-Supabase proxy configuration found."
 
       - name: Start frontend locally
         run: |
@@ -65,9 +65,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          grep -q "discovery-api" index.html
+          grep -q "/api/discovery" index.html
+          grep -q "x-telegram-init-data" index.html
 
           echo "Discovery API integration found."
+
+      - name: Verify worker routing
+        run: |
+          set -euo pipefail
+
+          grep -q '"/api/discovery"' worker.ts
+          grep -q '"/api/telegram/search"' worker.ts
+          grep -q '"/api/creator"' worker.ts
+
+          echo "Worker routes found."
 
       - name: Verify discovery features
         run: |
@@ -83,4 +94,3 @@ jobs:
         run: |
           echo "======================================"
           echo "Telegram Discovery smoke test PASSED"
-          echo "======================================"
