@@ -255,7 +255,7 @@ async function telegramHealth(
       service: "telegram-search-proxy",
       backend: "discovery-search-v6",
       preview_image_proxy: true,
-      build: "telegram-preview-v1",
+      build: "telegram-preview-v2-media-thumb",
       request_id: requestId(request)
     },
     200,
@@ -266,8 +266,8 @@ async function telegramHealth(
 /* =========================================================
    TELEGRAM POST PREVIEW IMAGE
 
-   Gets the public Telegram post page, extracts its OG image
-   and safely returns the image to the frontend.
+   Gets a public Telegram post page, extracts its photo or
+   video thumbnail and safely proxies the image.
 ========================================================= */
 
 function publicTelegramPost(
@@ -344,6 +344,90 @@ function telegramOgImage(
   return null;
 }
 
+function htmlTagAttribute(
+  tag: string,
+  name: string
+): string | null {
+  const match = tag.match(
+    new RegExp(
+      `${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`,
+      "i"
+    )
+  );
+
+  return match?.[2]
+    ? decodeHtmlAttribute(match[2])
+    : null;
+}
+
+function cssBackgroundImage(
+  style: string
+): string | null {
+  const value = style.match(
+    /background-image\s*:\s*url\(\s*([^)]+?)\s*\)/i
+  )?.[1];
+
+  if (!value) {
+    return null;
+  }
+
+  return decodeHtmlAttribute(value)
+    .replace(/^(?:&quot;|&#39;|["'])/i, "")
+    .replace(/(?:&quot;|&#39;|["'])$/i, "")
+    .trim();
+}
+
+function telegramMediaImage(
+  html: string
+): string | null {
+  const tags = html.match(/<[^>]+>/g) || [];
+
+  const mediaClass =
+    /tgme_widget_message_(?:video_thumb|photo_wrap|document_thumb)/i;
+
+  for (const tag of tags) {
+    if (!mediaClass.test(tag)) {
+      continue;
+    }
+
+    const style =
+      htmlTagAttribute(tag, "style");
+
+    const background = style
+      ? cssBackgroundImage(style)
+      : null;
+
+    if (background) {
+      return background;
+    }
+
+    const poster =
+      htmlTagAttribute(tag, "poster");
+
+    const source =
+      htmlTagAttribute(tag, "src");
+
+    if (poster || source) {
+      return poster || source;
+    }
+  }
+
+  for (const tag of tags) {
+    if (!/^<video\b/i.test(tag)) {
+      continue;
+    }
+
+    const poster =
+      htmlTagAttribute(tag, "poster");
+
+    if (poster) {
+      return poster;
+    }
+  }
+
+  return null;
+}
+
 async function telegramPreviewImage(
   request: Request
 ): Promise<Response> {
@@ -381,9 +465,10 @@ async function telegramPreviewImage(
   try {
     const page = await fetch(post.toString(), {
       headers: {
-        Accept: "text/html,application/xhtml+xml",
+        Accept:
+          "text/html,application/xhtml+xml",
         "User-Agent":
-          "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/1.0)"
+          "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/2.0)"
       },
       redirect: "follow"
     });
@@ -400,7 +485,10 @@ async function telegramPreviewImage(
     }
 
     const html = await page.text();
-    const imageValue = telegramOgImage(html);
+
+    const imageValue =
+      telegramMediaImage(html) ||
+      telegramOgImage(html);
 
     if (!imageValue) {
       return json(
@@ -413,7 +501,10 @@ async function telegramPreviewImage(
       );
     }
 
-    const imageUrl = new URL(imageValue);
+    const imageUrl = new URL(
+      imageValue,
+      post.toString()
+    );
 
     if (imageUrl.protocol !== "https:") {
       return json(
@@ -426,13 +517,19 @@ async function telegramPreviewImage(
       );
     }
 
-    const image = await fetch(imageUrl.toString(), {
-      headers: {
-        Accept:
-          "image/avif,image/webp,image/*,*/*;q=0.8"
-      },
-      redirect: "follow"
-    });
+    const image = await fetch(
+      imageUrl.toString(),
+      {
+        headers: {
+          Accept:
+            "image/avif,image/webp,image/*,*/*;q=0.8",
+          Referer: "https://t.me/",
+          "User-Agent":
+            "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/2.0)"
+        },
+        redirect: "follow"
+      }
+    );
 
     const contentType =
       image.headers.get("content-type") || "";
@@ -454,11 +551,16 @@ async function telegramPreviewImage(
 
     const headers = corsHeaders(request);
 
-    headers.set("Content-Type", contentType);
+    headers.set(
+      "Content-Type",
+      contentType
+    );
+
     headers.set(
       "Cache-Control",
       "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
     );
+
     headers.set(
       "X-Content-Type-Options",
       "nosniff"
@@ -522,7 +624,9 @@ async function proxyJsonApi(
   const incoming = new URL(request.url);
   const target = new URL(baseUrl);
 
-  target.pathname = `${target.pathname}${path}`;
+  target.pathname =
+    `${target.pathname}${path}`;
+
   target.search = incoming.search;
 
   const headers = new Headers();
@@ -535,7 +639,8 @@ async function proxyJsonApi(
     "x-telegram-init-data",
     "x-request-id"
   ]) {
-    const value = request.headers.get(name);
+    const value =
+      request.headers.get(name);
 
     if (value) {
       headers.set(name, value);
