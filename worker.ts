@@ -1,16 +1,8 @@
 /**
  * Telegram Discovery — Cloudflare Worker
  *
- * NOTE: This file matches the architecture that is CURRENTLY LIVE in
- * production (proxy to Supabase Edge Functions). It intentionally does
- * NOT include the MTProto/teleproto-based rewrite that exists elsewhere
- * in this repo's history — that version was never deployed and uses a
- * different architecture (direct Telegram user-session calls from the
- * Worker instead of proxying to Supabase). Decide separately whether to
- * migrate to that approach; don't merge it blindly with this file.
- *
- * New in this version: /api/creator/* proxy route for the Creator
- * Dashboard feature (see supabase/functions/creator-dashboard).
+ * Proxies Discovery, Search and Creator APIs to Supabase.
+ * It also extracts public Telegram post preview images.
  */
 
 const DISCOVERY_API_URL =
@@ -35,7 +27,8 @@ const CORS_HEADERS: Record<string, string> = {
     "x-telegram-init-data",
     "x-request-id"
   ].join(", "),
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS,PUT,PATCH,DELETE",
+  "Access-Control-Allow-Methods":
+    "GET,POST,OPTIONS,PUT,PATCH,DELETE",
   "Cache-Control": "no-store"
 };
 
@@ -51,7 +44,10 @@ function corsHeaders(request: Request): Headers {
   return headers;
 }
 
-function isAllowedOrigin(origin: string, requestUrl: string): boolean {
+function isAllowedOrigin(
+  origin: string,
+  requestUrl: string
+): boolean {
   try {
     const source = new URL(origin);
     const target = new URL(requestUrl);
@@ -97,7 +93,8 @@ function requestId(request: Request): string {
 }
 
 /* =========================================================
-   TELEGRAM SEARCH (with v6 -> v5 fallback)
+   TELEGRAM SEARCH
+   Primary v6 with v5 fallback
 ========================================================= */
 
 async function callSearchBackend(
@@ -113,6 +110,7 @@ async function callSearchBackend(
   target.searchParams.set("limit", limit);
 
   const headers = new Headers();
+
   const initData = request.headers.get(
     "x-telegram-init-data"
   );
@@ -230,4 +228,489 @@ async function telegramSearch(
   const items = Array.isArray(data?.items)
     ? data.items
     : Array.isArray(data?.results)
-      ?
+      ? data.results
+      : [];
+
+  return json(
+    {
+      ...data,
+      ok: data?.ok !== false && response.ok,
+      query,
+      count: items.length,
+      items,
+      results: items,
+      request_id: data?.request_id || id
+    },
+    response.status,
+    request
+  );
+}
+
+async function telegramHealth(
+  request: Request
+): Promise<Response> {
+  return json(
+    {
+      ok: true,
+      service: "telegram-search-proxy",
+      backend: "discovery-search-v6",
+      preview_image_proxy: true,
+      build: "telegram-preview-v1",
+      request_id: requestId(request)
+    },
+    200,
+    request
+  );
+}
+
+/* =========================================================
+   TELEGRAM POST PREVIEW IMAGE
+
+   Gets the public Telegram post page, extracts its OG image
+   and safely returns the image to the frontend.
+========================================================= */
+
+function publicTelegramPost(
+  value: string
+): URL | null {
+  try {
+    const input = new URL(value);
+
+    const allowedHosts = [
+      "t.me",
+      "www.t.me",
+      "telegram.me",
+      "www.telegram.me"
+    ];
+
+    if (!allowedHosts.includes(input.hostname)) {
+      return null;
+    }
+
+    const match = input.pathname.match(
+      /^\/(?:s\/)?([A-Za-z0-9_]{4,})\/(\d+)/
+    );
+
+    if (!match) {
+      return null;
+    }
+
+    const channel = match[1];
+    const messageId = match[2];
+
+    return new URL(
+      `https://t.me/s/${channel}/${messageId}`
+    );
+  } catch {
+    return null;
+  }
+}
+
+function decodeHtmlAttribute(
+  value: string
+): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&#x27;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function telegramOgImage(
+  html: string
+): string | null {
+  const tags =
+    html.match(/<meta\b[^>]*>/gi) || [];
+
+  for (const tag of tags) {
+    const key = tag.match(
+      /(?:property|name)=["'](?:og:image|twitter:image)(?::secure_url)?["']/i
+    );
+
+    if (!key) {
+      continue;
+    }
+
+    const content = tag.match(
+      /content=["']([^"']+)["']/i
+    )?.[1];
+
+    if (content) {
+      return decodeHtmlAttribute(content);
+    }
+  }
+
+  return null;
+}
+
+async function telegramPreviewImage(
+  request: Request
+): Promise<Response> {
+  if (
+    request.method !== "GET" &&
+    request.method !== "HEAD"
+  ) {
+    return json(
+      {
+        ok: false,
+        error: "Method not allowed"
+      },
+      405,
+      request
+    );
+  }
+
+  const incoming = new URL(request.url);
+
+  const post = publicTelegramPost(
+    incoming.searchParams.get("url") || ""
+  );
+
+  if (!post) {
+    return json(
+      {
+        ok: false,
+        error: "Invalid public Telegram post URL"
+      },
+      400,
+      request
+    );
+  }
+
+  try {
+    const page = await fetch(post.toString(), {
+      headers: {
+        Accept: "text/html,application/xhtml+xml",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/1.0)"
+      },
+      redirect: "follow"
+    });
+
+    if (!page.ok) {
+      return json(
+        {
+          ok: false,
+          error: "Telegram preview unavailable"
+        },
+        404,
+        request
+      );
+    }
+
+    const html = await page.text();
+    const imageValue = telegramOgImage(html);
+
+    if (!imageValue) {
+      return json(
+        {
+          ok: false,
+          error: "Telegram post has no preview image"
+        },
+        404,
+        request
+      );
+    }
+
+    const imageUrl = new URL(imageValue);
+
+    if (imageUrl.protocol !== "https:") {
+      return json(
+        {
+          ok: false,
+          error: "Unsupported preview image URL"
+        },
+        400,
+        request
+      );
+    }
+
+    const image = await fetch(imageUrl.toString(), {
+      headers: {
+        Accept:
+          "image/avif,image/webp,image/*,*/*;q=0.8"
+      },
+      redirect: "follow"
+    });
+
+    const contentType =
+      image.headers.get("content-type") || "";
+
+    if (
+      !image.ok ||
+      !contentType.startsWith("image/")
+    ) {
+      return json(
+        {
+          ok: false,
+          error:
+            "Telegram preview image unavailable"
+        },
+        404,
+        request
+      );
+    }
+
+    const headers = corsHeaders(request);
+
+    headers.set("Content-Type", contentType);
+    headers.set(
+      "Cache-Control",
+      "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
+    );
+    headers.set(
+      "X-Content-Type-Options",
+      "nosniff"
+    );
+
+    return new Response(
+      request.method === "HEAD"
+        ? null
+        : image.body,
+      {
+        status: 200,
+        headers
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Telegram preview error",
+      post.toString(),
+      error
+    );
+
+    return json(
+      {
+        ok: false,
+        error:
+          "Telegram preview service is unreachable"
+      },
+      502,
+      request
+    );
+  }
+}
+
+/* =========================================================
+   GENERIC API PROXY
+   Used for /api/discovery and /api/creator
+========================================================= */
+
+function getSubPath(
+  url: URL,
+  prefix: string
+): string | null {
+  if (!url.pathname.startsWith(prefix)) {
+    return null;
+  }
+
+  const remainder =
+    url.pathname.slice(prefix.length) || "/";
+
+  return remainder.startsWith("/")
+    ? remainder
+    : `/${remainder}`;
+}
+
+async function proxyJsonApi(
+  request: Request,
+  baseUrl: string,
+  path: string
+): Promise<Response> {
+  const id = requestId(request);
+  const incoming = new URL(request.url);
+  const target = new URL(baseUrl);
+
+  target.pathname = `${target.pathname}${path}`;
+  target.search = incoming.search;
+
+  const headers = new Headers();
+
+  for (const name of [
+    "authorization",
+    "apikey",
+    "content-type",
+    "x-client-info",
+    "x-telegram-init-data",
+    "x-request-id"
+  ]) {
+    const value = request.headers.get(name);
+
+    if (value) {
+      headers.set(name, value);
+    }
+  }
+
+  headers.set("x-request-id", id);
+
+  let body: BodyInit | undefined;
+
+  if (
+    request.method !== "GET" &&
+    request.method !== "HEAD"
+  ) {
+    body = await request.arrayBuffer();
+  }
+
+  try {
+    const response = await fetch(
+      target.toString(),
+      {
+        method: request.method,
+        headers,
+        body,
+        redirect: "follow"
+      }
+    );
+
+    const responseHeaders =
+      new Headers(response.headers);
+
+    const origin =
+      request.headers.get("Origin");
+
+    if (
+      origin &&
+      isAllowedOrigin(origin, request.url)
+    ) {
+      responseHeaders.set(
+        "Access-Control-Allow-Origin",
+        origin
+      );
+
+      responseHeaders.set(
+        "Vary",
+        "Origin"
+      );
+    } else {
+      responseHeaders.delete(
+        "Access-Control-Allow-Origin"
+      );
+    }
+
+    responseHeaders.set(
+      "Access-Control-Allow-Headers",
+      CORS_HEADERS[
+        "Access-Control-Allow-Headers"
+      ]
+    );
+
+    responseHeaders.set(
+      "Access-Control-Allow-Methods",
+      CORS_HEADERS[
+        "Access-Control-Allow-Methods"
+      ]
+    );
+
+    responseHeaders.set(
+      "Cache-Control",
+      "no-store"
+    );
+
+    responseHeaders.set(
+      "X-Request-Id",
+      response.headers.get("X-Request-Id") ||
+        id
+    );
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    });
+  } catch (error) {
+    console.error(
+      "Proxy error",
+      baseUrl,
+      id,
+      error
+    );
+
+    return json(
+      {
+        ok: false,
+        error:
+          "Backend service is unreachable",
+        request_id: id
+      },
+      502,
+      request
+    );
+  }
+}
+
+/* =========================================================
+   CLOUDFLARE WORKER ENTRYPOINT
+========================================================= */
+
+interface WorkerEnvironment {
+  ASSETS: {
+    fetch: typeof fetch;
+  };
+}
+
+export default {
+  async fetch(
+    request: Request,
+    env: WorkerEnvironment
+  ): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders(request)
+      });
+    }
+
+    if (
+      url.pathname ===
+      "/api/telegram/search"
+    ) {
+      return telegramSearch(request);
+    }
+
+    if (
+      url.pathname ===
+      "/api/telegram/health"
+    ) {
+      return telegramHealth(request);
+    }
+
+    if (
+      url.pathname ===
+      "/api/telegram/preview-image"
+    ) {
+      return telegramPreviewImage(request);
+    }
+
+    const discoveryPath = getSubPath(
+      url,
+      "/api/discovery"
+    );
+
+    if (discoveryPath) {
+      return proxyJsonApi(
+        request,
+        DISCOVERY_API_URL,
+        discoveryPath
+      );
+    }
+
+    const creatorPath = getSubPath(
+      url,
+      "/api/creator"
+    );
+
+    if (creatorPath) {
+      return proxyJsonApi(
+        request,
+        CREATOR_API_URL,
+        creatorPath
+      );
+    }
+
+    return env.ASSETS.fetch(request);
+  }
+};
