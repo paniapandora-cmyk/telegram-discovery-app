@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- DISCOVERY_UI_BUILD: telegram-native-discovery-v14-image-fallback -->
+<!-- DISCOVERY_UI_BUILD: midnight-reference-v15-2026-09-02 -->
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -1232,6 +1232,266 @@ h1{
     transition:none!important;
   }
 }
+
+/* v15 — faithful implementation of the approved Midnight Persian reference */
+:root{
+  --bg:var(--tg-theme-bg-color,#06111f);
+  --surface:var(--tg-theme-secondary-bg-color,#0d1a29);
+  --accent:var(--tg-theme-button-color,#168fe5);
+  --line:rgba(151,190,224,.16);
+  --safeT:max(72px,var(--tg-content-safe-area-inset-top,0px));
+}
+
+html,body{background:#06111f}
+body{
+  background:
+    radial-gradient(360px 260px at 92% 2%,rgba(35,120,214,.12),transparent 72%),
+    radial-gradient(300px 240px at -12% 54%,rgba(23,100,174,.07),transparent 70%),
+    #06111f;
+}
+
+.app{
+  max-width:680px;
+  padding:calc(var(--safeT) + 4px) 15px calc(96px + var(--safeB));
+}
+
+.top{
+  top:var(--safeT);
+  min-height:50px;
+  padding:1px 1px 8px;
+  background:linear-gradient(rgba(6,17,31,.97) 78%,transparent);
+}
+
+.brand{gap:10px}
+.mark{
+  width:42px;
+  height:42px;
+  border-radius:16px;
+  font-size:22px;
+  background:linear-gradient(145deg,#4099f2 5%,#795eea 57%,#d85bd1);
+  box-shadow:0 8px 28px rgba(43,131,226,.24),inset 0 1px rgba(255,255,255,.24);
+}
+h1{font-size:1.22rem}
+.eyebrow{margin-top:3px;font-size:.78rem}
+.status{min-height:36px;margin-top:7px;padding:0 12px;background:rgba(255,255,255,.035)}
+
+.discover{display:none!important}
+
+.searchbar{
+  top:calc(var(--safeT) + 51px);
+  min-height:46px;
+  margin-bottom:12px;
+  padding:4px;
+  border-color:rgba(157,193,224,.17);
+  border-radius:22px;
+  background:rgba(13,26,41,.9);
+  box-shadow:inset 0 1px rgba(255,255,255,.025),0 12px 30px rgba(0,0,0,.2);
+}
+.searchbar input{min-height:38px;padding:0 15px;font-size:.91rem}
+.icon{width:38px;min-width:38px;min-height:38px;border-radius:14px;background:transparent}
+
+.tabs{
+  min-height:38px;
+  margin-bottom:12px;
+  padding:2px;
+  gap:2px;
+  border-color:rgba(151,190,224,.14);
+  border-radius:23px;
+  background:rgba(4,12,23,.32);
+}
+.tab{min-height:34px;border-radius:19px;font-size:.86rem}
+.tab.active{
+  background:linear-gradient(145deg,#178fdf,#1685d7);
+  box-shadow:0 7px 20px rgba(21,139,222,.23),inset 0 1px rgba(255,255,255,.12);
+}
+
+.head{margin:0 3px 8px}
+.head h2{font-size:1.16rem}
+.head span{display:none}
+
+.grid{gap:11px}
+.card{
+  min-height:152px;
+  border-color:rgba(153,192,225,.15);
+  border-radius:22px;
+  background:#0a1726;
+  box-shadow:0 10px 28px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.025);
+  contain-intrinsic-size:152px;
+}
+.card.hero{
+  grid-column:1/-1;
+  min-height:226px;
+  border-radius:25px;
+}
+.card.tall,.card.wide{min-height:152px}
+.card.wide{grid-column:auto}
+
+.card.media-card{--caption-h:57px}
+.card.hero.media-card{--caption-h:90px}
+.mediaStage{background:#0c1b2a}
+.mediaStage .media{object-position:center 42%}
+.card.media-card .copy{
+  height:var(--caption-h);
+  padding:8px 10px 9px;
+  border-top-color:rgba(149,190,225,.12);
+  background:linear-gradient(145deg,#0e1d2e,#091521);
+}
+.card.hero.media-card .copy{padding:10px 13px 12px}
+.card.media-card .channel{margin-bottom:3px;font-size:.71rem}
+.card.media-card .title{font-size:.77rem;line-height:1.55;-webkit-line-clamp:2}
+.card.hero.media-card .channel{margin-bottom:7px;font-size:.82rem}
+.card.hero.media-card .title{font-size:.93rem;line-height:1.72}
+.card.media-card .meta{display:none}
+
+.save{
+  top:10px;
+  right:10px;
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  background:rgba(6,18,30,.77);
+}
+.card.hero .save{top:12px;right:12px;width:42px;height:42px}
+.type{
+  top:9px;
+  left:9px;
+  min-width:0;
+  height:28px;
+  padding:0 9px;
+  border-radius:10px;
+  color:#4cb8f0;
+  background:rgba(6,18,31,.78);
+  font-size:.64rem;
+}
+.card.hero .type{display:none}
+.reason{
+  margin-right:auto;
+  padding:5px 10px;
+  color:#afc1d1;
+  background:rgba(255,255,255,.055);
+  font-size:.66rem;
+}
+
+.avatar{width:28px;height:28px;flex-basis:28px;border-radius:50%;background:#dcecf5;color:#142334}
+.card.hero .avatar{width:34px;height:34px;flex-basis:34px}
+.avatar,.nativeAvatar{position:relative;overflow:hidden}
+.avatar img,.nativeAvatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+.card.native-card{background:linear-gradient(145deg,#0d1c2b,#081421)}
+.nativePreview{
+  padding:14px 13px 12px;
+  border-radius:22px;
+  background:
+    radial-gradient(160px 120px at 12% 0,color-mix(in srgb,var(--g1) 28%,transparent),transparent 72%),
+    linear-gradient(145deg,#0d1c2b,#081421);
+}
+.nativePreview:before{
+  content:'“';
+  position:absolute;
+  top:7px;
+  right:14px;
+  color:#32aaf0;
+  font-family:Georgia,serif;
+  font-size:2.9rem;
+  line-height:1;
+}
+.nativeHead{order:3;margin-top:auto;padding:7px 0 0}
+.nativeAvatar{width:30px;height:30px;flex-basis:30px;border-radius:50%}
+.nativeName{font-size:.7rem}
+.nativeMeta{display:none}
+.nativeMessage{
+  order:1;
+  margin:0;
+  padding:31px 1px 8px;
+  font-size:.88rem;
+  font-weight:750;
+  line-height:1.86;
+  -webkit-line-clamp:4;
+}
+.nativeFoot{order:2;display:none}
+.card.native-card .save{display:none}
+.hero.native-card .nativeMessage{font-size:1.02rem;-webkit-line-clamp:6}
+
+.sk{min-height:152px;border-radius:22px}
+.sk:first-child{min-height:226px}
+
+.nav{
+  right:15px;
+  left:15px;
+  height:66px;
+  padding:5px;
+  border-color:rgba(151,190,224,.17);
+  border-radius:28px;
+  background:rgba(12,25,40,.94);
+  box-shadow:0 18px 52px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.03);
+}
+.nav button{min-height:56px;border-radius:21px;font-size:.7rem}
+.nav button.active{
+  color:#fff;
+  background:linear-gradient(145deg,rgba(29,115,199,.42),rgba(28,79,139,.35));
+}
+.nav button.active:after{background:#37aef0}
+
+.mode-trending .card,
+.mode-trending .card.hero,
+.mode-trending .card.tall,
+.mode-trending .card.wide{min-height:146px}
+.mode-trending .card.media-card{min-height:146px}
+.mode-trending .mediaStage{width:40%}
+.mode-trending .card.media-card .copy{width:60%}
+
+.mode-fresh .card,.mode-fresh .card.hero{min-height:190px}
+.mode-fresh .card.hero{grid-column:auto}
+
+.mode-explore .grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-auto-rows:148px;
+  gap:3px;
+  padding:0 3px 12px;
+}
+.mode-explore .top,.mode-explore .searchbar{margin-right:12px;margin-left:12px}
+.mode-explore .card{border-radius:5px}
+.mode-explore .card.hero{grid-column:span 2;grid-row:span 2}
+.mode-explore .card.tall{grid-row:span 2}
+.mode-explore .card.wide{grid-column:span 2}
+.mode-explore .card.media-card{--caption-h:46px}
+.mode-explore .card.hero.media-card{--caption-h:62px}
+.mode-explore .nativePreview{border-radius:5px;padding:8px}
+.mode-explore .nativeMessage{padding-top:27px;font-size:.68rem;line-height:1.65}
+.mode-explore .nativeHead{display:none}
+.mode-explore .type{display:none}
+.mode-explore .save{display:none}
+
+.mode-search .card,.mode-search .card.hero,.mode-search .card.tall,.mode-search .card.wide,
+.mode-saved .card,.mode-saved .card.hero,.mode-saved .card.tall,.mode-saved .card.wide{min-height:150px}
+
+.viewer{padding-top:calc(var(--safeT) + 24px)}
+.viewerMedia{
+  height:clamp(230px,34svh,430px);
+  min-height:clamp(230px,34svh,430px);
+  flex-basis:clamp(230px,34svh,430px);
+  border-radius:25px;
+}
+.viewerBody{padding-top:15px}
+
+@media(max-width:390px){
+  .app{padding-right:12px;padding-left:12px}
+  .card{min-height:148px}
+  .card.hero{min-height:222px}
+  .card.media-card{--caption-h:55px}
+  .card.hero.media-card{--caption-h:88px}
+  .mode-explore .grid{grid-auto-rows:142px;padding-right:3px;padding-left:3px}
+  .nav{right:12px;left:12px}
+}
+
+@media(min-width:680px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card.hero{grid-column:1/-1;grid-row:auto;min-height:360px}
+  .card{min-height:230px}
+  .card.hero.media-card{--caption-h:118px}
+  .card.media-card{--caption-h:78px}
+  .mode-explore .grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:220px}
+}
 </style>
 </head>
 
@@ -1483,6 +1743,20 @@ h1{
     )[1] ||
     "Telegram";
 
+  const channelUsername = item => {
+    const explicit = String(item.channel_username || "")
+      .replace(/^@/, "")
+      .trim();
+
+    if (explicit) return explicit;
+
+    return (
+      String(item.source_url || item.url || "")
+        .match(/t\.me\/(?:s\/)?([^/]+)/)?.[1] ||
+      ""
+    );
+  };
+
   const safeUrl = value => {
     try {
       const url = new URL(value);
@@ -1503,6 +1777,43 @@ h1{
       item.url ||
       item.link
     );
+
+  const channelAvatarUrl = item => {
+    const direct = safeUrl(
+      item.channel_avatar_url ||
+      item.channel_photo_url ||
+      item.creator_avatar_url ||
+      item.avatar_url
+    );
+
+    if (direct) return direct;
+
+    const username = channelUsername(item);
+
+    return username
+      ? `https://t.me/i/userpic/320/${encodeURIComponent(username)}.jpg`
+      : "";
+  };
+
+  const avatarMarkup = (item, className) => {
+    const label = escapeHtml(channel(item).slice(0, 1));
+    const image = channelAvatarUrl(item);
+
+    return `
+      <span class="${className}">
+        ${label}
+        ${image ? `
+          <img
+            src="${escapeHtml(image)}"
+            alt=""
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            onerror="this.remove()"
+          >
+        ` : ""}
+      </span>
+    `;
+  };
 
   const contentType = item =>
     String(item.content_type || "TEXT").toUpperCase();
@@ -1592,6 +1903,18 @@ h1{
     MIXED: "چند‌رسانه‌ای"
   })[type] || "پست";
 
+  const topicLabel = item => {
+    const value = cleanText(
+      item.category_name ||
+      item.category ||
+      item.topic ||
+      item.primary_interest ||
+      typeName(contentType(item))
+    );
+
+    return value.slice(0, 18) || "تلگرام";
+  };
+
   const hasVisualMedia = item => {
     const type = contentType(item);
 
@@ -1611,6 +1934,32 @@ h1{
       )
     );
   };
+
+  function arrangeItems(items, mode) {
+    const arranged = [...items];
+
+    if (!["feed", "fresh"].includes(mode) || arranged.length < 2) {
+      return arranged;
+    }
+
+    const heroIndex = arranged.findIndex(hasVisualMedia);
+
+    if (heroIndex > 0) {
+      const [hero] = arranged.splice(heroIndex, 1);
+      arranged.unshift(hero);
+    }
+
+    const quoteIndex = arranged.findIndex(
+      (item, index) => index > 0 && !hasVisualMedia(item)
+    );
+
+    if (quoteIndex > 4) {
+      const [quote] = arranged.splice(quoteIndex, 1);
+      arranged.splice(Math.min(3, arranged.length), 0, quote);
+    }
+
+    return arranged;
+  }
 
   function imageErrorCode() {
     return `
@@ -1644,7 +1993,7 @@ h1{
             class="media"
             src="${escapeHtml(asset)}"
             ${poster || proxyPreview
-              ? `poster="${escapeHtml(proxyPreview || poster)}"`
+              ? `poster="${escapeHtml(poster || proxyPreview)}"`
               : ""}
             muted
             loop
@@ -1694,9 +2043,7 @@ h1{
   const nativeMarkup = (item, type) => `
     <div class="nativePreview">
       <div class="nativeHead">
-        <span class="nativeAvatar">
-          ${escapeHtml(channel(item).slice(0, 1))}
-        </span>
+        ${avatarMarkup(item, "nativeAvatar")}
 
         <div class="nativeIdentity">
           <div class="nativeName">
@@ -1778,15 +2125,10 @@ h1{
 
   function cardClass(item, index) {
     if (index === 0) return "hero";
-    if (index % 7 === 0) return "wide";
 
-    if (
-      ["IMAGE", "PHOTO", "VIDEO", "DOCUMENT"].includes(
-        contentType(item)
-      ) &&
-      index % 3 === 1
-    ) {
-      return "tall";
+    if (S.mode === "explore") {
+      if (index % 9 === 4) return "wide";
+      if (index % 7 === 2) return "tall";
     }
 
     return "";
@@ -1839,7 +2181,7 @@ h1{
           }
 
           ${visual
-            ? `<span class="type">${typeIcon(type)}</span>`
+            ? `<span class="type">${escapeHtml(topicLabel(item))}</span>`
             : ""
           }
 
@@ -1860,9 +2202,7 @@ h1{
           ${visual ? `
             <div class="copy">
               <div class="channel">
-                <span class="avatar">
-                  ${escapeHtml(channel(item).slice(0, 1))}
-                </span>
+                ${avatarMarkup(item, "avatar")}
 
                 <span>${escapeHtml(channel(item))}</span>
                 ${reason}
@@ -2048,7 +2388,10 @@ h1{
         signal: controller.signal
       });
 
-      S.items = data.items || data.results || [];
+      S.items = arrangeItems(
+        data.items || data.results || [],
+        mode
+      );
       S.cache[mode] = S.items;
 
       render();
@@ -2273,7 +2616,7 @@ h1{
 
     if (isVideo) {
       viewerVideo.src = asset;
-      viewerVideo.poster = proxyPreview || poster || "";
+      viewerVideo.poster = poster || proxyPreview || "";
 
       viewerVideo.onerror = () => {
         if (telegramEmbed) {
@@ -2302,8 +2645,21 @@ h1{
     $("viewerChannel").textContent =
       channel(item);
 
-    $("viewerAvatar").textContent =
-      channel(item).slice(0, 1);
+    const viewerAvatar = $("viewerAvatar");
+    const avatarImage = channelAvatarUrl(item);
+
+    viewerAvatar.textContent = channel(item).slice(0, 1);
+
+    if (avatarImage) {
+      const imageElement = document.createElement("img");
+
+      imageElement.src = avatarImage;
+      imageElement.alt = "";
+      imageElement.referrerPolicy = "no-referrer";
+      imageElement.onerror = () => imageElement.remove();
+
+      viewerAvatar.append(imageElement);
+    }
 
     $("viewerMeta").textContent =
       formatDate(item.published_at || item.date);
