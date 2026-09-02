@@ -57,7 +57,7 @@ jobs:
           set -euo pipefail
 
           grep -qi "Telegram" /tmp/index.html
-          grep -q "Telegram.WebApp" index.html
+          grep -Eq 'Telegram(\?\.|\.)WebApp' index.html
 
           echo "Telegram WebApp integration found."
 
