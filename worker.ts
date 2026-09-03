@@ -9,10 +9,10 @@ const DISCOVERY_API_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-api-live";
 
 const SEARCH_API_URL =
-  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v6";
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v7";
 
 const SEARCH_FALLBACK_URL =
-  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v5";
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v6";
 
 const CREATOR_API_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-dashboard";
@@ -94,7 +94,7 @@ function requestId(request: Request): string {
 
 /* =========================================================
    TELEGRAM SEARCH
-   Primary v6 with v5 fallback
+   Primary v7 with v6 fallback
 ========================================================= */
 
 async function callSearchBackend(
@@ -185,7 +185,13 @@ async function telegramSearch(
         : String(error);
   }
 
-  if (!response || !response.ok) {
+  // Retry only infrastructure failures. A client/auth/rate-limit response from
+  // v7 must be preserved; falling back would bypass its validation rules.
+  if (
+    !response ||
+    response.status === 404 ||
+    response.status >= 500
+  ) {
     try {
       response = await callSearchBackend(
         SEARCH_FALLBACK_URL,
@@ -253,9 +259,11 @@ async function telegramHealth(
     {
       ok: true,
       service: "telegram-search-proxy",
-      backend: "discovery-search-v6",
+      backend: "discovery-search-v7",
       preview_image_proxy: true,
-      build: "telegram-preview-v3-embed-first",
+      search_scope: "public_telegram",
+      search_types: ["user", "bot", "channel", "group", "post"],
+      build: "telegram-global-search-v20",
       request_id: requestId(request)
     },
     200,
