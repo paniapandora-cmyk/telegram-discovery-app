@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- DISCOVERY_UI_BUILD: midnight-v20-global-public-telegram-search-2026-09-03 -->
+<!-- DISCOVERY_UI_BUILD: midnight-v21-growth-suite-2026-09-03 -->
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -1018,7 +1018,7 @@ h1{
   height:var(--nav-h);
   min-height:var(--nav-h);
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:3px;
   margin:8px auto var(--safe-b);
   padding:5px;
@@ -1077,6 +1077,28 @@ h1{
   border-radius:999px;
   background:#4cc3ff;
   transform:translateX(50%);
+}
+
+.navBadge{
+  position:absolute;
+  top:5px;
+  right:calc(50% - 21px);
+  min-width:17px;
+  height:17px;
+  display:none;
+  place-items:center;
+  padding:0 4px;
+  border:2px solid #0c1b2c;
+  border-radius:999px;
+  color:#fff;
+  background:#ff4d72;
+  font-size:.58rem;
+  font-style:normal;
+  line-height:1;
+}
+
+.navBadge.show{
+  display:grid;
 }
 
 .back{
@@ -1178,6 +1200,23 @@ h1{
   width:40px;
   height:40px;
   flex-basis:40px;
+}
+
+.viewerFollow{
+  min-height:40px;
+  margin-inline-start:auto;
+  padding:0 13px;
+  border:1px solid rgba(99,199,255,.28);
+  border-radius:999px;
+  color:#dff5ff;
+  background:rgba(40,137,207,.14);
+  cursor:pointer;
+}
+
+.viewerFollow.following{
+  border-color:rgba(61,220,151,.28);
+  color:#bff3dc;
+  background:rgba(31,130,96,.16);
 }
 
 .viewer h3{
@@ -1284,6 +1323,346 @@ h1{
   transform:translate(50%,0);
 }
 
+.mode-hub .discover,.mode-hub .tabs,.mode-hub .searchbar,
+.mode-history .discover,.mode-history .tabs,.mode-history .searchbar{
+  display:none!important;
+}
+
+.mode-hub .head,.mode-history .head{
+  margin-top:8px;
+}
+
+.mode-hub .grid,.mode-history .grid{
+  grid-template-columns:minmax(0,1fr);
+}
+
+.hub{
+  display:grid;
+  gap:12px;
+}
+
+.hubHero,.hubPanel{
+  border:1px solid var(--line);
+  border-radius:22px;
+  background:linear-gradient(145deg,rgba(16,35,56,.96),rgba(8,22,37,.96));
+  box-shadow:0 12px 28px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.03);
+}
+
+.hubHero{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:16px;
+  background:
+    radial-gradient(220px 130px at 100% 0,rgba(83,140,246,.2),transparent 72%),
+    linear-gradient(145deg,#10243a,#091827);
+}
+
+.hubAvatar{
+  width:54px;
+  height:54px;
+  flex:0 0 54px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:19px;
+  color:#fff;
+  background:linear-gradient(145deg,#318fe6,#8c56dd);
+  font-size:1.25rem;
+  font-weight:900;
+}
+
+.hubIdentity{
+  min-width:0;
+}
+
+.hubIdentity b{
+  display:block;
+  font-size:1rem;
+}
+
+.hubIdentity span,.hubHint{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:.73rem;
+  line-height:1.7;
+}
+
+.hubStats{
+  margin-inline-start:auto;
+  text-align:center;
+}
+
+.hubStats b{
+  display:block;
+  color:#78d2ff;
+  font-size:1.15rem;
+}
+
+.hubStats span{
+  color:var(--muted);
+  font-size:.66rem;
+}
+
+.hubQuick{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.hubQuick button,.hubButton{
+  min-height:50px;
+  padding:9px 12px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  color:#eef7ff;
+  background:rgba(255,255,255,.035);
+  cursor:pointer;
+}
+
+.hubQuick button{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  text-align:right;
+}
+
+.hubQuick button b{
+  color:#75cdfb;
+  font-size:1rem;
+}
+
+.hubPanel{
+  padding:14px;
+}
+
+.hubPanelHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:11px;
+}
+
+.hubPanelHead h3{
+  margin:0;
+  font-size:.94rem;
+}
+
+.hubPanelHead button{
+  min-height:40px;
+  padding:0 10px;
+  border:0;
+  border-radius:12px;
+  color:#71ccff;
+  background:rgba(80,158,217,.09);
+  cursor:pointer;
+}
+
+.hubList{
+  display:grid;
+  gap:8px;
+}
+
+.hubRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:58px;
+  padding:10px;
+  border:1px solid rgba(153,195,231,.1);
+  border-radius:15px;
+  color:inherit;
+  background:rgba(255,255,255,.022);
+  text-align:right;
+}
+
+button.hubRow{
+  width:100%;
+  cursor:pointer;
+}
+
+.hubRowDot{
+  width:9px;
+  height:9px;
+  flex:0 0 9px;
+  border-radius:50%;
+  background:#61758a;
+}
+
+.hubRowDot.unread{
+  background:#4cc3ff;
+  box-shadow:0 0 10px rgba(76,195,255,.6);
+}
+
+.hubRowCopy{
+  min-width:0;
+  flex:1;
+}
+
+.hubRowCopy b,.hubRowCopy span{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.hubRowCopy b{
+  font-size:.8rem;
+}
+
+.hubRowCopy span{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:.69rem;
+}
+
+.topicPicker{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+}
+
+.topicChip{
+  min-height:42px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:var(--muted);
+  background:transparent;
+  cursor:pointer;
+}
+
+.topicChip.selected{
+  border-color:rgba(82,193,247,.35);
+  color:#fff;
+  background:rgba(36,137,205,.23);
+}
+
+.hubSave{
+  width:100%;
+  margin-top:11px;
+  color:#fff;
+  background:linear-gradient(145deg,#258edb,#5f60dc);
+  font-weight:800;
+}
+
+.settingRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:48px;
+  padding:8px 2px;
+  border-bottom:1px solid rgba(153,195,231,.08);
+  font-size:.78rem;
+}
+
+.settingRow:last-child{
+  border-bottom:0;
+}
+
+.settingRow input{
+  width:22px;
+  height:22px;
+  accent-color:#2fa4ec;
+}
+
+.creatorMetricGrid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+}
+
+.creatorCard{
+  display:grid;
+  gap:10px;
+  padding:12px;
+  border:1px solid rgba(153,195,231,.1);
+  border-radius:16px;
+  background:rgba(255,255,255,.02);
+}
+
+.creatorCardHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.creatorCardHead b{
+  font-size:.82rem;
+}
+
+.creatorCardHead button{
+  min-height:38px;
+  padding:0 10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  color:#7ad2ff;
+  background:transparent;
+  cursor:pointer;
+}
+
+.creatorMetric{
+  padding:10px 5px;
+  border-radius:13px;
+  background:rgba(255,255,255,.03);
+  text-align:center;
+}
+
+.creatorMetric b,.creatorMetric span{
+  display:block;
+}
+
+.creatorMetric b{
+  color:#dff5ff;
+  font-size:.88rem;
+}
+
+.creatorMetric span{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:.62rem;
+}
+
+.claimForm{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:7px;
+  margin-top:10px;
+}
+
+.claimForm input{
+  min-width:0;
+  min-height:46px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  outline:0;
+  color:#fff;
+  background:rgba(2,13,24,.5);
+}
+
+.claimForm button{
+  min-height:46px;
+  padding:0 14px;
+  border:0;
+  border-radius:14px;
+  color:#fff;
+  background:#277ebf;
+  cursor:pointer;
+}
+
+.hubEmpty{
+  padding:12px 4px;
+  color:var(--muted);
+  font-size:.74rem;
+  line-height:1.8;
+  text-align:center;
+}
+
 @media(max-width:390px){
   .app{
     padding-right:12px;
@@ -1319,6 +1698,10 @@ h1{
 
   .nav{
     width:calc(100% - 18px);
+  }
+
+  .nav button{
+    font-size:.63rem;
   }
 }
 
@@ -1504,6 +1887,17 @@ h1{
     </span>
     ذخیره‌ها
   </button>
+
+  <button id="hub">
+    <span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.5"/>
+        <path d="M5 20c.6-4 3-6 7-6s6.4 2 7 6"/>
+      </svg>
+    </span>
+    <i class="navBadge" id="hubBadge">۰</i>
+    من
+  </button>
 </nav>
 
 <div class="back" id="back"></div>
@@ -1534,6 +1928,7 @@ h1{
       <span class="avatar" id="viewerAvatar"></span>
       <b id="viewerChannel"></b>
       <span class="eyebrow" id="viewerMeta"></span>
+      <button class="viewerFollow" id="viewerFollow" hidden>دنبال‌کردن</button>
     </div>
 
     <h3 id="viewerTitle"></h3>
@@ -1600,6 +1995,9 @@ h1{
   const API_PATH = '/api/discovery';
   const API = `${ORIGIN}${API_PATH}`;
   const PREVIEW = `${ORIGIN}/api/telegram/preview-image`;
+  const SESSION_ID = crypto.randomUUID
+    ? crypto.randomUUID()
+    : "00000000-0000-4000-8000-000000000000";
 
   const S = {
     mode: "feed",
@@ -1611,7 +2009,12 @@ h1{
     loading: false,
     request: null,
     returnFocus: null,
-    cache: {}
+    cache: {},
+    observer: null,
+    impressed: new Set(),
+    viewerOpenedAt: 0,
+    topics: [],
+    preferences: null
   };
 
   const $ = id => document.getElementById(id);
@@ -2316,6 +2719,14 @@ h1{
     return item.content_id || item.id || "";
   };
 
+  const internalCreatorId = item => {
+    const value = String(item?.creator_id || "");
+
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+      ? value
+      : "";
+  };
+
   const requestHeaders = () => ({
     "x-telegram-init-data": tg?.initData || "",
     "content-type": "application/json"
@@ -2387,15 +2798,46 @@ h1{
           <button data-quick-query="زبان بدن">زبان بدن</button>
           <button data-quick-query="هوش مصنوعی">هوش مصنوعی</button>
         </div>
+
+        <div class="quickSearches" id="recentSearches" aria-label="جست‌وجوهای اخیر" hidden></div>
       </div>
     `;
 
+    bindQuickSearchButtons();
+    loadRecentSearches().catch(() => {});
+  }
+
+  function bindQuickSearchButtons() {
     grid.querySelectorAll("[data-quick-query]").forEach(button => {
       button.onclick = () => {
         search.value = button.dataset.quickQuery;
         performSearch(search.value);
       };
     });
+  }
+
+  async function loadRecentSearches() {
+    const target = $("recentSearches");
+
+    if (!target || !isTelegramHost) {
+      return;
+    }
+
+    const data = await api("/search-history?limit=10");
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    if (!items.length || !$("recentSearches")) {
+      return;
+    }
+
+    target.hidden = false;
+    target.innerHTML = items.map(item => `
+      <button data-quick-query="${escapeHtml(item.query)}">
+        ${escapeHtml(item.query)}
+      </button>
+    `).join("");
+
+    bindQuickSearchButtons();
   }
 
   function searchFilterCounts() {
@@ -2473,6 +2915,52 @@ h1{
     }
 
     return "";
+  }
+
+  function observeImpressions() {
+    S.observer?.disconnect();
+
+    if (
+      !window.IntersectionObserver ||
+      !["feed", "trending", "fresh", "explore"].includes(S.mode)
+    ) {
+      return;
+    }
+
+    S.observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting || entry.intersectionRatio < .55) {
+          return;
+        }
+
+        const index = Number(entry.target.dataset.index);
+        const item = S.items[index];
+        const contentId = saveContentId(item || {});
+
+        if (!contentId || S.impressed.has(contentId)) {
+          S.observer.unobserve(entry.target);
+          return;
+        }
+
+        S.impressed.add(contentId);
+        S.observer.unobserve(entry.target);
+
+        api("/impression", {
+          method: "POST",
+          body: JSON.stringify({
+            content_id: contentId,
+            session_id: SESSION_ID,
+            position: index + 1,
+            score: Number(item?.score || 0),
+            reason: item?.reason || S.mode
+          })
+        }).catch(() => {});
+      });
+    }, { threshold:[.55] });
+
+    grid.querySelectorAll(".card[data-index]").forEach(card => {
+      S.observer.observe(card);
+    });
   }
 
   function render() {
@@ -2612,6 +3100,8 @@ h1{
         );
       };
     });
+
+    observeImpressions();
   }
 
   function setModeClass(mode) {
@@ -2637,6 +3127,8 @@ h1{
         ? $("focusSearch")
         : mode === "saved"
           ? $("saved")
+          : ["hub", "history"].includes(mode)
+            ? $("hub")
           : document.querySelector(
               `[data-nav="${mode === "explore" ? "explore" : "feed"}"]`
             );
@@ -2717,7 +3209,7 @@ h1{
         sub: "انتخاب‌هایی که به سلیقه‌ات نزدیک‌ترند",
         glyph: "✦",
         heading: "منتخب برای تو",
-        path: "/feed?limit=18"
+        path: `/feed?limit=18&session_id=${encodeURIComponent(SESSION_ID)}`
       },
       trending: {
         title: "نبض امروز",
@@ -2861,6 +3353,14 @@ h1{
 
       applySearchFilter("all");
 
+      api("/search-history", {
+        method: "POST",
+        body: JSON.stringify({
+          query,
+          result_count: S.searchItems.length
+        })
+      }).catch(() => {});
+
       status.textContent = "جست‌وجوی سراسری";
 
       status.classList.add("online");
@@ -2891,11 +3391,6 @@ h1{
   }
 
   async function saveItem(item, button) {
-    if (item.is_saved) {
-      showToast("قبلاً ذخیره شده");
-      return;
-    }
-
     const contentId = saveContentId(item);
 
     if (!contentId) {
@@ -2903,11 +3398,42 @@ h1{
       return;
     }
 
+    if (item.is_saved) {
+      try {
+        await api("/unsave", {
+          method: "POST",
+          body: JSON.stringify({
+            content_id: contentId,
+            session_id: SESSION_ID
+          })
+        });
+
+        item.is_saved = false;
+
+        if (S.mode === "saved") {
+          S.items = S.items.filter(entry => entry !== item);
+          render();
+        } else if (button) {
+          button.classList.remove("saved");
+          button.textContent = "♡";
+        }
+
+        $("viewerSave").textContent = "♡";
+        showToast("از ذخیره‌ها حذف شد");
+        haptic("medium");
+      } catch {
+        showToast("حذف از ذخیره‌ها انجام نشد");
+      }
+
+      return;
+    }
+
     try {
       await api("/save", {
         method: "POST",
         body: JSON.stringify({
-          content_id: contentId
+          content_id: contentId,
+          session_id: SESSION_ID
         })
       });
 
@@ -2948,6 +3474,7 @@ h1{
 
   function showViewer(item) {
     S.current = item;
+    S.viewerOpenedAt = Date.now();
 
     const [firstColor, secondColor] = palette(item);
     const type = contentType(item);
@@ -3105,6 +3632,15 @@ h1{
     $("viewerSave").textContent =
       item.is_saved ? "♥" : "♡";
 
+    const followButton = $("viewerFollow");
+    const creatorId = internalCreatorId(item);
+
+    followButton.hidden = !creatorId;
+    followButton.classList.toggle("following", Boolean(item.is_following));
+    followButton.textContent = item.is_following
+      ? "دنبال می‌کنی"
+      : "دنبال‌کردن";
+
     $("back").classList.add("show");
     $("viewer").classList.add("show");
 
@@ -3139,7 +3675,8 @@ h1{
         method: "POST",
         body: JSON.stringify({
           content_id: contentId,
-          event_type: "open"
+          event_type: "open",
+          session_id: SESSION_ID
         })
       }).catch(() => {});
     }
@@ -3149,6 +3686,11 @@ h1{
     if (!$("viewer").classList.contains("show")) {
       return;
     }
+
+    const viewedItem = S.current;
+    const viewedFor = S.viewerOpenedAt
+      ? Math.round((Date.now() - S.viewerOpenedAt) / 1000)
+      : 0;
 
     $("back").classList.remove("show");
     $("viewer").classList.remove("show");
@@ -3169,6 +3711,21 @@ h1{
     } catch {}
 
     S.current = null;
+    S.viewerOpenedAt = 0;
+
+    const viewedContentId = saveContentId(viewedItem || {});
+
+    if (viewedContentId && viewedFor >= 3) {
+      api("/events", {
+        method: "POST",
+        body: JSON.stringify({
+          content_id: viewedContentId,
+          event_type: viewedFor >= 12 ? "long_view" : "view",
+          watch_duration_seconds: viewedFor,
+          session_id: SESSION_ID
+        })
+      }).catch(() => {});
+    }
 
     const returnFocus = S.returnFocus;
 
@@ -3204,6 +3761,39 @@ h1{
       showToast("بازخوردت ثبت شد");
     } catch {
       showToast("بازخورد ثبت نشد");
+    }
+  }
+
+  async function toggleCurrentCreatorFollow() {
+    const item = S.current;
+    const creatorId = internalCreatorId(item || {});
+
+    if (!item || !creatorId) {
+      return;
+    }
+
+    const next = !item.is_following;
+    const button = $("viewerFollow");
+    button.disabled = true;
+
+    try {
+      await api("/follow", {
+        method: "POST",
+        body: JSON.stringify({
+          creator_id: creatorId,
+          following: next
+        })
+      });
+
+      item.is_following = next;
+      button.classList.toggle("following", next);
+      button.textContent = next ? "دنبال می‌کنی" : "دنبال‌کردن";
+      showToast(next ? "کانال دنبال شد" : "دنبال‌کردن متوقف شد");
+      haptic("medium");
+    } catch {
+      showToast("تغییر دنبال‌کردن انجام نشد");
+    } finally {
+      button.disabled = false;
     }
   }
 
@@ -3275,6 +3865,397 @@ h1{
     }
   }
 
+  const faNumber = value =>
+    Number(value || 0).toLocaleString("fa-IR");
+
+  const faPercent = value =>
+    `${Math.round(Number(value || 0) * 100).toLocaleString("fa-IR")}٪`;
+
+  function renderHub({ profile, notifications, preferences, topics, dashboard, claims }) {
+    const user = profile?.user || {};
+    const follows = Array.isArray(profile?.follows) ? profile.follows : [];
+    const notificationItems = Array.isArray(notifications?.items) ? notifications.items : [];
+    const creators = Array.isArray(dashboard?.creators) ? dashboard.creators : [];
+    const claimItems = Array.isArray(claims?.claims) ? claims.claims : [];
+    const unread = Number(notifications?.unread ?? profile?.unread_notifications ?? 0);
+    const name = cleanText(user.display_name || user.username || "کاربر تلگرام");
+    const username = user.username ? `@${user.username}` : "حساب متصل به تلگرام";
+
+    S.topics = Array.isArray(topics?.items) ? topics.items : [];
+    S.preferences = preferences?.preferences || {
+      in_app_enabled:true,
+      followed_creators:true,
+      personalized_digest:true
+    };
+
+    $("hubBadge").textContent = Math.min(unread, 99).toLocaleString("fa-IR");
+    $("hubBadge").classList.toggle("show", unread > 0);
+
+    grid.innerHTML = `
+      <section class="hub">
+        <div class="hubHero">
+          <div class="hubAvatar">${escapeHtml(name.slice(0, 1) || "ت")}</div>
+          <div class="hubIdentity">
+            <b>${escapeHtml(name)}</b>
+            <span>${escapeHtml(username)}</span>
+          </div>
+          <div class="hubStats">
+            <b>${faNumber(follows.length)}</b>
+            <span>دنبال‌شده</span>
+          </div>
+        </div>
+
+        <div class="hubQuick">
+          <button data-hub-action="history"><b>◷</b><span>تاریخچه تماشا</span></button>
+          <button data-hub-action="saved"><b>♥</b><span>ذخیره‌ها</span></button>
+          <button data-hub-action="read-all"><b>●</b><span>${unread ? `${faNumber(unread)} اعلان تازه` : "همه اعلان‌ها خوانده شد"}</span></button>
+          <button data-hub-action="refresh"><b>↻</b><span>به‌روزرسانی</span></button>
+        </div>
+
+        <div class="hubPanel">
+          <div class="hubPanelHead">
+            <h3>اعلان‌های شخصی</h3>
+            ${unread ? '<button data-hub-action="read-all">خواندن همه</button>' : ""}
+          </div>
+          <div class="hubList">
+            ${notificationItems.length ? notificationItems.slice(0, 8).map(item => `
+              <button class="hubRow" data-notification-id="${escapeHtml(item.id)}" data-notification-url="${escapeHtml(safeUrl(item.action_url))}">
+                <span class="hubRowDot ${item.read_at ? "" : "unread"}"></span>
+                <span class="hubRowCopy">
+                  <b>${escapeHtml(item.title)}</b>
+                  <span>${escapeHtml(item.body)} · ${escapeHtml(formatDate(item.created_at))}</span>
+                </span>
+              </button>
+            `).join("") : '<div class="hubEmpty">هنوز اعلان تازه‌ای نیست. پیشنهادهای شخصی و پست‌های کانال‌های دنبال‌شده اینجا می‌آیند.</div>'}
+          </div>
+        </div>
+
+        <div class="hubPanel">
+          <div class="hubPanelHead">
+            <h3>علایق تو</h3>
+            <span class="hubHint">حداکثر ۱۲ موضوع</span>
+          </div>
+          <div class="topicPicker">
+            ${S.topics.map(topic => `
+              <button class="topicChip ${topic.selected ? "selected" : ""}" data-topic-id="${escapeHtml(topic.id)}" aria-pressed="${String(Boolean(topic.selected))}">
+                ${escapeHtml(topic.name)}
+              </button>
+            `).join("")}
+          </div>
+          <button class="hubButton hubSave" id="saveInterests">ذخیره علایق و بهترکردن فید</button>
+        </div>
+
+        <div class="hubPanel">
+          <div class="hubPanelHead"><h3>تنظیم اعلان‌ها</h3></div>
+          <label class="settingRow"><span>اعلان داخل برنامه</span><input id="prefEnabled" type="checkbox" ${S.preferences.in_app_enabled ? "checked" : ""}></label>
+          <label class="settingRow"><span>پست تازهٔ کانال‌های دنبال‌شده</span><input id="prefFollows" type="checkbox" ${S.preferences.followed_creators ? "checked" : ""}></label>
+          <label class="settingRow"><span>پیشنهاد شخصی روزانه</span><input id="prefDigest" type="checkbox" ${S.preferences.personalized_digest ? "checked" : ""}></label>
+          <button class="hubButton hubSave" id="savePreferences">ذخیره تنظیمات اعلان</button>
+        </div>
+
+        <div class="hubPanel">
+          <div class="hubPanelHead"><h3>داشبورد سازنده</h3></div>
+          <div class="hubList">
+            ${creators.length ? creators.map(creator => `
+              <div class="creatorCard">
+                <div class="creatorCardHead">
+                  <b>${escapeHtml(creator.creator_name || creator.creator_username || "کانال")}</b>
+                  <button data-creator-content="${escapeHtml(creator.creator_id)}" data-creator-name="${escapeHtml(creator.creator_name || "کانال")}">جزئیات محتوا</button>
+                </div>
+                <div class="creatorMetricGrid">
+                  <div class="creatorMetric"><b>${faNumber(creator.total_impressions)}</b><span>نمایش</span></div>
+                  <div class="creatorMetric"><b>${faNumber(creator.total_opens)}</b><span>بازشدن</span></div>
+                  <div class="creatorMetric"><b>${faNumber(creator.total_saves)}</b><span>ذخیره</span></div>
+                  <div class="creatorMetric"><b>${faNumber(creator.total_follows)}</b><span>دنبال‌کننده</span></div>
+                  <div class="creatorMetric"><b>${faPercent(creator.save_rate)}</b><span>نرخ ذخیره</span></div>
+                  <div class="creatorMetric"><b>${faNumber(creator.impressions_7d)}</b><span>نمایش ۷ روز</span></div>
+                </div>
+              </div>
+            `).join("") : '<div class="hubEmpty">برای دیدن آمار، مالکیت کانالت را ثبت کن. پس از تأیید، نمایش‌ها، بازشدن‌ها و ذخیره‌ها اینجا دیده می‌شوند.</div>'}
+          </div>
+          <div id="creatorDetail"></div>
+          ${claimItems.length ? `
+            <div class="hubHint">${claimItems.map(claim => `${escapeHtml(claim.creators?.name || claim.creators?.username || "کانال")}: ${escapeHtml(claim.status)}`).join(" · ")}</div>
+          ` : ""}
+          <div class="claimForm">
+            <input id="claimUsername" dir="ltr" placeholder="@channel_username" aria-label="نام کاربری کانال">
+            <button id="submitClaim">ثبت مالکیت</button>
+          </div>
+        </div>
+      </section>
+    `;
+
+    bindHubEvents();
+  }
+
+  function bindHubEvents() {
+    grid.querySelectorAll("[data-hub-action]").forEach(button => {
+      button.onclick = () => {
+        const action = button.dataset.hubAction;
+        if (action === "history") loadHistory();
+        if (action === "saved") loadSaved();
+        if (action === "refresh") loadHub();
+        if (action === "read-all") markNotificationsRead();
+      };
+    });
+
+    grid.querySelectorAll("[data-topic-id]").forEach(button => {
+      button.onclick = () => {
+        const selected = !button.classList.contains("selected");
+        const selectedCount = grid.querySelectorAll("[data-topic-id].selected").length;
+
+        if (selected && selectedCount >= 12) {
+          showToast("حداکثر ۱۲ موضوع انتخاب کن");
+          return;
+        }
+
+        button.classList.toggle("selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+        haptic();
+      };
+    });
+
+    $("saveInterests")?.addEventListener("click", saveInterests);
+    $("savePreferences")?.addEventListener("click", savePreferences);
+    $("submitClaim")?.addEventListener("click", submitCreatorClaim);
+
+    grid.querySelectorAll("[data-notification-id]").forEach(button => {
+      button.onclick = () => openNotification(button);
+    });
+
+    grid.querySelectorAll("[data-creator-content]").forEach(button => {
+      button.onclick = () => loadCreatorContent(
+        button.dataset.creatorContent,
+        button.dataset.creatorName
+      );
+    });
+  }
+
+  async function loadHub() {
+    clearTimeout(searchTimer);
+    S.request?.abort();
+    S.request = null;
+    S.loading = true;
+    S.mode = "hub";
+
+    setModeClass("hub");
+    selectTab();
+    activateNavigation("hub");
+    heading.textContent = "فضای شخصی تو";
+    count.textContent = "در حال آماده‌سازی";
+    showSkeletons();
+
+    try {
+      const results = await Promise.allSettled([
+        api("/profile"),
+        api("/notifications?limit=20"),
+        api("/notification-preferences"),
+        api("/topics"),
+        api("/api/creator/dashboard"),
+        api("/api/creator/claims")
+      ]);
+
+      if (results.every(result => result.status === "rejected")) {
+        throw results[0].reason;
+      }
+
+      const value = (index, fallback) =>
+        results[index].status === "fulfilled"
+          ? results[index].value
+          : fallback;
+
+      const profile = value(0, { user:{}, follows:[] });
+      const notifications = value(1, { items:[], unread:0 });
+
+      renderHub({
+        profile,
+        notifications,
+        preferences:value(2, { preferences:null }),
+        topics:value(3, { items:[] }),
+        dashboard:value(4, { creators:[] }),
+        claims:value(5, { claims:[] })
+      });
+
+      count.textContent = `${faNumber(notifications.unread)} اعلان خوانده‌نشده`;
+      status.textContent = "حساب همگام شد";
+      status.classList.add("online");
+    } catch (error) {
+      grid.innerHTML = `<div class="empty">فضای شخصی بارگذاری نشد.<br><small>${escapeHtml(error.message)}</small></div>`;
+      status.textContent = "خطای همگام‌سازی";
+      status.classList.remove("online");
+    } finally {
+      S.loading = false;
+      grid.setAttribute("aria-busy", "false");
+    }
+  }
+
+  async function loadHistory() {
+    S.mode = "history";
+    setModeClass("history");
+    selectTab();
+    activateNavigation("history");
+    heading.textContent = "تاریخچه تماشا";
+    count.textContent = "در حال دریافت";
+    showSkeletons();
+
+    try {
+      const data = await api("/history?limit=50");
+      S.items = data.items || [];
+      render();
+      grid.insertAdjacentHTML("afterbegin", `
+        <div class="hubQuick">
+          <button id="historyBack"><b>→</b><span>بازگشت به من</span></button>
+          <button id="clearHistory"><b>×</b><span>پاک‌کردن تاریخچه</span></button>
+        </div>
+      `);
+      $("historyBack").onclick = loadHub;
+      $("clearHistory").onclick = clearHistory;
+      if (!S.items.length) count.textContent = "هنوز چیزی ندیده‌ای";
+    } catch (error) {
+      grid.innerHTML = `<div class="empty">تاریخچه دریافت نشد.<br><small>${escapeHtml(error.message)}</small></div>`;
+    }
+  }
+
+  function askConfirmation(message) {
+    if (tg?.showConfirm) {
+      return new Promise(resolve => tg.showConfirm(message, resolve));
+    }
+
+    return Promise.resolve(window.confirm(message));
+  }
+
+  async function clearHistory() {
+    if (!await askConfirmation("تاریخچه مشاهده پاک شود؟")) return;
+
+    try {
+      await api("/history", { method:"DELETE", body:"{}" });
+      S.impressed.clear();
+      showToast("تاریخچه پاک شد");
+      loadHistory();
+    } catch {
+      showToast("پاک‌کردن تاریخچه انجام نشد");
+    }
+  }
+
+  async function markNotificationsRead() {
+    try {
+      await api("/notifications/read", { method:"POST", body:"{}" });
+      $("hubBadge").classList.remove("show");
+      showToast("اعلان‌ها خوانده شد");
+      loadHub();
+    } catch {
+      showToast("اعلان‌ها به‌روزرسانی نشد");
+    }
+  }
+
+  async function openNotification(button) {
+    const id = button.dataset.notificationId;
+    const url = safeUrl(button.dataset.notificationUrl);
+
+    api("/notifications/read", {
+      method:"POST",
+      body:JSON.stringify({ notification_id:id })
+    }).catch(() => {});
+
+    if (url) {
+      try {
+        tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url, "_blank", "noopener");
+      } catch {
+        window.open(url, "_blank", "noopener");
+      }
+    }
+
+    button.querySelector(".hubRowDot")?.classList.remove("unread");
+  }
+
+  async function saveInterests() {
+    const topicIds = [...grid.querySelectorAll("[data-topic-id].selected")]
+      .map(button => button.dataset.topicId);
+
+    try {
+      await api("/interests", {
+        method:"PUT",
+        body:JSON.stringify({ topic_ids:topicIds })
+      });
+      S.cache.feed = [];
+      S.impressed.clear();
+      showToast("علایق ذخیره شد؛ فید تازه می‌شود");
+      haptic("medium");
+    } catch {
+      showToast("ذخیره علایق انجام نشد");
+    }
+  }
+
+  async function savePreferences() {
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const data = await api("/notification-preferences", {
+        method:"PUT",
+        body:JSON.stringify({
+          in_app_enabled:$("prefEnabled").checked,
+          followed_creators:$("prefFollows").checked,
+          personalized_digest:$("prefDigest").checked,
+          timezone
+        })
+      });
+      S.preferences = data.preferences;
+      showToast("تنظیمات اعلان ذخیره شد");
+      haptic("medium");
+    } catch {
+      showToast("ذخیره تنظیمات انجام نشد");
+    }
+  }
+
+  async function submitCreatorClaim() {
+    const input = $("claimUsername");
+    const username = input.value.trim();
+
+    if (!username) {
+      showToast("نام کاربری کانال را بنویس");
+      input.focus();
+      return;
+    }
+
+    try {
+      await api("/api/creator/claim", {
+        method:"POST",
+        body:JSON.stringify({ username })
+      });
+      showToast("درخواست مالکیت ثبت شد");
+      haptic("medium");
+      loadHub();
+    } catch (error) {
+      showToast(error.message || "ثبت مالکیت انجام نشد");
+    }
+  }
+
+  async function loadCreatorContent(creatorId, creatorName) {
+    const target = $("creatorDetail");
+    if (!target) return;
+
+    target.innerHTML = '<div class="hubEmpty">در حال دریافت آمار محتوا…</div>';
+
+    try {
+      const data = await api(`/api/creator/content?creator_id=${encodeURIComponent(creatorId)}&limit=20`);
+      const items = Array.isArray(data.items) ? data.items : [];
+      target.innerHTML = `
+        <div class="hubPanelHead"><h3>${escapeHtml(creatorName)}</h3></div>
+        <div class="hubList">
+          ${items.length ? items.map(item => `
+            <a class="hubRow" href="${escapeHtml(safeUrl(item.source_url))}" target="_blank" rel="noopener">
+              <span class="hubRowCopy">
+                <b>${escapeHtml(cleanText(item.title || "پست تلگرام"))}</b>
+                <span>${faNumber(item.impressions)} نمایش · ${faNumber(item.opens)} بازشدن · ${faNumber(item.saves)} ذخیره · ${faPercent(item.save_rate)}</span>
+              </span>
+            </a>
+          `).join("") : '<div class="hubEmpty">هنوز محتوایی برای این کانال ثبت نشده است.</div>'}
+        </div>
+      `;
+    } catch (error) {
+      target.innerHTML = `<div class="hubEmpty">آمار محتوا دریافت نشد: ${escapeHtml(error.message)}</div>`;
+    }
+  }
+
   let searchTimer;
 
   document.querySelectorAll(".tab").forEach(button => {
@@ -3331,6 +4312,11 @@ h1{
     loadSaved();
   };
 
+  $("hub").onclick = () => {
+    haptic();
+    loadHub();
+  };
+
   $("back").onclick = hide;
   $("viewerClose").onclick = hide;
 
@@ -3345,6 +4331,9 @@ h1{
       saveItem(S.current, $("viewerSave"));
     }
   };
+
+  $("viewerFollow").onclick =
+    toggleCurrentCreatorFollow;
 
   $("openTelegram").onclick =
     openCurrentTelegram;
