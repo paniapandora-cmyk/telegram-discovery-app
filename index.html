@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- DISCOVERY_UI_BUILD: midnight-reference-v15-2026-09-02 -->
+<!-- DISCOVERY_UI_BUILD: midnight-reference-v17-fluid-captions-video-preview-2026-09-03 -->
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -1492,6 +1492,154 @@ h1{font-size:1.22rem}
   .card.media-card{--caption-h:78px}
   .mode-explore .grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:220px}
 }
+
+/* v17 — content-sized captions + reliable video poster cards */
+.card.media-card .copy{
+  overflow:hidden;
+}
+
+.card.media-card .channel{
+  min-width:0;
+}
+
+.card.media-card .channel > span:not(.avatar):not(.reason){
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.card.media-card .title{
+  display:-webkit-box;
+  max-height:3.45em;
+  overflow:hidden;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+
+.card.media-card:not(.hero) .title{
+  max-height:1.6em;
+  -webkit-line-clamp:1;
+}
+
+.mode-feed .card.media-card,
+.mode-fresh .card.media-card{
+  display:grid;
+  grid-template-rows:minmax(94px,1fr) auto;
+}
+
+.mode-feed .card.media-card .mediaStage,
+.mode-fresh .card.media-card .mediaStage{
+  position:relative;
+  inset:auto;
+  grid-row:1;
+  min-height:94px;
+}
+
+.mode-feed .card.media-card .copy,
+.mode-fresh .card.media-card .copy{
+  position:relative;
+  inset:auto;
+  grid-row:2;
+  width:100%;
+  height:auto;
+  min-height:57px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  overflow:visible;
+}
+
+.mode-feed .card.hero.media-card{
+  grid-template-rows:minmax(136px,1fr) auto;
+}
+
+.mode-feed .card.hero.media-card .mediaStage{
+  min-height:136px;
+}
+
+.mode-feed .card.hero.media-card .copy{
+  min-height:90px;
+}
+
+.mode-fresh .card.media-card{
+  grid-template-rows:minmax(118px,1fr) auto;
+}
+
+.mode-fresh .card.media-card .mediaStage{
+  min-height:118px;
+}
+
+.mode-fresh .card.hero.media-card{
+  min-height:190px;
+}
+
+.mode-fresh .card.hero.media-card .copy{
+  min-height:72px;
+}
+
+.videoPlay{
+  position:absolute;
+  top:50%;
+  left:50%;
+  z-index:2;
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:17px;
+  color:#fff;
+  background:rgba(4,15,27,.68);
+  box-shadow:0 10px 30px rgba(0,0,0,.28);
+  backdrop-filter:blur(10px);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
+.videoPlay:after{
+  content:'';
+  width:0;
+  height:0;
+  margin-left:3px;
+  border-top:8px solid transparent;
+  border-bottom:8px solid transparent;
+  border-left:13px solid currentColor;
+}
+
+.mode-explore .card.media-card{--caption-h:74px}
+.mode-explore .grid{grid-auto-rows:176px}
+.mode-explore .card.hero.media-card{--caption-h:108px}
+
+@media(max-width:390px){
+  .mode-feed .card.media-card,
+  .mode-fresh .card.media-card{
+    grid-template-rows:minmax(92px,1fr) auto;
+  }
+
+  .mode-feed .card.media-card .mediaStage,
+  .mode-fresh .card.media-card .mediaStage{
+    min-height:92px;
+  }
+
+  .mode-feed .card.hero.media-card{
+    grid-template-rows:minmax(132px,1fr) auto;
+  }
+
+  .mode-feed .card.hero.media-card .mediaStage{
+    min-height:132px;
+  }
+
+  .mode-fresh .card.media-card{
+    grid-template-rows:minmax(116px,1fr) auto;
+  }
+
+  .mode-fresh .card.media-card .mediaStage{
+    min-height:116px;
+  }
+
+  .mode-explore .grid{grid-auto-rows:172px}
+}
 </style>
 </head>
 
@@ -1769,14 +1917,35 @@ h1{font-size:1.22rem}
     }
   };
 
-  const sourceUrl = item =>
-    safeUrl(
+  const telegramMessageId = item =>
+    String(
+      item.message_id ||
+      item.telegram_message_id ||
+      item.telegram_post_id ||
+      item.post_id ||
+      item.telegram?.message_id ||
+      item.metadata?.message_id ||
+      ""
+    ).trim();
+
+  const sourceUrl = item => {
+    const direct = safeUrl(
       item.source_url ||
       item.telegram_url ||
       item.post_url ||
       item.url ||
       item.link
     );
+
+    if (direct) return direct;
+
+    const username = channelUsername(item);
+    const messageId = telegramMessageId(item);
+
+    return username && /^\d+$/.test(messageId)
+      ? `https://t.me/${encodeURIComponent(username)}/${messageId}`
+      : "";
+  };
 
   const channelAvatarUrl = item => {
     const direct = safeUrl(
@@ -1823,7 +1992,10 @@ h1{font-size:1.22rem}
       item.thumbnail_url ||
       item.image_url ||
       item.photo_url ||
-      item.preview_url
+      item.preview_url ||
+      item.poster_url ||
+      item.video_thumbnail_url ||
+      item.media_thumbnail_url
     );
 
   const assetUrl = item =>
@@ -1980,30 +2152,10 @@ h1{font-size:1.22rem}
 
     const fallback = `
       <div class="mediaFallback">
-        <b>${typeIcon(type)}</b>
+        ${type === "VIDEO" ? "" : `<b>${typeIcon(type)}</b>`}
         <span>${escapeHtml(typeName(type))} تلگرام</span>
       </div>
     `;
-
-    if (type === "VIDEO" && asset) {
-      return `
-        <div class="mediaStage">
-          ${fallback}
-          <video
-            class="media"
-            src="${escapeHtml(asset)}"
-            ${poster || proxyPreview
-              ? `poster="${escapeHtml(poster || proxyPreview)}"`
-              : ""}
-            muted
-            loop
-            playsinline
-            preload="metadata"
-            onerror="this.remove()"
-          ></video>
-        </div>
-      `;
-    }
 
     const directImage =
       poster ||
@@ -2036,6 +2188,11 @@ h1{font-size:1.22rem}
             onerror="${imageErrorCode()}"
           >
         ` : ""}
+
+        ${type === "VIDEO"
+          ? '<span class="videoPlay" aria-hidden="true"></span>'
+          : ""
+        }
       </div>
     `;
   };

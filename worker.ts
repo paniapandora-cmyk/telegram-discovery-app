@@ -255,7 +255,7 @@ async function telegramHealth(
       service: "telegram-search-proxy",
       backend: "discovery-search-v6",
       preview_image_proxy: true,
-      build: "telegram-preview-v2-media-thumb",
+      build: "telegram-preview-v3-embed-first",
       request_id: requestId(request)
     },
     200,
@@ -266,7 +266,7 @@ async function telegramHealth(
 /* =========================================================
    TELEGRAM POST PREVIEW IMAGE
 
-   Gets the public Telegram post page, extracts its OG image
+   Gets the exact public Telegram embed page, extracts its image
    and safely returns the image to the frontend.
 ========================================================= */
 
@@ -298,9 +298,14 @@ function publicTelegramPost(
     const channel = match[1];
     const messageId = match[2];
 
-    return new URL(
-      `https://t.me/s/${channel}/${messageId}`
+    const post = new URL(
+      `https://t.me/${channel}/${messageId}`
     );
+
+    post.searchParams.set("embed", "1");
+    post.searchParams.set("mode", "tme");
+
+    return post;
   } catch {
     return null;
   }
