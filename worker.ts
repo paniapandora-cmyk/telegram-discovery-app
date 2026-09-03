@@ -266,8 +266,8 @@ async function telegramHealth(
 /* =========================================================
    TELEGRAM POST PREVIEW IMAGE
 
-   Gets a public Telegram post page, extracts its photo or
-   video thumbnail and safely proxies the image.
+   Gets the public Telegram post page, extracts its OG image
+   and safely returns the image to the frontend.
 ========================================================= */
 
 function publicTelegramPost(
@@ -381,7 +381,6 @@ function telegramMediaImage(
   html: string
 ): string | null {
   const tags = html.match(/<[^>]+>/g) || [];
-
   const mediaClass =
     /tgme_widget_message_(?:video_thumb|photo_wrap|document_thumb)/i;
 
@@ -390,9 +389,7 @@ function telegramMediaImage(
       continue;
     }
 
-    const style =
-      htmlTagAttribute(tag, "style");
-
+    const style = htmlTagAttribute(tag, "style");
     const background = style
       ? cssBackgroundImage(style)
       : null;
@@ -401,11 +398,8 @@ function telegramMediaImage(
       return background;
     }
 
-    const poster =
-      htmlTagAttribute(tag, "poster");
-
-    const source =
-      htmlTagAttribute(tag, "src");
+    const poster = htmlTagAttribute(tag, "poster");
+    const source = htmlTagAttribute(tag, "src");
 
     if (poster || source) {
       return poster || source;
@@ -417,8 +411,7 @@ function telegramMediaImage(
       continue;
     }
 
-    const poster =
-      htmlTagAttribute(tag, "poster");
+    const poster = htmlTagAttribute(tag, "poster");
 
     if (poster) {
       return poster;
@@ -465,10 +458,9 @@ async function telegramPreviewImage(
   try {
     const page = await fetch(post.toString(), {
       headers: {
-        Accept:
-          "text/html,application/xhtml+xml",
+        Accept: "text/html,application/xhtml+xml",
         "User-Agent":
-          "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/2.0)"
+          "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/1.0)"
       },
       redirect: "follow"
     });
@@ -485,7 +477,6 @@ async function telegramPreviewImage(
     }
 
     const html = await page.text();
-
     const imageValue =
       telegramMediaImage(html) ||
       telegramOgImage(html);
@@ -517,19 +508,16 @@ async function telegramPreviewImage(
       );
     }
 
-    const image = await fetch(
-      imageUrl.toString(),
-      {
-        headers: {
-          Accept:
-            "image/avif,image/webp,image/*,*/*;q=0.8",
-          Referer: "https://t.me/",
-          "User-Agent":
-            "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/2.0)"
-        },
-        redirect: "follow"
-      }
-    );
+    const image = await fetch(imageUrl.toString(), {
+      headers: {
+        Accept:
+          "image/avif,image/webp,image/*,*/*;q=0.8",
+        Referer: "https://t.me/",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/2.0)"
+      },
+      redirect: "follow"
+    });
 
     const contentType =
       image.headers.get("content-type") || "";
@@ -551,16 +539,11 @@ async function telegramPreviewImage(
 
     const headers = corsHeaders(request);
 
-    headers.set(
-      "Content-Type",
-      contentType
-    );
-
+    headers.set("Content-Type", contentType);
     headers.set(
       "Cache-Control",
       "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
     );
-
     headers.set(
       "X-Content-Type-Options",
       "nosniff"
@@ -624,9 +607,7 @@ async function proxyJsonApi(
   const incoming = new URL(request.url);
   const target = new URL(baseUrl);
 
-  target.pathname =
-    `${target.pathname}${path}`;
-
+  target.pathname = `${target.pathname}${path}`;
   target.search = incoming.search;
 
   const headers = new Headers();
@@ -639,8 +620,7 @@ async function proxyJsonApi(
     "x-telegram-init-data",
     "x-request-id"
   ]) {
-    const value =
-      request.headers.get(name);
+    const value = request.headers.get(name);
 
     if (value) {
       headers.set(name, value);
