@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- DISCOVERY_UI_BUILD: midnight-final-v19-intrinsic-grid-2026-09-03 -->
+<!-- DISCOVERY_UI_BUILD: midnight-final-v19-search-fixed-2026-09-03 -->
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -1819,7 +1819,11 @@ h1{
   }
 
   async function api(path, options = {}) {
-    const response = await fetch(API + path, {
+    const endpoint = path.startsWith("/api/")
+      ? `${ORIGIN}${path}`
+      : `${API}${path}`;
+
+    const response = await fetch(endpoint, {
       ...options,
       headers: {
         ...requestHeaders(),
@@ -2176,7 +2180,7 @@ h1{
 
     try {
       const data = await api(
-        `/search?q=${encodeURIComponent(query)}&limit=18`,
+        `/api/telegram/search?q=${encodeURIComponent(query)}&limit=18`,
         { signal: controller.signal }
       );
 
