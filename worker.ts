@@ -6,7 +6,7 @@
  */
 
 const DISCOVERY_API_URL =
-  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-api-live";
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-api-v33";
 
 const SEARCH_API_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v7";
@@ -15,7 +15,7 @@ const SEARCH_FALLBACK_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-search-v6";
 
 const CREATOR_API_URL =
-  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-dashboard";
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-dashboard-v2";
 
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -263,7 +263,7 @@ async function telegramHealth(
       preview_image_proxy: true,
       search_scope: "public_telegram",
       search_types: ["user", "bot", "channel", "group", "post"],
-      build: "telegram-global-search-v20",
+      build: "telegram-discovery-growth-v21",
       request_id: requestId(request)
     },
     200,
@@ -434,6 +434,67 @@ function telegramMediaImage(
   return null;
 }
 
+function isTrustedTelegramMediaUrl(
+  value: URL
+): boolean {
+  const host = value.hostname.toLowerCase();
+
+  return (
+    value.protocol === "https:" &&
+    (
+      host === "t.me" ||
+      host === "telegram.org" ||
+      host.endsWith(".telegram.org") ||
+      host === "telegram-cdn.org" ||
+      host.endsWith(".telegram-cdn.org") ||
+      host === "cdn-telegram.org" ||
+      host.endsWith(".cdn-telegram.org") ||
+      host === "telesco.pe" ||
+      host.endsWith(".telesco.pe")
+    )
+  );
+}
+
+async function fetchTelegramMedia(
+  initialUrl: URL
+): Promise<Response> {
+  let current = initialUrl;
+
+  for (let redirectCount = 0; redirectCount < 4; redirectCount++) {
+    if (!isTrustedTelegramMediaUrl(current)) {
+      throw new Error("Untrusted Telegram media host");
+    }
+
+    const response = await fetch(current.toString(), {
+      headers: {
+        Accept:
+          "image/avif,image/webp,image/*,*/*;q=0.8",
+        Referer: "https://t.me/",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/2.0)"
+      },
+      redirect: "manual"
+    });
+
+    if (
+      response.status < 300 ||
+      response.status >= 400
+    ) {
+      return response;
+    }
+
+    const location = response.headers.get("location");
+
+    if (!location) {
+      return response;
+    }
+
+    current = new URL(location, current);
+  }
+
+  throw new Error("Too many Telegram media redirects");
+}
+
 async function telegramPreviewImage(
   request: Request
 ): Promise<Response> {
@@ -510,27 +571,18 @@ async function telegramPreviewImage(
       post.toString()
     );
 
-    if (imageUrl.protocol !== "https:") {
+    if (!isTrustedTelegramMediaUrl(imageUrl)) {
       return json(
         {
           ok: false,
-          error: "Unsupported preview image URL"
+          error: "Unsupported preview image host"
         },
         400,
         request
       );
     }
 
-    const image = await fetch(imageUrl.toString(), {
-      headers: {
-        Accept:
-          "image/avif,image/webp,image/*,*/*;q=0.8",
-        Referer: "https://t.me/",
-        "User-Agent":
-          "Mozilla/5.0 (compatible; TelegramDiscoveryPreview/2.0)"
-      },
-      redirect: "follow"
-    });
+    const image = await fetchTelegramMedia(imageUrl);
 
     const contentType =
       image.headers.get("content-type") || "";
