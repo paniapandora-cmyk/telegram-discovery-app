@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- DISCOVERY_UI_BUILD: midnight-final-v19-search-fixed-2026-09-03 -->
+<!-- DISCOVERY_UI_BUILD: midnight-v20-global-public-telegram-search-2026-09-03 -->
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -814,6 +814,203 @@ h1{
   margin-top:8px;
 }
 
+.globalSearchPanel{
+  display:none;
+}
+
+.mode-search .globalSearchPanel{
+  display:grid;
+  gap:11px;
+  margin:0 0 14px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:21px;
+  background:
+    radial-gradient(180px 120px at 100% 0,rgba(67,143,255,.16),transparent 72%),
+    linear-gradient(145deg,rgba(15,34,55,.96),rgba(8,22,37,.96));
+  box-shadow:0 12px 28px rgba(0,0,0,.14);
+}
+
+.globalSearchIntro{
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+
+.globalSearchGlyph{
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(99,199,255,.22);
+  border-radius:15px;
+  color:#dff5ff;
+  background:linear-gradient(145deg,rgba(33,145,224,.34),rgba(103,80,205,.32));
+  font-size:1.25rem;
+}
+
+.globalSearchCopy{
+  min-width:0;
+}
+
+.globalSearchCopy b{
+  display:block;
+  color:#f7fbff;
+  font-size:.91rem;
+}
+
+.globalSearchCopy span{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:.72rem;
+  line-height:1.65;
+}
+
+.searchFilters{
+  display:flex;
+  gap:6px;
+  margin-inline:-3px;
+  padding:1px 3px 3px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  scroll-snap-type:x proximity;
+  overscroll-behavior-inline:contain;
+}
+
+.searchFilters::-webkit-scrollbar{
+  display:none;
+}
+
+.searchFilter{
+  min-width:max-content;
+  min-height:44px;
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:0 8px;
+  border:1px solid transparent;
+  border-radius:14px;
+  color:var(--muted);
+  background:rgba(255,255,255,.025);
+  font-size:.76rem;
+  cursor:pointer;
+  scroll-snap-align:start;
+}
+
+.searchFilter span{
+  min-width:20px;
+  padding:2px 6px;
+  border-radius:999px;
+  color:#bcd0e2;
+  background:rgba(255,255,255,.06);
+  font-size:.64rem;
+}
+
+.searchFilter.active{
+  border-color:rgba(79,183,246,.32);
+  color:#fff;
+  background:linear-gradient(145deg,rgba(26,142,222,.38),rgba(49,96,169,.3));
+}
+
+.mode-search .grid{
+  gap:10px;
+}
+
+.mode-search .card{
+  border-radius:19px;
+  box-shadow:0 10px 26px rgba(0,0,0,.2),inset 0 1px rgba(255,255,255,.025);
+}
+
+.mode-search .search-peer-card .nativePreview{
+  min-height:142px;
+  gap:11px;
+  background:
+    radial-gradient(210px 130px at 100% 0,rgba(99,199,255,.17),transparent 72%),
+    linear-gradient(145deg,#102a43,#0b1a2b);
+}
+
+.mode-search .search-peer-card .nativeAvatar{
+  width:48px;
+  height:48px;
+  flex-basis:48px;
+}
+
+.mode-search .search-peer-card .nativeName{
+  font-size:.92rem;
+}
+
+.mode-search .search-peer-card .nativeMessage{
+  color:#c5d2df;
+  font-size:.8rem;
+  font-weight:600;
+  line-height:1.75;
+}
+
+.mode-search .search-post-card .nativePreview{
+  min-height:170px;
+}
+
+.searchWelcome{
+  grid-column:1/-1;
+  display:grid;
+  justify-items:center;
+  gap:9px;
+  padding:44px 20px;
+  border:1px dashed var(--line-strong);
+  border-radius:23px;
+  color:var(--muted);
+  background:rgba(255,255,255,.022);
+  text-align:center;
+}
+
+.searchWelcomeGlyph{
+  width:60px;
+  height:60px;
+  display:grid;
+  place-items:center;
+  margin-bottom:3px;
+  border:1px solid var(--line);
+  border-radius:21px;
+  color:#79d1ff;
+  background:linear-gradient(145deg,rgba(43,126,195,.22),rgba(91,69,175,.19));
+  font-size:1.7rem;
+}
+
+.searchWelcome b{
+  color:#f4f8fc;
+  font-size:1rem;
+}
+
+.searchWelcome p{
+  max-width:330px;
+  margin:0;
+  font-size:.78rem;
+  line-height:1.85;
+}
+
+.quickSearches{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:7px;
+  margin-top:7px;
+}
+
+.quickSearches button{
+  min-height:44px;
+  padding:0 13px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:#c8d8e7;
+  background:rgba(255,255,255,.035);
+  font-size:.74rem;
+  cursor:pointer;
+}
+
 .nav{
   position:relative;
   z-index:40;
@@ -1201,8 +1398,8 @@ h1{
     <input
       id="search"
       type="search"
-      placeholder="موضوع، کانال یا یک ایده…"
-      aria-label="جست‌وجوی محتوا"
+      placeholder="@username، نام، گروه، کانال یا متن پست…"
+      aria-label="جست‌وجوی سراسری در تلگرام"
     >
     <button class="icon" id="searchAction" aria-label="اجرای جست‌وجو">⌕</button>
   </div>
@@ -1235,6 +1432,37 @@ h1{
     <h2 id="heading">منتخب برای تو</h2>
     <span id="count">—</span>
   </div>
+
+  <section class="globalSearchPanel" aria-label="فیلترهای جست‌وجوی سراسری">
+    <div class="globalSearchIntro">
+      <div class="globalSearchGlyph" aria-hidden="true">◎</div>
+      <div class="globalSearchCopy">
+        <b>جست‌وجوی سراسری تلگرام</b>
+        <span>افراد، ربات‌ها، کانال‌ها، گروه‌ها و پست‌های عمومی</span>
+      </div>
+    </div>
+
+    <div class="searchFilters" id="searchFilters" role="group" aria-label="نوع نتیجه">
+      <button class="searchFilter active" data-search-filter="all" aria-pressed="true">
+        همه <span id="searchCountAll">۰</span>
+      </button>
+      <button class="searchFilter" data-search-filter="user" aria-pressed="false">
+        افراد <span id="searchCountUsers">۰</span>
+      </button>
+      <button class="searchFilter" data-search-filter="bot" aria-pressed="false">
+        ربات‌ها <span id="searchCountBots">۰</span>
+      </button>
+      <button class="searchFilter" data-search-filter="channel" aria-pressed="false">
+        کانال‌ها <span id="searchCountChannels">۰</span>
+      </button>
+      <button class="searchFilter" data-search-filter="group" aria-pressed="false">
+        گروه‌ها <span id="searchCountGroups">۰</span>
+      </button>
+      <button class="searchFilter" data-search-filter="post" aria-pressed="false">
+        پست‌ها <span id="searchCountPosts">۰</span>
+      </button>
+    </div>
+  </section>
 
   <main class="grid" id="grid" aria-live="polite"></main>
 </div>
@@ -1311,7 +1539,7 @@ h1{
     <h3 id="viewerTitle"></h3>
     <div class="desc" id="viewerDesc"></div>
 
-    <div class="feedback">
+    <div class="feedback" id="viewerFeedback">
       <button data-feedback="not_relevant">مرتبط نبود</button>
       <button data-feedback="hide_creator">این کانال کمتر</button>
       <button data-feedback="report">گزارش محتوا</button>
@@ -1376,6 +1604,9 @@ h1{
   const S = {
     mode: "feed",
     items: [],
+    searchItems: [],
+    searchFilter: "all",
+    searchQuery: "",
     current: null,
     loading: false,
     request: null,
@@ -1437,20 +1668,39 @@ h1{
       ) % palettes.length
     ];
 
-  const text = item =>
-    String(
-      item.title ||
-      item.description ||
-      item.text ||
-      item.message ||
-      "یک پست تازه از تلگرام"
+  const text = item => {
+    const globalMessage =
+      item.result_type === "telegram_message" ||
+      item._globalKind === "post";
+
+    return String(
+      globalMessage
+        ? (
+            item.text ||
+            item.message ||
+            item.description ||
+            item.title
+          )
+        : (
+            item.title ||
+            item.description ||
+            item.text ||
+            item.message
+          ) ||
+          "یک پست تازه از تلگرام"
     ).trim();
+  };
 
   const plainText = item => cleanText(text(item));
 
   const channel = item =>
+    item.display_name ||
+    item.name ||
     item.channel_name ||
     item.channel_title ||
+    item.title ||
+    [item.first_name, item.last_name].filter(Boolean).join(" ") ||
+    item.username ||
     item.channel_username ||
     (
       String(item.source_url || item.url || "")
@@ -1459,7 +1709,12 @@ h1{
     "Telegram";
 
   const channelUsername = item => {
-    const explicit = String(item.channel_username || "")
+    const explicit = String(
+      item.username ||
+      item.channel_username ||
+      item.chat_username ||
+      ""
+    )
       .replace(/^@/, "")
       .trim();
 
@@ -1500,6 +1755,11 @@ h1{
       item.source_url ||
       item.telegram_url ||
       item.post_url ||
+      item.message_url ||
+      item.channel_url ||
+      item.peer_url ||
+      item.profile_url ||
+      item.bot_url ||
       item.url ||
       item.link
     );
@@ -1509,8 +1769,12 @@ h1{
     const username = channelUsername(item);
     const messageId = telegramMessageId(item);
 
-    return username && /^\d+$/.test(messageId)
-      ? `https://t.me/${encodeURIComponent(username)}/${messageId}`
+    if (username && /^\d+$/.test(messageId)) {
+      return `https://t.me/${encodeURIComponent(username)}/${messageId}`;
+    }
+
+    return username
+      ? `https://t.me/${encodeURIComponent(username)}`
       : "";
   };
 
@@ -1519,6 +1783,8 @@ h1{
       item.channel_avatar_url ||
       item.channel_photo_url ||
       item.creator_avatar_url ||
+      item.profile_photo_url ||
+      item.photo_url ||
       item.avatar_url
     );
 
@@ -1551,8 +1817,34 @@ h1{
     `;
   };
 
-  const contentType = item =>
-    String(item.content_type || "TEXT").toUpperCase();
+  const globalResultKind = item =>
+    item._globalKind ||
+    (
+      ["user", "bot", "channel", "group"].includes(
+        String(item.result_type || item.entity_type || "").toLowerCase()
+      )
+        ? String(item.result_type || item.entity_type).toLowerCase()
+        : "post"
+    );
+
+  const isPeerResult = item =>
+    ["user", "bot", "channel", "group"].includes(
+      globalResultKind(item)
+    );
+
+  const contentType = item => {
+    if (isPeerResult(item)) {
+      return globalResultKind(item).toUpperCase();
+    }
+
+    if (!item.content_type && item.has_media) {
+      return "MIXED";
+    }
+
+    return String(
+      item.content_type || "TEXT"
+    ).toUpperCase();
+  };
 
   const posterUrl = item =>
     safeUrl(
@@ -1629,7 +1921,11 @@ h1{
     VIDEO: "▶",
     DOCUMENT: "▤",
     AUDIO: "♪",
-    MIXED: "◆"
+    MIXED: "◆",
+    USER: "◉",
+    BOT: "✦",
+    CHANNEL: "◎",
+    GROUP: "◇"
   })[String(type || "").toUpperCase()] || "✦";
 
   const typeName = type => ({
@@ -1639,10 +1935,20 @@ h1{
     VIDEO: "ویدئو",
     DOCUMENT: "فایل",
     AUDIO: "صدا",
-    MIXED: "چند‌رسانه‌ای"
+    MIXED: "چند‌رسانه‌ای",
+    USER: "کاربر",
+    BOT: "ربات",
+    CHANNEL: "کانال",
+    GROUP: "گروه"
   })[type] || "پست";
 
   const topicLabel = item => {
+    if (S.mode === "search") {
+      return globalResultKind(item) === "post"
+        ? "پست تلگرام"
+        : typeName(contentType(item));
+    }
+
     const value = cleanText(
       item.category_name ||
       item.category ||
@@ -1673,6 +1979,148 @@ h1{
       )
     );
   };
+
+  const foldSearchText = value =>
+    cleanText(value)
+      .toLocaleLowerCase("fa")
+      .replace(/^@+/, "")
+      .replace(/[يى]/g, "ی")
+      .replace(/ك/g, "ک")
+      .replace(/\u200c/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  function normalizeGlobalResult(item, index) {
+    const rawKind = String(
+      item.result_type || item.entity_type || ""
+    ).toLowerCase();
+
+    const kind = ["user", "bot", "channel", "group"].includes(rawKind)
+      ? rawKind
+      : "post";
+
+    const isMessage =
+      ["telegram_message", "message", "post"].includes(rawKind) ||
+      kind === "post";
+
+    return {
+      ...item,
+      _globalKind: kind,
+      _globalIndex: index,
+      title: isMessage
+        ? (
+            item.text ||
+            item.message ||
+            item.description ||
+            item.title
+          )
+        : (
+          item.title ||
+          item.display_name ||
+          item.channel_title ||
+          item.username ||
+          item.channel_username ||
+          "نتیجه تلگرام"
+        ),
+      channel_title:
+        item.channel_title ||
+        (
+          kind !== "post"
+            ? (item.title || item.display_name)
+            : "Telegram"
+        ),
+      source_url:
+        (
+          kind !== "post"
+            ? (
+                item.source_url ||
+                item.channel_url ||
+                item.peer_url ||
+                item.profile_url ||
+                item.bot_url ||
+                item.url
+              )
+            : (
+                item.message_url ||
+                item.post_url ||
+                item.link ||
+                item.source_url ||
+                item.url
+              )
+        ) || "",
+      content_type:
+        item.content_type ||
+        (
+          kind !== "post"
+            ? kind.toUpperCase()
+            : item.has_media
+              ? "MIXED"
+              : "TEXT"
+        )
+    };
+  }
+
+  function globalResultScore(item, query) {
+    const tokens = foldSearchText(query)
+      .split(" ")
+      .filter(Boolean);
+
+    const identity = foldSearchText([
+      item.channel_title,
+      item.channel_username,
+      item.title
+    ].filter(Boolean).join(" "));
+
+    const body = foldSearchText([
+      item.text,
+      item.message,
+      item.description,
+      item.title
+    ].filter(Boolean).join(" "));
+
+    const identityMatches = tokens.filter(
+      token => identity.includes(token)
+    ).length;
+
+    const bodyMatches = tokens.filter(
+      token => body.includes(token)
+    ).length;
+
+    const directIdentityMatch =
+      tokens.length > 0 &&
+      identityMatches === tokens.length;
+
+    if (
+      isPeerResult(item) &&
+      !directIdentityMatch
+    ) {
+      return Number.NEGATIVE_INFINITY;
+    }
+
+    if (!sourceUrl(item)) {
+      return Number.NEGATIVE_INFINITY;
+    }
+
+    return (
+      Number(item.search_score || item.score || 0) +
+      identityMatches * 18 +
+      bodyMatches * 7 +
+      (directIdentityMatch ? 28 : 0) +
+      (isPeerResult(item) ? 12 : 0)
+    );
+  }
+
+  function prepareGlobalResults(items, query) {
+    return items
+      .map(normalizeGlobalResult)
+      .map(item => ({
+        item,
+        score: globalResultScore(item, query)
+      }))
+      .filter(result => Number.isFinite(result.score))
+      .sort((first, second) => second.score - first.score)
+      .map(result => result.item);
+  }
 
   function arrangeItems(items, mode) {
     const arranged = [...items];
@@ -1796,6 +2244,78 @@ h1{
     </div>
   `;
 
+  const searchPeerMarkup = item => {
+    const kind = globalResultKind(item);
+    const username = channelUsername(item);
+    const label = typeName(kind.toUpperCase());
+    const fallbackDescription = ({
+      user: "حساب عمومی تلگرام",
+      bot: "ربات تلگرام",
+      channel: "کانال عمومی تلگرام",
+      group: "گروه عمومی تلگرام"
+    })[kind] || "نتیجه عمومی تلگرام";
+
+    const description = cleanText(
+      item.description || fallbackDescription
+    );
+
+    const action = ({
+      user: "بازکردن پروفایل",
+      bot: "بازکردن ربات",
+      channel: "بازکردن کانال",
+      group: "بازکردن گروه"
+    })[kind] || "بازکردن";
+
+    const trustLabel = item.is_scam || item.is_fake
+      ? " · مشکوک ⚠"
+      : item.is_verified
+        ? " · تأییدشده ✓"
+        : "";
+
+    return `
+      <div class="nativePreview">
+        <div class="nativeHead">
+          ${avatarMarkup(item, "nativeAvatar")}
+
+          <div class="nativeIdentity">
+            <div class="nativeName">
+              ${escapeHtml(channel(item))}
+            </div>
+
+            <div class="nativeMeta">
+              ${username
+                ? `@${escapeHtml(username)}`
+                : escapeHtml(fallbackDescription)
+              }
+              ${trustLabel}
+            </div>
+          </div>
+        </div>
+
+        <div class="nativeMessage">
+          ${escapeHtml(description)}
+        </div>
+
+        <div class="nativeFoot">
+          <span class="nativeKind">
+            <b>${typeIcon(kind.toUpperCase())}</b>
+            ${escapeHtml(label)}
+          </span>
+
+          <span>${escapeHtml(action)} ↗</span>
+        </div>
+      </div>
+    `;
+  };
+
+  const saveContentId = item => {
+    if (item._globalKind && !item.content_id) {
+      return "";
+    }
+
+    return item.content_id || item.id || "";
+  };
+
   const requestHeaders = () => ({
     "x-telegram-init-data": tg?.initData || "",
     "content-type": "application/json"
@@ -1845,14 +2365,104 @@ h1{
   }
 
   function showSkeletons() {
+    grid.setAttribute("aria-busy", "true");
+
     grid.innerHTML = Array.from(
       { length: 8 },
       () => '<div class="sk"></div>'
     ).join("");
   }
 
+  function renderSearchWelcome(message = "نام، @username، کانال، گروه، ربات یا متن یک پست عمومی را بنویس.") {
+    grid.setAttribute("aria-busy", "false");
+
+    grid.innerHTML = `
+      <div class="searchWelcome">
+        <div class="searchWelcomeGlyph" aria-hidden="true">⌕</div>
+        <b>در تلگرام عمومی جست‌وجو کن</b>
+        <p>${escapeHtml(message)}</p>
+
+        <div class="quickSearches" aria-label="جست‌وجوهای پیشنهادی">
+          <button data-quick-query="@durov">@durov</button>
+          <button data-quick-query="زبان بدن">زبان بدن</button>
+          <button data-quick-query="هوش مصنوعی">هوش مصنوعی</button>
+        </div>
+      </div>
+    `;
+
+    grid.querySelectorAll("[data-quick-query]").forEach(button => {
+      button.onclick = () => {
+        search.value = button.dataset.quickQuery;
+        performSearch(search.value);
+      };
+    });
+  }
+
+  function searchFilterCounts() {
+    return S.searchItems.reduce(
+      (totals, item) => {
+        totals.all += 1;
+        totals[globalResultKind(item)] += 1;
+        return totals;
+      },
+      { all:0, user:0, bot:0, channel:0, group:0, post:0 }
+    );
+  }
+
+  function updateSearchFilters() {
+    const totals = searchFilterCounts();
+
+    $("searchCountAll").textContent =
+      totals.all.toLocaleString("fa-IR");
+
+    $("searchCountUsers").textContent =
+      totals.user.toLocaleString("fa-IR");
+
+    $("searchCountBots").textContent =
+      totals.bot.toLocaleString("fa-IR");
+
+    $("searchCountChannels").textContent =
+      totals.channel.toLocaleString("fa-IR");
+
+    $("searchCountGroups").textContent =
+      totals.group.toLocaleString("fa-IR");
+
+    $("searchCountPosts").textContent =
+      totals.post.toLocaleString("fa-IR");
+
+    document
+      .querySelectorAll("[data-search-filter]")
+      .forEach(button => {
+        const active =
+          button.dataset.searchFilter === S.searchFilter;
+
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+  }
+
+  function applySearchFilter(filter = S.searchFilter) {
+    S.searchFilter = filter;
+    S.items = filter === "all"
+      ? [...S.searchItems]
+      : S.searchItems.filter(
+          item => globalResultKind(item) === filter
+        );
+
+    render();
+    updateSearchFilters();
+
+    const total = S.searchItems.length;
+
+    count.textContent = filter === "all"
+      ? `${total.toLocaleString("fa-IR")} نتیجه سراسری`
+      : `${S.items.length.toLocaleString("fa-IR")} از ${total.toLocaleString("fa-IR")}`;
+  }
+
   function cardClass(item, index) {
-    if (index === 0) return "hero";
+    if (index === 0 && S.mode !== "search") {
+      return "hero";
+    }
 
     if (
       S.mode === "explore" &&
@@ -1866,15 +2476,25 @@ h1{
   }
 
   function render() {
+    grid.setAttribute("aria-busy", "false");
+
     count.textContent =
-      `${S.items.length.toLocaleString("fa-IR")} محتوا`;
+      S.mode === "search"
+        ? `${S.items.length.toLocaleString("fa-IR")} نتیجه`
+        : `${S.items.length.toLocaleString("fa-IR")} محتوا`;
 
     if (!S.items.length) {
       grid.innerHTML = `
         <div class="empty">
-          هنوز چیزی برای نمایش پیدا نشد.
+          ${S.mode === "search"
+            ? "در این دسته نتیجه‌ای پیدا نشد."
+            : "هنوز چیزی برای نمایش پیدا نشد."
+          }
           <br>
-          یک موضوع دیگر را جست‌وجو کن یا دوباره تلاش کن.
+          ${S.mode === "search"
+            ? "فیلتر دیگری را انتخاب کن یا عبارت را تغییر بده."
+            : "یک موضوع دیگر را جست‌وجو کن یا دوباره تلاش کن."
+          }
         </div>
       `;
       return;
@@ -1884,13 +2504,20 @@ h1{
       const [firstColor, secondColor] = palette(item);
       const type = contentType(item);
       const visual = hasVisualMedia(item);
+      const peerResult =
+        S.mode === "search" && isPeerResult(item);
+
+      const canSave = Boolean(saveContentId(item));
       const accessibleTitle = (
         plainText(item) ||
         `${typeName(type)} از ${channel(item)}`
       ).slice(0, 120);
 
-      const specialClass =
-        type === "DOCUMENT"
+      const specialClass = peerResult
+        ? `global-result search-peer-card search-${globalResultKind(item)}-card`
+        : S.mode === "search"
+          ? "global-result search-post-card"
+          : type === "DOCUMENT"
           ? "document-card"
           : type === "AUDIO"
             ? "audio-card"
@@ -1907,7 +2534,9 @@ h1{
           data-index="${index}"
           style="--g1:${firstColor};--g2:${secondColor}"
         >
-          ${visual
+          ${peerResult
+            ? searchPeerMarkup(item)
+            : visual
             ? mediaMarkup(item, type)
             : nativeMarkup(item, type)
           }
@@ -1920,7 +2549,7 @@ h1{
           <button
             class="cardOpen"
             data-open="${index}"
-            aria-label="مشاهده پست: ${escapeHtml(accessibleTitle)}"
+            aria-label="بازکردن نتیجه: ${escapeHtml(accessibleTitle)}"
           ></button>
 
           <span class="rank">
@@ -1929,13 +2558,15 @@ h1{
 
           <span class="freshness">تازه</span>
 
-          <button
-            class="save ${item.is_saved ? "saved" : ""}"
-            data-save="${index}"
-            aria-label="ذخیره"
-          >
-            ${item.is_saved ? "♥" : "♡"}
-          </button>
+          ${canSave ? `
+            <button
+              class="save ${item.is_saved ? "saved" : ""}"
+              data-save="${index}"
+              aria-label="ذخیره"
+            >
+              ${item.is_saved ? "♥" : "♡"}
+            </button>
+          ` : ""}
 
           ${visual ? `
             <div class="copy">
@@ -2037,15 +2668,25 @@ h1{
 
     activateNavigation("search");
 
-    heading.textContent = "جست‌وجو";
-    count.textContent = "موضوعت را بنویس";
+    heading.textContent = "جست‌وجوی سراسری";
+    count.textContent = "افراد، کانال‌ها، گروه‌ها و پست‌ها";
+
+    updateSearchFilters();
 
     if (!search.value.trim()) {
-      grid.innerHTML = `
-        <div class="empty">
-          نام موضوع، کانال یا چیزی که دنبالش هستی را بنویس.
-        </div>
-      `;
+      S.searchItems = [];
+      S.items = [];
+      S.searchQuery = "";
+      S.searchFilter = "all";
+      updateSearchFilters();
+      renderSearchWelcome();
+    } else if (
+      S.searchQuery === search.value.trim() &&
+      S.searchItems.length
+    ) {
+      applySearchFilter();
+    } else {
+      performSearch(search.value);
     }
 
     setTimeout(() => {
@@ -2132,6 +2773,8 @@ h1{
       status.classList.add("online");
     } catch (error) {
       if (error.name !== "AbortError") {
+        grid.setAttribute("aria-busy", "false");
+
         grid.innerHTML = `
           <div class="empty">
             ارتباط برقرار نشد.
@@ -2159,6 +2802,27 @@ h1{
       return;
     }
 
+    if ([...query].length < 2) {
+      S.mode = "search";
+      S.searchItems = [];
+      S.items = [];
+      S.searchQuery = query;
+      S.searchFilter = "all";
+
+      setModeClass("search");
+      selectTab();
+      activateNavigation("search");
+      updateSearchFilters();
+
+      heading.textContent = "جست‌وجوی سراسری";
+      count.textContent = "حداقل دو حرف";
+
+      renderSearchWelcome(
+        "برای شروع جست‌وجو حداقل دو حرف بنویس."
+      );
+      return;
+    }
+
     clearTimeout(searchTimer);
     S.request?.abort();
 
@@ -2167,6 +2831,8 @@ h1{
     S.request = controller;
     S.loading = true;
     S.mode = "search";
+    S.searchQuery = query;
+    S.searchFilter = "all";
 
     setModeClass("search");
 
@@ -2175,35 +2841,46 @@ h1{
     activateNavigation("search");
     showSkeletons();
 
-    heading.textContent = `نتایج «${query}»`;
+    updateSearchFilters();
+
+    heading.textContent = `نتایج سراسری «${query}»`;
     count.textContent = "در حال جست‌وجو";
 
     try {
       const data = await api(
-        `/api/telegram/search?q=${encodeURIComponent(query)}&limit=18`,
+        `/api/telegram/search?q=${encodeURIComponent(query)}&limit=50`,
         { signal: controller.signal }
       );
 
-      S.items = data.items || data.results || [];
-      S.cache.search = S.items;
+      S.searchItems = prepareGlobalResults(
+        data.items || data.results || [],
+        query
+      );
 
-      render();
+      S.cache.search = S.searchItems;
 
-      status.textContent =
-        data.source === "telegram_live"
-          ? "جست‌وجوی زنده"
-          : "نتایج هوشمند";
+      applySearchFilter("all");
+
+      status.textContent = "جست‌وجوی سراسری";
 
       status.classList.add("online");
     } catch (error) {
       if (error.name !== "AbortError") {
+        S.searchItems = [];
+        S.items = [];
+        updateSearchFilters();
+        grid.setAttribute("aria-busy", "false");
+
         grid.innerHTML = `
           <div class="empty">
-            جست‌وجو انجام نشد.
+            جست‌وجوی سراسری انجام نشد.
             <br>
             <small>${escapeHtml(error.message)}</small>
           </div>
         `;
+
+        status.textContent = "خطای جست‌وجو";
+        status.classList.remove("online");
       }
     } finally {
       if (S.request === controller) {
@@ -2219,11 +2896,18 @@ h1{
       return;
     }
 
+    const contentId = saveContentId(item);
+
+    if (!contentId) {
+      showToast("این نتیجه مستقیماً در تلگرام باز می‌شود");
+      return;
+    }
+
     try {
       await api("/save", {
         method: "POST",
         body: JSON.stringify({
-          content_id: item.content_id || item.id
+          content_id: contentId
         })
       });
 
@@ -2247,7 +2931,7 @@ h1{
     const url = sourceUrl(S.current || {});
 
     if (!url) {
-      showToast("لینک این پست در دسترس نیست");
+      showToast("لینک این نتیجه در دسترس نیست");
       return;
     }
 
@@ -2399,6 +3083,25 @@ h1{
       titleText ||
       "این پست را در تلگرام ببین.";
 
+    const canPersonalize = Boolean(
+      saveContentId(item)
+    );
+
+    const kind = globalResultKind(item);
+    const openLabel = ({
+      user: "دیدن پروفایل در تلگرام",
+      bot: "بازکردن ربات در تلگرام",
+      channel: "دیدن کانال در تلگرام",
+      group: "دیدن گروه در تلگرام",
+      post: "دیدن پست در تلگرام"
+    })[kind] || "بازکردن در تلگرام";
+
+    $("openTelegram").textContent = openLabel;
+
+    $("viewerSave").hidden = !canPersonalize;
+    $("notInterested").hidden = !canPersonalize;
+    $("viewerFeedback").hidden = !canPersonalize;
+
     $("viewerSave").textContent =
       item.is_saved ? "♥" : "♡";
 
@@ -2422,20 +3125,24 @@ h1{
 
       if (nativeMain) {
         tg.MainButton
-          .setText("دیدن پست در تلگرام")
+          .setText(openLabel)
           .show();
       }
     } catch {}
 
     haptic();
 
-    api("/events", {
-      method: "POST",
-      body: JSON.stringify({
-        content_id: item.content_id || item.id,
-        event_type: "open"
-      })
-    }).catch(() => {});
+    const contentId = saveContentId(item);
+
+    if (contentId) {
+      api("/events", {
+        method: "POST",
+        body: JSON.stringify({
+          content_id: contentId,
+          event_type: "open"
+        })
+      }).catch(() => {});
+    }
   }
 
   function hide() {
@@ -2587,6 +3294,17 @@ h1{
   $("searchAction").onclick = () => {
     performSearch(search.value);
   };
+
+  document
+    .querySelectorAll("[data-search-filter]")
+    .forEach(button => {
+      button.onclick = () => {
+        haptic();
+        applySearchFilter(
+          button.dataset.searchFilter
+        );
+      };
+    });
 
   search.oninput = () => {
     clearTimeout(searchTimer);
