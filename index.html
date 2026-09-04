@@ -1333,15 +1333,31 @@ h1{
 }
 
 .mode-hub .grid,.mode-history .grid{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   grid-template-columns:minmax(0,1fr);
 }
 
+.mode-hub .grid > *,
+.mode-history .grid > *{
+  min-width:0;
+  max-width:100%;
+}
+
 .hub{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   display:grid;
+  grid-template-columns:minmax(0,1fr);
   gap:12px;
 }
 
 .hubHero,.hubPanel{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   border:1px solid var(--line);
   border-radius:22px;
   background:linear-gradient(145deg,rgba(16,35,56,.96),rgba(8,22,37,.96));
@@ -1351,6 +1367,7 @@ h1{
 .hubHero{
   display:flex;
   align-items:center;
+  flex-wrap:wrap;
   gap:12px;
   padding:16px;
   background:
@@ -1374,6 +1391,7 @@ h1{
 
 .hubIdentity{
   min-width:0;
+  flex:1 1 140px;
 }
 
 .hubIdentity b{
@@ -1390,6 +1408,8 @@ h1{
 }
 
 .hubStats{
+  min-width:0;
+  flex:0 0 auto;
   margin-inline-start:auto;
   text-align:center;
 }
@@ -1406,6 +1426,9 @@ h1{
 }
 
 .hubQuick{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
   gap:8px;
@@ -1422,10 +1445,18 @@ h1{
 }
 
 .hubQuick button{
+  min-width:0;
+  max-width:100%;
   display:flex;
   align-items:center;
   gap:9px;
+  overflow:hidden;
   text-align:right;
+}
+
+.hubQuick button span{
+  min-width:0;
+  overflow-wrap:anywhere;
 }
 
 .hubQuick button b{
@@ -1438,9 +1469,11 @@ h1{
 }
 
 .hubPanelHead{
+  min-width:0;
   display:flex;
   align-items:center;
   justify-content:space-between;
+  flex-wrap:wrap;
   gap:10px;
   margin-bottom:11px;
 }
@@ -1461,7 +1494,11 @@ h1{
 }
 
 .hubList{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   display:grid;
+  grid-template-columns:minmax(0,1fr);
   gap:8px;
 }
 
@@ -1519,18 +1556,24 @@ button.hubRow{
 }
 
 .topicPicker{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   display:flex;
   flex-wrap:wrap;
   gap:7px;
 }
 
 .topicChip{
+  max-width:100%;
   min-height:42px;
   padding:0 12px;
   border:1px solid var(--line);
   border-radius:999px;
   color:var(--muted);
   background:transparent;
+  overflow-wrap:anywhere;
+  white-space:normal;
   cursor:pointer;
 }
 
@@ -1549,6 +1592,8 @@ button.hubRow{
 }
 
 .settingRow{
+  width:100%;
+  min-width:0;
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -1557,6 +1602,11 @@ button.hubRow{
   padding:8px 2px;
   border-bottom:1px solid rgba(153,195,231,.08);
   font-size:.78rem;
+}
+
+.settingRow span{
+  min-width:0;
+  overflow-wrap:anywhere;
 }
 
 .settingRow:last-child{
@@ -1570,13 +1620,20 @@ button.hubRow{
 }
 
 .creatorMetricGrid{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:7px;
 }
 
 .creatorCard{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   display:grid;
+  grid-template-columns:minmax(0,1fr);
   gap:10px;
   padding:12px;
   border:1px solid rgba(153,195,231,.1);
@@ -1585,35 +1642,47 @@ button.hubRow{
 }
 
 .creatorCardHead{
+  min-width:0;
   display:flex;
   align-items:center;
   justify-content:space-between;
+  flex-wrap:wrap;
   gap:10px;
 }
 
 .creatorCardHead b{
+  min-width:0;
+  flex:1 1 140px;
   font-size:.82rem;
+  overflow-wrap:anywhere;
 }
 
 .creatorCardHead button{
+  max-width:100%;
   min-height:38px;
   padding:0 10px;
   border:1px solid var(--line);
   border-radius:12px;
   color:#7ad2ff;
   background:transparent;
+  white-space:normal;
   cursor:pointer;
 }
 
 .creatorMetric{
+  width:100%;
+  min-width:0;
   padding:10px 5px;
   border-radius:13px;
   background:rgba(255,255,255,.03);
+  overflow:hidden;
   text-align:center;
 }
 
 .creatorMetric b,.creatorMetric span{
   display:block;
+  max-width:100%;
+  overflow-wrap:anywhere;
 }
 
 .creatorMetric b{
@@ -1628,6 +1697,9 @@ button.hubRow{
 }
 
 .claimForm{
+  width:100%;
+  max-width:100%;
+  min-width:0;
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
   gap:7px;
@@ -1716,6 +1788,24 @@ button.hubRow{
 
   .tabs{
     font-size:.78rem;
+  }
+
+  .mode-hub .creatorMetricGrid{
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .mode-hub .claimForm{
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .mode-hub .claimForm button{
+    width:100%;
+  }
+}
+
+@media(min-width:520px){
+  .mode-hub .creatorMetricGrid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
   }
 }
 
