@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- DISCOVERY_UI_BUILD: aurora-v1-full-redesign-2026-09-04 -->
+<!-- DISCOVERY_UI_BUILD: aurora-v2-layout-safe-2026-09-05 -->
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -1809,12 +1809,21 @@ body:before{
   z-index:0;
 }
 
-.app,
-.nav,
-.viewer,
-.back,
-.toast{
+.app{
   position:relative;
+}
+
+/* Keep overlay elements out of the body grid. */
+.back{
+  position:fixed;
+}
+
+.viewer{
+  position:fixed;
+}
+
+.toast{
+  position:fixed;
 }
 
 .app{
@@ -2524,6 +2533,23 @@ h1{
   background:rgba(15,33,51,.96);
   box-shadow:0 14px 34px rgba(0,0,0,.35);
   backdrop-filter:blur(14px);
+}
+
+/* ---------- layout safety ---------- */
+
+body > .app{
+  grid-row:1;
+  min-height:0;
+}
+
+body > .nav{
+  grid-row:2;
+}
+
+.back,
+.viewer,
+.toast{
+  grid-row:auto;
 }
 
 /* ---------- responsive ---------- */
