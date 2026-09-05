@@ -1097,27 +1097,21 @@
     const id = encodeURIComponent(state.selectedChannelId);
     const days = encodeURIComponent(state.days);
 
-    try {
-      return normalizeDashboard(await creatorApi(`/dashboard?channel_id=${id}&days=${days}`));
-    } catch {
-      const raw = await creatorApi(`/analytics?channel_id=${id}&days=${days}`);
-      const candidates = raw?.channels || raw?.items || raw?.data || raw;
-      const selected = Array.isArray(candidates)
-        ? candidates.find((item) => (item.channel_id || item.id || item.creator_channel_id) === state.selectedChannelId) || candidates[0] || {}
-        : candidates;
-      return normalizeDashboard(selected);
-    }
+    const raw = await creatorApi(`/analytics?channel_id=${id}&days=${days}`);
+    const candidates = raw?.channels || raw?.items || raw?.data || raw;
+    const selected = Array.isArray(candidates)
+      ? candidates.find((item) => (item.channel_id || item.id || item.creator_channel_id) === state.selectedChannelId) || candidates[0] || {}
+      : candidates;
+    return normalizeDashboard(selected);
   }
 
   async function loadContentForChannel() {
     const id = encodeURIComponent(state.selectedChannelId);
     const days = encodeURIComponent(state.days);
 
-    try {
-      return normalizeContent(await creatorApi(`/content?channel_id=${id}&days=${days}&limit=50`));
-    } catch {
-      return normalizeContent(await creatorApi(`/content-performance?channel_id=${id}&days=${days}&limit=50`));
-    }
+    return normalizeContent(
+      await creatorApi(`/content-performance?channel_id=${id}&days=${days}&limit=50`)
+    );
   }
 
   async function loadCreatorSelected() {
