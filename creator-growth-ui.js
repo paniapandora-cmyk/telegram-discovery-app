@@ -1,5 +1,5 @@
 /*
- * Telegram Discovery — Creator Center v3
+ * Telegram Discovery — Creator Center v3.1
  * Dense / Deep / Premium creator analytics UI.
  * Keeps "Add Channel to Discovery" separate from Creator Center.
  * Compatible with current /api/creator/* routes and /api/add-channel.
@@ -523,11 +523,38 @@
     `;
     if (!document.getElementById(style.id)) document.head.appendChild(style);
 
+    const openBtn = document.getElementById("openAddChannel");
+    const closeBtn = document.getElementById("addChannelClose");
     const submit = document.getElementById("addChannelSubmit");
     const input = document.getElementById("addChannelInput");
     const msg = document.getElementById("addChannelMessage");
     const modal = document.getElementById("addChannelModal");
-    if (!submit || !input || !msg) return;
+
+    if (!openBtn || !closeBtn || !submit || !input || !msg || !modal) return;
+
+    // The legacy handler inside index.html is created before the modal HTML exists,
+    // so it captures null references and breaks the Add Channel button.
+    // Handle the whole modal lifecycle here in capture phase and block that legacy handler.
+    openBtn.addEventListener("click", ev => {
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      modal.classList.add("open");
+      requestAnimationFrame(() => input.focus());
+    }, true);
+
+    closeBtn.addEventListener("click", ev => {
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      modal.classList.remove("open");
+    }, true);
+
+    modal.addEventListener("click", ev => {
+      if (ev.target === modal) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        modal.classList.remove("open");
+      }
+    }, true);
 
     submit.addEventListener("click", async ev => {
       // Block the old /api/creator/channel/add handler in index.html.
