@@ -17,6 +17,9 @@ const SEARCH_FALLBACK_URL =
 const CREATOR_API_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-dashboard-v2";
 
+const ADD_CHANNEL_API_URL =
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-channel-add-v1";
+
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": [
@@ -845,6 +848,16 @@ export default {
         request,
         DISCOVERY_API_URL,
         discoveryPath
+      );
+    }
+
+    if (
+      url.pathname === "/api/add-channel"
+    ) {
+      return proxyJsonApi(
+        request,
+        ADD_CHANNEL_API_URL,
+        "/"
       );
     }
 
