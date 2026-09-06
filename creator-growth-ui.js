@@ -471,92 +471,104 @@
          1 channel => 1 large card
          2-4 channels => 2 columns / 4 posts visible
          5+ channels => denser layout on wider screens */
-      body[data-discovery-channel-count="1"] .grid{
+      body.mode-feed[data-discovery-channel-count="1"] .grid,
+body.mode-explore[data-discovery-channel-count="1"] .grid{
         grid-template-columns:minmax(0,1fr)!important;
       }
-      body[data-discovery-channel-count="2"] .grid,
-      body[data-discovery-channel-count="3"] .grid,
-      body[data-discovery-channel-count="4"] .grid{
+      body.mode-feed[data-discovery-channel-count="2"] .grid,
+      body.mode-feed[data-discovery-channel-count="3"] .grid,
+      body.mode-feed[data-discovery-channel-count="4"] .grid,
+      body.mode-explore[data-discovery-channel-count="2"] .grid,
+      body.mode-explore[data-discovery-channel-count="3"] .grid,
+      body.mode-explore[data-discovery-channel-count="4"] .grid{
         grid-template-columns:repeat(2,minmax(0,1fr))!important;
         gap:7px!important;
       }
-      body[data-discovery-channel-count="5"] .grid,
-      body[data-discovery-channel-count="6"] .grid{
+      body.mode-feed[data-discovery-channel-count="5"] .grid,
+      body.mode-feed[data-discovery-channel-count="6"] .grid,
+      body.mode-explore[data-discovery-channel-count="5"] .grid,
+      body.mode-explore[data-discovery-channel-count="6"] .grid{
         grid-template-columns:repeat(2,minmax(0,1fr))!important;
         gap:6px!important;
       }
-      body[data-discovery-channel-count="7"] .grid,
-      body[data-discovery-channel-count="8"] .grid,
-      body[data-discovery-channel-count="9"] .grid,
-      body[data-discovery-channel-count="10"] .grid,
-      body[data-discovery-channel-count="11"] .grid,
-      body[data-discovery-channel-count="12"] .grid{
+      body.mode-feed[data-discovery-channel-count="7"] .grid,
+      body.mode-feed[data-discovery-channel-count="8"] .grid,
+      body.mode-feed[data-discovery-channel-count="9"] .grid,
+      body.mode-feed[data-discovery-channel-count="10"] .grid,
+      body.mode-feed[data-discovery-channel-count="11"] .grid,
+      body.mode-feed[data-discovery-channel-count="12"] .grid,
+      body.mode-explore[data-discovery-channel-count="7"] .grid,
+      body.mode-explore[data-discovery-channel-count="8"] .grid,
+      body.mode-explore[data-discovery-channel-count="9"] .grid,
+      body.mode-explore[data-discovery-channel-count="10"] .grid,
+      body.mode-explore[data-discovery-channel-count="11"] .grid,
+      body.mode-explore[data-discovery-channel-count="12"] .grid{
         grid-template-columns:repeat(2,minmax(0,1fr))!important;
         gap:6px!important;
       }
 
-      body[data-discovery-channel-count="2"] .card,
-      body[data-discovery-channel-count="3"] .card,
-      body[data-discovery-channel-count="4"] .card{
+      body.mode-feed[data-discovery-channel-count="2"] .card,
+      body.mode-feed[data-discovery-channel-count="3"] .card,
+      body.mode-feed[data-discovery-channel-count="4"] .card{
         border-radius:13px!important;
       }
 
-      body[data-discovery-channel-count="2"] .mediaStage,
-      body[data-discovery-channel-count="3"] .mediaStage,
-      body[data-discovery-channel-count="4"] .mediaStage,
-      body[data-discovery-channel-count="2"] .v6-auto-media-stage,
-      body[data-discovery-channel-count="3"] .v6-auto-media-stage,
-      body[data-discovery-channel-count="4"] .v6-auto-media-stage{
+      body.mode-feed[data-discovery-channel-count="2"] .mediaStage,
+      body.mode-feed[data-discovery-channel-count="3"] .mediaStage,
+      body.mode-feed[data-discovery-channel-count="4"] .mediaStage,
+      body.mode-feed[data-discovery-channel-count="2"] .v6-auto-media-stage,
+      body.mode-feed[data-discovery-channel-count="3"] .v6-auto-media-stage,
+      body.mode-feed[data-discovery-channel-count="4"] .v6-auto-media-stage{
         aspect-ratio:1/1!important;
       }
 
-      body[data-discovery-channel-count="2"] .title,
-      body[data-discovery-channel-count="3"] .title,
-      body[data-discovery-channel-count="4"] .title{
+      body.mode-feed[data-discovery-channel-count="2"] .title,
+      body.mode-feed[data-discovery-channel-count="3"] .title,
+      body.mode-feed[data-discovery-channel-count="4"] .title{
         font-size:10px!important;
         line-height:16px!important;
         -webkit-line-clamp:3!important;
         line-clamp:3!important;
       }
 
-      body[data-discovery-channel-count="2"] .copy,
-      body[data-discovery-channel-count="3"] .copy,
-      body[data-discovery-channel-count="4"] .copy,
-      body[data-discovery-channel-count="2"] .nativePreview,
-      body[data-discovery-channel-count="3"] .nativePreview,
-      body[data-discovery-channel-count="4"] .nativePreview{
+      body.mode-feed[data-discovery-channel-count="2"] .copy,
+      body.mode-feed[data-discovery-channel-count="3"] .copy,
+      body.mode-feed[data-discovery-channel-count="4"] .copy,
+      body.mode-feed[data-discovery-channel-count="2"] .nativePreview,
+      body.mode-feed[data-discovery-channel-count="3"] .nativePreview,
+      body.mode-feed[data-discovery-channel-count="4"] .nativePreview{
         padding:8px!important;
       }
 
-      body[data-discovery-channel-count="2"] .channel,
-      body[data-discovery-channel-count="3"] .channel,
-      body[data-discovery-channel-count="4"] .channel,
-      body[data-discovery-channel-count="2"] .nativeName,
-      body[data-discovery-channel-count="3"] .nativeName,
-      body[data-discovery-channel-count="4"] .nativeName{
+      body.mode-feed[data-discovery-channel-count="2"] .channel,
+      body.mode-feed[data-discovery-channel-count="3"] .channel,
+      body.mode-feed[data-discovery-channel-count="4"] .channel,
+      body.mode-feed[data-discovery-channel-count="2"] .nativeName,
+      body.mode-feed[data-discovery-channel-count="3"] .nativeName,
+      body.mode-feed[data-discovery-channel-count="4"] .nativeName{
         font-size:9px!important;
       }
 
-      body[data-discovery-channel-count="2"] .avatar,
-      body[data-discovery-channel-count="3"] .avatar,
-      body[data-discovery-channel-count="4"] .avatar,
-      body[data-discovery-channel-count="2"] .nativeAvatar,
-      body[data-discovery-channel-count="3"] .nativeAvatar,
-      body[data-discovery-channel-count="4"] .nativeAvatar{
+      body.mode-feed[data-discovery-channel-count="2"] .avatar,
+      body.mode-feed[data-discovery-channel-count="3"] .avatar,
+      body.mode-feed[data-discovery-channel-count="4"] .avatar,
+      body.mode-feed[data-discovery-channel-count="2"] .nativeAvatar,
+      body.mode-feed[data-discovery-channel-count="3"] .nativeAvatar,
+      body.mode-feed[data-discovery-channel-count="4"] .nativeAvatar{
         width:27px!important;
         height:27px!important;
         flex-basis:27px!important;
       }
 
-      body[data-discovery-channel-count="2"] .v6-card-actions,
-      body[data-discovery-channel-count="3"] .v6-card-actions,
-      body[data-discovery-channel-count="4"] .v6-card-actions{
+      body.mode-feed[data-discovery-channel-count="2"] .v6-card-actions,
+      body.mode-feed[data-discovery-channel-count="3"] .v6-card-actions,
+      body.mode-feed[data-discovery-channel-count="4"] .v6-card-actions{
         min-height:34px!important;
       }
 
-      body[data-discovery-channel-count="2"] .v6-card-actions button,
-      body[data-discovery-channel-count="3"] .v6-card-actions button,
-      body[data-discovery-channel-count="4"] .v6-card-actions button{
+      body.mode-feed[data-discovery-channel-count="2"] .v6-card-actions button,
+      body.mode-feed[data-discovery-channel-count="3"] .v6-card-actions button,
+      body.mode-feed[data-discovery-channel-count="4"] .v6-card-actions button{
         min-height:34px!important;
         font-size:8px!important;
         padding:0 3px!important;
@@ -574,12 +586,12 @@
       }
       .card:before,.card:after{display:none!important}
       .card.hero,.card.wide{grid-column:auto!important;border-radius:14px!important}
-      body[data-discovery-channel-count="2"] .card.hero,
-      body[data-discovery-channel-count="3"] .card.hero,
-      body[data-discovery-channel-count="4"] .card.hero,
-      body[data-discovery-channel-count="2"] .card.wide,
-      body[data-discovery-channel-count="3"] .card.wide,
-      body[data-discovery-channel-count="4"] .card.wide{
+      body.mode-feed[data-discovery-channel-count="2"] .card.hero,
+      body.mode-feed[data-discovery-channel-count="3"] .card.hero,
+      body.mode-feed[data-discovery-channel-count="4"] .card.hero,
+      body.mode-feed[data-discovery-channel-count="2"] .card.wide,
+      body.mode-feed[data-discovery-channel-count="3"] .card.wide,
+      body.mode-feed[data-discovery-channel-count="4"] .card.wide{
         grid-column:auto!important;
       }
       .card:hover{transform:none!important;box-shadow:var(--v6-card-shadow)!important;border-color:#343434!important}
@@ -850,6 +862,25 @@
       .close{background:#171717!important;border-color:#303030!important;backdrop-filter:none!important}
       .back{background:rgba(0,0,0,.72)!important;backdrop-filter:blur(2px)!important}
       .toast{background:#1A1A1A!important;border:1px solid #303030!important;color:#F0F0F0!important;box-shadow:var(--v6-float-shadow)!important}
+
+
+      /* Personal/utility sections must never inherit Discovery density */
+      body.mode-hub .grid,
+      body.mode-history .grid,
+      body.mode-saved .grid,
+      body.mode-search .grid{
+        grid-template-columns:minmax(0,1fr)!important;
+        gap:8px!important;
+      }
+
+      body.mode-hub .grid > *,
+      body.mode-history .grid > *,
+      body.mode-saved .grid > *,
+      body.mode-search .grid > *{
+        grid-column:1/-1!important;
+        width:100%!important;
+        min-width:0!important;
+      }
 
       .hub{gap:8px!important}
       .hubHero,.hubPanel{
