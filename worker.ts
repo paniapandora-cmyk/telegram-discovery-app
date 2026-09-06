@@ -498,6 +498,138 @@ async function fetchTelegramMedia(
   throw new Error("Too many Telegram media redirects");
 }
 
+
+async function telegramChannelAvatar(
+  request: Request
+): Promise<Response> {
+  if (
+    request.method !== "GET" &&
+    request.method !== "HEAD"
+  ) {
+    return json(
+      { ok: false, error: "Method not allowed" },
+      405,
+      request
+    );
+  }
+
+  const incoming = new URL(request.url);
+  const username = (
+    incoming.searchParams.get("username") || ""
+  )
+    .trim()
+    .replace(/^@/, "");
+
+  if (!/^[A-Za-z0-9_]{4,32}$/.test(username)) {
+    return json(
+      { ok: false, error: "Invalid Telegram username" },
+      400,
+      request
+    );
+  }
+
+  try {
+    const directUrl = new URL(
+      `https://t.me/i/userpic/320/${encodeURIComponent(username)}.jpg`
+    );
+
+    let image = await fetch(directUrl.toString(), {
+      headers: {
+        Accept: "image/avif,image/webp,image/*,*/*;q=0.8",
+        Referer: "https://t.me/",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; TelegramDiscoveryAvatar/1.0)"
+      },
+      redirect: "follow"
+    });
+
+    let contentType =
+      image.headers.get("content-type") || "";
+
+    if (!image.ok || !contentType.startsWith("image/")) {
+      const page = await fetch(
+        `https://t.me/${encodeURIComponent(username)}`,
+        {
+          headers: {
+            Accept: "text/html,application/xhtml+xml",
+            "User-Agent":
+              "Mozilla/5.0 (compatible; TelegramDiscoveryAvatar/1.0)"
+          },
+          redirect: "follow"
+        }
+      );
+
+      if (!page.ok) {
+        return json(
+          { ok: false, error: "Telegram avatar unavailable" },
+          404,
+          request
+        );
+      }
+
+      const html = await page.text();
+      const imageValue = telegramOgImage(html);
+
+      if (!imageValue) {
+        return json(
+          { ok: false, error: "Telegram channel has no public avatar" },
+          404,
+          request
+        );
+      }
+
+      const imageUrl = new URL(
+        imageValue,
+        `https://t.me/${username}`
+      );
+
+      if (!isTrustedTelegramMediaUrl(imageUrl)) {
+        return json(
+          { ok: false, error: "Unsupported avatar host" },
+          400,
+          request
+        );
+      }
+
+      image = await fetchTelegramMedia(imageUrl);
+      contentType = image.headers.get("content-type") || "";
+    }
+
+    if (!image.ok || !contentType.startsWith("image/")) {
+      return json(
+        { ok: false, error: "Telegram avatar unavailable" },
+        404,
+        request
+      );
+    }
+
+    const headers = corsHeaders(request);
+    headers.set("Content-Type", contentType);
+    headers.set(
+      "Cache-Control",
+      "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
+    );
+    headers.set("X-Content-Type-Options", "nosniff");
+
+    return new Response(
+      request.method === "HEAD" ? null : image.body,
+      { status: 200, headers }
+    );
+  } catch (error) {
+    console.error(
+      "Telegram avatar error",
+      username,
+      error
+    );
+
+    return json(
+      { ok: false, error: "Telegram avatar unavailable" },
+      502,
+      request
+    );
+  }
+}
+
 async function telegramPreviewImage(
   request: Request
 ): Promise<Response> {
@@ -829,6 +961,13 @@ export default {
       "/api/telegram/health"
     ) {
       return telegramHealth(request);
+    }
+
+    if (
+      url.pathname ===
+      "/api/telegram/channel-avatar"
+    ) {
+      return telegramChannelAvatar(request);
     }
 
     if (

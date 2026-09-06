@@ -14,6 +14,8 @@
   const tg = window.Telegram?.WebApp || null;
   const CREATOR_API = "/api/creator";
   const ADD_CHANNEL_API = "/api/add-channel";
+  const CHANNEL_AVATAR_API = "/api/telegram/channel-avatar";
+  const POST_PREVIEW_API = "/api/telegram/preview-image";
   const VERSION = "7.0.0";
 
   const state = {
@@ -164,6 +166,137 @@
       .replace(/^@/, "")
       .split(/[/?#]/)[0]
       .trim();
+  }
+
+
+  function liveDiscoveryItems() {
+    try {
+      return typeof S !== "undefined" && Array.isArray(S?.items)
+        ? S.items
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function sourceUrlForItem(item) {
+    return String(
+      item?.source_url ||
+      item?.channel_url ||
+      item?.telegram_url ||
+      item?.url ||
+      ""
+    ).trim();
+  }
+
+  function usernameForItem(item) {
+    const direct = String(
+      item?.channel_username ||
+      item?.creator_username ||
+      item?.username ||
+      ""
+    ).replace(/^@/, "").trim();
+
+    if (direct) return direct;
+
+    const source = sourceUrlForItem(item);
+    const match = source.match(
+      /^https?:\/\/(?:www\.)?t\.me\/(?:s\/)?([A-Za-z0-9_]{4,32})(?:\/|$)/i
+    );
+
+    return match?.[1] || "";
+  }
+
+  function channelAvatarProxy(username) {
+    const value = String(username || "").replace(/^@/, "").trim();
+    return value
+      ? `${CHANNEL_AVATAR_API}?username=${encodeURIComponent(value)}`
+      : "";
+  }
+
+  function postPreviewProxy(item) {
+    const source = sourceUrlForItem(item);
+    if (!/^https?:\/\/(?:www\.)?(?:t\.me|telegram\.me)\/[A-Za-z0-9_]{4,32}\/\d+/i.test(source)) {
+      return "";
+    }
+
+    return `${POST_PREVIEW_API}?url=${encodeURIComponent(source)}`;
+  }
+
+  function itemForCard(card) {
+    const opener = q(".cardOpen", card);
+    const index = Number(opener?.dataset?.open);
+
+    if (!Number.isInteger(index) || index < 0) return null;
+    return liveDiscoveryItems()[index] || null;
+  }
+
+  function recoverCardAvatar(card, item) {
+    const username = usernameForItem(item);
+    if (!username) return;
+
+    const url = channelAvatarProxy(username);
+
+    qa(".avatar, .nativeAvatar", card).forEach((holder) => {
+      if (q("img", holder)) return;
+
+      const image = document.createElement("img");
+      image.alt = "";
+      image.loading = "lazy";
+      image.decoding = "async";
+      image.src = url;
+      image.onerror = () => image.remove();
+      holder.appendChild(image);
+    });
+  }
+
+  function recoverCardMedia(card, item) {
+    if (q(".mediaStage, .v6-auto-media-stage", card)) return;
+
+    const preview = postPreviewProxy(item);
+    if (!preview) return;
+
+    const stage = document.createElement("div");
+    stage.className = "v6-auto-media-stage";
+    stage.hidden = true;
+
+    const image = document.createElement("img");
+    image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+
+    image.onload = () => {
+      stage.hidden = false;
+    };
+
+    image.onerror = () => {
+      stage.remove();
+    };
+
+    stage.appendChild(image);
+
+    const native = q(".nativePreview", card);
+    const copy = q(".copy", card);
+
+    if (native) {
+      card.insertBefore(stage, native);
+    } else if (copy) {
+      card.insertBefore(stage, copy);
+    } else {
+      card.prepend(stage);
+    }
+
+    image.src = preview;
+  }
+
+  function recoverTelegramMedia() {
+    qa("#grid .card").forEach((card) => {
+      const item = itemForCard(card);
+      if (!item) return;
+
+      recoverCardAvatar(card, item);
+      recoverCardMedia(card, item);
+    });
   }
 
   function installHostTheme() {
@@ -703,6 +836,7 @@
       item.creator_avatar_url ||
       item.channel_avatar_url ||
       item.avatar_url ||
+      channelAvatarProxy(username) ||
       ""
     ).trim();
 
@@ -902,6 +1036,7 @@
   function decorateHost() {
     relocateDiscoveryModules();
     decorateMediaCards();
+    recoverTelegramMedia();
     void renderCreatorRail();
     decorateHub();
   }
