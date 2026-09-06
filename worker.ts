@@ -17,8 +17,8 @@ const SEARCH_FALLBACK_URL =
 const CREATOR_API_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-dashboard-v2";
 
-const ADD_CHANNEL_API_URL =
-  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-channel-add-v1";
+const CHANNELS_API_URL =
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-channels-v1";
 
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -838,6 +838,16 @@ export default {
       return telegramPreviewImage(request);
     }
 
+    if (
+      url.pathname === "/api/discovery/channels"
+    ) {
+      return proxyJsonApi(
+        request,
+        CHANNELS_API_URL,
+        "/"
+      );
+    }
+
     const discoveryPath = getSubPath(
       url,
       "/api/discovery"
@@ -848,16 +858,6 @@ export default {
         request,
         DISCOVERY_API_URL,
         discoveryPath
-      );
-    }
-
-    if (
-      url.pathname === "/api/add-channel"
-    ) {
-      return proxyJsonApi(
-        request,
-        ADD_CHANNEL_API_URL,
-        "/"
       );
     }
 
