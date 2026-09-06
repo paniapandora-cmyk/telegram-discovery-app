@@ -26,6 +26,9 @@
     gridObserver: null,
     bodyObserver: null,
     decorateTimer: 0,
+    discoveryCreators: [],
+    discoveryCreatorsLoaded: false,
+    discoveryCreatorsLoading: false,
   };
 
   const q = (selector, root = document) => root.querySelector(selector);
@@ -660,7 +663,133 @@
     return { name, avatar, meta, card, index };
   }
 
-  function renderCreatorRail() {
+  function normalizeDiscoveryCreator(item) {
+    if (!item || typeof item !== "object") return null;
+
+    const creator =
+      item.creator ||
+      item.author ||
+      item.channel ||
+      item.source ||
+      item.telegram_source ||
+      {};
+
+    const username = String(
+      creator.username ||
+      creator.channel_username ||
+      item.creator_username ||
+      item.channel_username ||
+      item.username ||
+      ""
+    ).replace(/^@/, "").trim();
+
+    const name = String(
+      creator.name ||
+      creator.title ||
+      creator.channel_title ||
+      item.creator_name ||
+      item.channel_title ||
+      item.creator_title ||
+      item.source_name ||
+      username ||
+      ""
+    ).trim();
+
+    const avatar = String(
+      creator.avatar_url ||
+      creator.photo_url ||
+      creator.image_url ||
+      item.creator_avatar_url ||
+      item.channel_avatar_url ||
+      item.avatar_url ||
+      ""
+    ).trim();
+
+    const id = String(
+      creator.id ||
+      creator.creator_id ||
+      item.creator_id ||
+      username ||
+      name
+    ).trim();
+
+    if (!id || !name) return null;
+
+    return {
+      id,
+      name,
+      username,
+      avatar,
+      meta: username ? `@${username}` : "کانال تلگرام",
+    };
+  }
+
+  function discoveryItems(raw) {
+    if (Array.isArray(raw)) return raw;
+
+    for (const candidate of [
+      raw?.items,
+      raw?.results,
+      raw?.content,
+      raw?.contents,
+      raw?.data,
+      raw?.feed,
+      raw?.recommendations,
+    ]) {
+      if (Array.isArray(candidate)) return candidate;
+    }
+
+    if (raw?.data && typeof raw.data === "object") {
+      for (const candidate of [
+        raw.data.items,
+        raw.data.results,
+        raw.data.content,
+        raw.data.feed,
+      ]) {
+        if (Array.isArray(candidate)) return candidate;
+      }
+    }
+
+    return [];
+  }
+
+  async function loadDiscoveryCreators() {
+    if (state.discoveryCreatorsLoaded || state.discoveryCreatorsLoading) return;
+    state.discoveryCreatorsLoading = true;
+
+    try {
+      const target = new URL("/api/discovery", window.location.origin);
+      target.searchParams.set("limit", "100");
+
+      const raw = await request(target.toString());
+      const unique = [];
+      const seen = new Set();
+
+      for (const item of discoveryItems(raw)) {
+        const creator = normalizeDiscoveryCreator(item);
+        if (!creator) continue;
+
+        const key = String(
+          creator.id ||
+          creator.username ||
+          creator.name
+        ).toLowerCase();
+
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        unique.push(creator);
+      }
+
+      state.discoveryCreators = unique;
+      state.discoveryCreatorsLoaded = true;
+    } catch (error) {
+      console.warn("Discovery creator rail:", error);
+    } finally {
+      state.discoveryCreatorsLoading = false;
+    }
+  }
+
+  async function renderCreatorRail() {
     const rail = q("#v6CreatorRail");
     if (!rail) return;
 
@@ -669,8 +798,18 @@
       return;
     }
 
+    await loadDiscoveryCreators();
+
     const unique = [];
     const seen = new Set();
+
+    for (const creator of state.discoveryCreators) {
+      if (unique.length >= 6) break;
+      const key = String(creator.id || creator.username || creator.name).toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      unique.push({ ...creator, card: null });
+    }
 
     qa("#grid .card").forEach((card, index) => {
       if (unique.length >= 6) return;
@@ -678,10 +817,17 @@
       const key = data.name.toLowerCase();
       if (!data.name || seen.has(key)) return;
       seen.add(key);
-      unique.push(data);
+      unique.push({
+        id: key,
+        name: data.name,
+        username: "",
+        avatar: data.avatar,
+        meta: data.meta,
+        card,
+      });
     });
 
-    if (unique.length < 2) {
+    if (!unique.length) {
       rail.innerHTML = "";
       return;
     }
@@ -700,7 +846,20 @@
     qa("[data-v6-creator]", rail).forEach((element) => {
       element.querySelector("button")?.addEventListener("click", () => {
         const item = unique[Number(element.dataset.v6Creator)];
-        q(".cardOpen", item?.card)?.click();
+
+        if (item?.card) {
+          q(".cardOpen", item.card)?.click();
+          return;
+        }
+
+        if (item?.username) {
+          const url = `https://t.me/${item.username}`;
+          try {
+            tg?.openTelegramLink?.(url);
+          } catch {
+            window.open(url, "_blank", "noopener,noreferrer");
+          }
+        }
       });
     });
   }
@@ -732,7 +891,7 @@
   function decorateHost() {
     relocateDiscoveryModules();
     decorateMediaCards();
-    renderCreatorRail();
+    void renderCreatorRail();
     decorateHub();
   }
 
