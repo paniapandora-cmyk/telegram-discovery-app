@@ -103,18 +103,58 @@
 
   const creatorApi = (path, options) => request(`${CREATOR_API}${path}`, options);
 
+  function currentTelegramUserId() {
+    const value = tg?.initDataUnsafe?.user?.id;
+    return value === undefined || value === null ? "" : String(value);
+  }
+
   function normalizeChannels(raw) {
     const list = raw?.channels || raw?.items || raw?.data || [];
     if (!Array.isArray(list)) return [];
 
     return list.map((channel) => ({
       id: channel.id || channel.creator_channel_id || channel.channel_id || "",
+      creatorId:
+        channel.creator_id ||
+        channel.owner_creator_id ||
+        channel.creator?.id ||
+        "",
+      ownerTelegramUserId: String(
+        channel.owner_telegram_user_id ??
+        channel.telegram_user_id ??
+        channel.creator_telegram_user_id ??
+        channel.creator?.telegram_user_id ??
+        ""
+      ),
+      ownerName:
+        channel.owner_name ||
+        channel.creator_name ||
+        channel.creator?.display_name ||
+        channel.creator?.name ||
+        "",
       title: channel.title || channel.name || channel.username || "کانال",
       username: channel.username || channel.channel_username || "",
       verified: Boolean(channel.verified || channel.ownership_verified),
       botAdmin: Boolean(channel.bot_admin || channel.is_bot_admin),
       tracking: channel.tracking_available ?? channel.bot_admin ?? channel.is_bot_admin ?? false,
     })).filter((channel) => channel.id);
+  }
+
+  function filterChannelsForCurrentOwner(channels) {
+    const currentUserId = currentTelegramUserId();
+    if (!currentUserId) return channels;
+
+    const withOwnerMetadata = channels.filter(
+      (channel) => channel.ownerTelegramUserId
+    );
+
+    if (!withOwnerMetadata.length) {
+      return channels;
+    }
+
+    return channels.filter(
+      (channel) => channel.ownerTelegramUserId === currentUserId
+    );
   }
 
   function normalizeDashboard(raw) {
@@ -1446,13 +1486,65 @@ body.mode-explore[data-discovery-channel-count="1"] .grid{
       .title b{display:block;font-size:15px;line-height:19px}
       .title span{display:block;margin-top:2px;color:#858585;font-size:8px;line-height:11px}
       .close{width:36px;height:36px;border:1px solid #303030;border-radius:11px;color:#D8D8D8;background:#171717;cursor:pointer}
-      .toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-bottom:7px}
-      .channels{display:flex;gap:5px;overflow:auto;padding-bottom:2px;scrollbar-width:none}
-      .channels::-webkit-scrollbar{display:none}
-      .chip{flex:0 0 auto;height:30px;padding:0 9px;border:1px solid #373737;border-radius:999px;color:#BDBDBD;background:#101010;font-size:9px;cursor:pointer;white-space:nowrap}
-      .chip.active{color:#0A0A0A;background:#EFEFEF;border-color:#EFEFEF}
-      .chip em{margin-inline-start:4px;color:#249B68;font-style:normal}
-      select{height:30px;padding:0 8px;border:1px solid #333;border-radius:9px;color:#D7D7D7;background:#161616;outline:0;font-size:9px}
+      .creatorScope{
+        margin-bottom:10px;
+        padding:10px;
+        border:1px solid #2A2A2A;
+        border-radius:14px;
+        background:#151515;
+      }
+      .creatorOwner{
+        display:flex;
+        align-items:center;
+        gap:9px;
+        margin-bottom:9px;
+      }
+      .creatorOwnerAvatar{
+        width:38px;
+        height:38px;
+        flex:0 0 38px;
+        display:grid;
+        place-items:center;
+        border-radius:12px;
+        color:#fff;
+        background:linear-gradient(145deg,#2AABEE,#1678C8);
+        font-size:14px;
+        font-weight:900;
+      }
+      .creatorOwnerCopy{min-width:0}
+      .creatorOwnerCopy b{
+        display:block;
+        color:#F4F4F4;
+        font-size:11px;
+        line-height:15px;
+      }
+      .creatorOwnerCopy span{
+        display:block;
+        margin-top:2px;
+        color:#7E7E7E;
+        font-size:7.5px;
+        line-height:11px;
+      }
+      .creatorFilters{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto;
+        gap:6px;
+      }
+      select{
+        height:34px;
+        min-width:0;
+        padding:0 9px;
+        border:1px solid #333;
+        border-radius:10px;
+        color:#E1E1E1;
+        background:#111;
+        outline:0;
+        font-size:9px;
+      }
+      #creatorChannelSelect{
+        width:100%;
+        font-weight:700;
+      }
       .overview{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:2px 1px 8px}
       .overview b{font-size:13px;line-height:17px}
       .overview span{color:#777;font-size:7px}
@@ -1461,12 +1553,12 @@ body.mode-explore[data-discovery-channel-count="1"] .grid{
       .channelState b{font-size:10px}
       .channelState span{margin-inline-start:auto;color:#858585;font-size:7px}
       .metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-      .metric{min-width:0;min-height:72px;padding:9px 9px;border:1px solid #2B2B2B;border-radius:11px;background:#181818}
+      .metric{min-width:0;min-height:78px;padding:10px;border:1px solid #2B2B2B;border-radius:13px;background:#171717}
       .metric.accent{border-color:#3A302B;background:#1C1715}
       .metric small{display:block;overflow:hidden;color:#8B8B8B;font-size:8px;line-height:10px;text-overflow:ellipsis;white-space:nowrap}
-      .metric strong{display:block;margin-top:7px;color:#F5F5F5;font-size:19px;line-height:20px;font-weight:820;white-space:nowrap;font-variant-numeric:tabular-nums}
+      .metric strong{display:block;margin-top:8px;color:#F7F7F7;font-size:20px;line-height:21px;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
       .metric .hint{display:block;margin-top:6px;color:#707070;font-size:7px;line-height:9px}
-      .section{margin-top:9px;padding:10px;border:1px solid #2B2B2B;border-radius:13px;background:#151515}
+      .section{margin-top:10px;padding:11px;border:1px solid #292929;border-radius:14px;background:#141414}
       .sectionHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
       .sectionHead b{font-size:11px}
       .sectionHead span{color:#777;font-size:7px}
@@ -1478,7 +1570,7 @@ body.mode-explore[data-discovery-channel-count="1"] .grid{
       .bar{height:100%;min-width:0;border-radius:999px;background:#2AABEE}
       .bar.orange{background:#FF7A45}.bar.purple{background:#8B5CF6}.bar.green{background:#37C98B}
       .list{display:grid;gap:6px}
-      .item{padding:8px;border:1px solid #292929;border-radius:10px;background:#181818}
+      .item{padding:9px;border:1px solid #292929;border-radius:11px;background:#181818}
       .itemTitle{font-size:10px;font-weight:650;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .mini{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:6px}
       .mini div{min-width:0;padding:5px 2px;border-radius:7px;background:#101010;text-align:center}
@@ -1505,14 +1597,27 @@ body.mode-explore[data-discovery-channel-count="1"] .grid{
             </div>
             <button class="close" id="closeCreator" type="button" aria-label="بستن">✕</button>
           </header>
-          <div class="toolbar">
-            <div class="channels" id="creatorChannels"></div>
-            <select id="creatorDays" aria-label="بازه زمانی">
-              <option value="7">۷ روز</option>
-              <option value="30" selected>۳۰ روز</option>
-              <option value="90">۹۰ روز</option>
-              <option value="365">۱ سال</option>
-            </select>
+          <div class="creatorScope" id="creatorScope">
+            <div class="creatorOwner">
+              <div class="creatorOwnerAvatar" id="creatorOwnerAvatar">C</div>
+              <div class="creatorOwnerCopy">
+                <b id="creatorOwnerName">Creator</b>
+                <span id="creatorOwnerHint">کانال‌های متعلق به این حساب</span>
+              </div>
+            </div>
+
+            <div class="creatorFilters">
+              <select id="creatorChannelSelect" aria-label="کانال">
+                <option value="">انتخاب کانال</option>
+              </select>
+
+              <select id="creatorDays" aria-label="بازه زمانی">
+                <option value="7">۷ روز</option>
+                <option value="30" selected>۳۰ روز</option>
+                <option value="90">۹۰ روز</option>
+                <option value="365">۱ سال</option>
+              </select>
+            </div>
           </div>
           <div id="creatorBody"><div class="loading">در حال دریافت اطلاعات…</div></div>
         </div>
@@ -1524,27 +1629,55 @@ body.mode-explore[data-discovery-channel-count="1"] .grid{
   const cqa = (selector) => [...creatorRoot.querySelectorAll(selector)];
 
   function renderCreatorChannels() {
-    const target = cq("#creatorChannels");
-    if (!target) return;
+    const select = cq("#creatorChannelSelect");
+    const ownerName = cq("#creatorOwnerName");
+    const ownerHint = cq("#creatorOwnerHint");
+    const ownerAvatar = cq("#creatorOwnerAvatar");
+
+    if (!select) return;
 
     if (!state.channels.length) {
-      target.innerHTML = `<span class="empty" style="padding:7px">کانالی ثبت نشده</span>`;
+      select.innerHTML = `<option value="">کانالی برای این حساب ثبت نشده</option>`;
+      select.disabled = true;
+
+      if (ownerName) ownerName.textContent = "Creator Center";
+      if (ownerHint) ownerHint.textContent = "کانالی برای این حساب پیدا نشد";
+      if (ownerAvatar) ownerAvatar.textContent = "C";
       return;
     }
 
-    target.innerHTML = state.channels.map((channel) => `
-      <button class="chip ${channel.id === state.selectedChannelId ? "active" : ""}" data-channel-id="${escapeHtml(channel.id)}" type="button">
-        ${escapeHtml(channel.title || channel.username || "کانال")}${channel.verified ? "<em>✓</em>" : ""}
-      </button>
+    select.disabled = false;
+    select.innerHTML = state.channels.map((channel) => `
+      <option value="${escapeHtml(channel.id)}" ${channel.id === state.selectedChannelId ? "selected" : ""}>
+        ${escapeHtml(channel.title || channel.username || "کانال")}${channel.verified ? " ✓" : ""}
+      </option>
     `).join("");
 
-    cqa("[data-channel-id]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        state.selectedChannelId = button.dataset.channelId || "";
-        renderCreatorChannels();
-        await loadCreatorSelected();
-      });
-    });
+    const selected =
+      state.channels.find((channel) => channel.id === state.selectedChannelId) ||
+      state.channels[0];
+
+    if (ownerName) {
+      ownerName.textContent =
+        selected?.ownerName ||
+        tg?.initDataUnsafe?.user?.first_name ||
+        "Creator";
+    }
+
+    if (ownerHint) {
+      const count = state.channels.length.toLocaleString("fa-IR");
+      ownerHint.textContent =
+        `${count} کانال متعلق به این حساب`;
+    }
+
+    if (ownerAvatar) {
+      const label =
+        selected?.ownerName ||
+        tg?.initDataUnsafe?.user?.first_name ||
+        selected?.title ||
+        "C";
+      ownerAvatar.textContent = String(label).slice(0, 1).toUpperCase();
+    }
   }
 
   function metric(label, value, hint = "", accent = false) {
@@ -1576,7 +1709,9 @@ body.mode-explore[data-discovery-channel-count="1"] .grid{
 
     const channel = state.channels.find((item) => item.id === state.selectedChannelId);
     const views = Math.max(dashboard.views, dashboard.uniqueViewers, 1);
-    const statusText = channel?.botAdmin ? "Tracking دقیق عضویت فعال" : "Discovery فعال · Join Tracking محدود";
+    const statusText = channel?.botAdmin
+      ? "Tracking دقیق عضویت فعال"
+      : "Discovery فعال · Join Tracking محدود";
 
     body.innerHTML = `
       <div class="overview">
@@ -1641,10 +1776,17 @@ body.mode-explore[data-discovery-channel-count="1"] .grid{
 
   async function loadCreatorChannels() {
     const raw = await creatorApi("/channels");
-    state.channels = normalizeChannels(raw);
-    if (!state.selectedChannelId || !state.channels.some((item) => item.id === state.selectedChannelId)) {
+    const normalized = normalizeChannels(raw);
+
+    state.channels = filterChannelsForCurrentOwner(normalized);
+
+    if (
+      !state.selectedChannelId ||
+      !state.channels.some((item) => item.id === state.selectedChannelId)
+    ) {
       state.selectedChannelId = state.channels[0]?.id || "";
     }
+
     renderCreatorChannels();
   }
 
@@ -1758,6 +1900,12 @@ body.mode-explore[data-discovery-channel-count="1"] .grid{
     cq("#creatorBackdrop")?.addEventListener("click", (event) => {
       if (event.target === cq("#creatorBackdrop")) closeCreatorCenter();
     });
+    cq("#creatorChannelSelect")?.addEventListener("change", async (event) => {
+      state.selectedChannelId = event.target.value || "";
+      renderCreatorChannels();
+      await loadCreatorSelected();
+    });
+
     cq("#creatorDays")?.addEventListener("change", async (event) => {
       state.days = Number(event.target.value || 30);
       await loadCreatorSelected();
