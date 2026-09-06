@@ -688,6 +688,7 @@
       creator.title ||
       creator.channel_title ||
       item.creator_name ||
+      item.title ||
       item.channel_title ||
       item.creator_title ||
       item.source_name ||
@@ -709,6 +710,8 @@
       creator.id ||
       creator.creator_id ||
       item.creator_id ||
+      item.source_id ||
+      item.id ||
       username ||
       name
     ).trim();
@@ -720,6 +723,7 @@
       name,
       username,
       avatar,
+      sourceUrl: item.source_url || creator.source_url || (username ? `https://t.me/${username}` : ""),
       meta: username ? `@${username}` : "کانال تلگرام",
     };
   }
@@ -728,6 +732,7 @@
     if (Array.isArray(raw)) return raw;
 
     for (const candidate of [
+      raw?.channels,
       raw?.items,
       raw?.results,
       raw?.content,
@@ -741,6 +746,7 @@
 
     if (raw?.data && typeof raw.data === "object") {
       for (const candidate of [
+        raw.data.channels,
         raw.data.items,
         raw.data.results,
         raw.data.content,
@@ -758,14 +764,15 @@
     state.discoveryCreatorsLoading = true;
 
     try {
-      const target = new URL("/api/discovery", window.location.origin);
-      target.searchParams.set("limit", "100");
+      const target = new URL("/api/discovery/channels", window.location.origin);
 
       const raw = await request(target.toString());
       const unique = [];
       const seen = new Set();
 
       for (const item of discoveryItems(raw)) {
+        if (item?.enabled === false) continue;
+
         const creator = normalizeDiscoveryCreator(item);
         if (!creator) continue;
 
@@ -783,7 +790,8 @@
       state.discoveryCreators = unique;
       state.discoveryCreatorsLoaded = true;
     } catch (error) {
-      console.warn("Discovery creator rail:", error);
+      console.warn("Discovery channel rail:", error);
+      state.discoveryCreatorsLoaded = false;
     } finally {
       state.discoveryCreatorsLoading = false;
     }
@@ -804,28 +812,31 @@
     const seen = new Set();
 
     for (const creator of state.discoveryCreators) {
-      if (unique.length >= 6) break;
+      if (unique.length >= 12) break;
       const key = String(creator.id || creator.username || creator.name).toLowerCase();
       if (!key || seen.has(key)) continue;
       seen.add(key);
       unique.push({ ...creator, card: null });
     }
 
-    qa("#grid .card").forEach((card, index) => {
-      if (unique.length >= 6) return;
-      const data = creatorCardData(card, index);
-      const key = data.name.toLowerCase();
-      if (!data.name || seen.has(key)) return;
-      seen.add(key);
-      unique.push({
-        id: key,
-        name: data.name,
-        username: "",
-        avatar: data.avatar,
-        meta: data.meta,
-        card,
+    // Fallback only if the dedicated telegram_sources catalog is temporarily unavailable.
+    if (!unique.length) {
+      qa("#grid .card").forEach((card, index) => {
+        if (unique.length >= 6) return;
+        const data = creatorCardData(card, index);
+        const key = data.name.toLowerCase();
+        if (!data.name || seen.has(key)) return;
+        seen.add(key);
+        unique.push({
+          id: key,
+          name: data.name,
+          username: "",
+          avatar: data.avatar,
+          meta: data.meta,
+          card,
+        });
       });
-    });
+    }
 
     if (!unique.length) {
       rail.innerHTML = "";
@@ -852,8 +863,8 @@
           return;
         }
 
-        if (item?.username) {
-          const url = `https://t.me/${item.username}`;
+        const url = item?.sourceUrl || (item?.username ? `https://t.me/${item.username}` : "");
+        if (url) {
           try {
             tg?.openTelegramLink?.(url);
           } catch {
@@ -975,6 +986,8 @@
             : "✓ کانال عمومی ثبت شد و Sync می‌شود؛ مالکیت هنوز تأیید نشده است.";
 
         input.value = "";
+        state.discoveryCreatorsLoaded = false;
+        state.discoveryCreators = [];
         scheduleDecorate();
         setTimeout(() => {
           modal.classList.remove("open");
