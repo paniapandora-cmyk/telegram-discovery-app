@@ -729,6 +729,95 @@
       .v6-creator-card button{
         width:100%;min-height:30px;margin-top:auto;border:0;border-radius:999px;color:#fff;background:var(--v6-blue);font-size:9px;font-weight:700;cursor:pointer;
       }
+
+      /* HOME — density follows active telegram_sources count */
+      body.mode-feed[data-discovery-channel-count="2"] #grid,
+      body.mode-feed[data-discovery-channel-count="3"] #grid,
+      body.mode-feed[data-discovery-channel-count="4"] #grid{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:7px!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="2"] #grid .card,
+      body.mode-feed[data-discovery-channel-count="3"] #grid .card,
+      body.mode-feed[data-discovery-channel-count="4"] #grid .card{
+        grid-column:auto!important;
+        min-width:0!important;
+        border-radius:13px!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="2"] #grid .card.hero,
+      body.mode-feed[data-discovery-channel-count="3"] #grid .card.hero,
+      body.mode-feed[data-discovery-channel-count="4"] #grid .card.hero,
+      body.mode-feed[data-discovery-channel-count="2"] #grid .card.wide,
+      body.mode-feed[data-discovery-channel-count="3"] #grid .card.wide,
+      body.mode-feed[data-discovery-channel-count="4"] #grid .card.wide{
+        grid-column:auto!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] .v6-creator-rail{
+        display:grid!important;
+        grid-template-columns:repeat(4,minmax(0,1fr))!important;
+        gap:6px!important;
+        overflow:visible!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] .v6-creator-card{
+        min-width:0!important;
+        min-height:112px!important;
+        padding:8px 5px 6px!important;
+        border-radius:12px!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] .v6-creator-card img,
+      body.mode-feed[data-discovery-channel-count="4"] .v6-creator-avatar-fallback{
+        width:42px!important;
+        height:42px!important;
+        flex-basis:42px!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] .v6-creator-card strong{
+        margin-top:6px!important;
+        font-size:8px!important;
+        line-height:11px!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] .v6-creator-card small{
+        margin-top:1px!important;
+        font-size:6.5px!important;
+        line-height:9px!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] .v6-creator-card button{
+        min-height:24px!important;
+        padding:0 4px!important;
+        font-size:7px!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] #grid .mediaStage,
+      body.mode-feed[data-discovery-channel-count="4"] #grid .v6-auto-media-stage{
+        aspect-ratio:1/1!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] #grid .copy,
+      body.mode-feed[data-discovery-channel-count="4"] #grid .nativePreview{
+        padding:7px!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] #grid .nativeMessage,
+      body.mode-feed[data-discovery-channel-count="4"] #grid .title{
+        font-size:9.5px!important;
+        line-height:15px!important;
+        -webkit-line-clamp:4!important;
+        line-clamp:4!important;
+        overflow:hidden!important;
+      }
+
+      body.mode-feed[data-discovery-channel-count="4"] #grid .meta,
+      body.mode-feed[data-discovery-channel-count="4"] #grid .nativeMeta,
+      body.mode-feed[data-discovery-channel-count="4"] #grid .nativeFoot{
+        font-size:6.5px!important;
+      }
       .mode-search .v6-creator-rail,.mode-explore .v6-creator-rail,.mode-trending .v6-creator-rail,.mode-fresh .v6-creator-rail,
       .mode-hub .v6-creator-rail,.mode-history .v6-creator-rail,.mode-saved .v6-creator-rail{display:none!important}
       .mode-search .add-channel-card,.mode-hub .add-channel-card,.mode-history .add-channel-card,.mode-saved .add-channel-card{display:none!important}
@@ -1645,6 +1734,10 @@
   }
 
   function boot() {
+    if (!document.body.dataset.discoveryChannelCount) {
+      document.body.dataset.discoveryChannelCount = "4";
+    }
+
     installHostTheme();
     bindTelegramEvents();
     installFallbackAddChannel();
