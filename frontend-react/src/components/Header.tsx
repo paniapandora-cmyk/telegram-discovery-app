@@ -1,0 +1,1 @@
+export default function Header(){return <header className='hero'><div className='brand'><div className='brandMark'>✦</div><div className='brandCopy'><h1>کشف</h1><p>✨ تلگرام، اما برای سلیقه تو</p></div></div><div className='heroAside'><span className='plane'>➤</span><small>کانال‌های بهتر<br/>دنیای بزرگ‌تر</small></div></header>}
