@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import ExploreTile from '../components/ExploreTile';
+import { loadExpandedExplore } from '../data/explore';
 import type { Post } from '../types';
+import '../styles/explore-masonry-v7.css';
 
 type FeedState = 'loading' | 'live' | 'fallback';
 
@@ -19,11 +21,34 @@ export default function ExplorePage({
   onImpression,
 }: Props) {
   const [category, setCategory] = useState('همه');
+  const [expandedPosts, setExpandedPosts] = useState<Post[]>([]);
+  const [expandedLoading, setExpandedLoading] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    setExpandedLoading(true);
+
+    loadExpandedExplore(controller.signal, 100)
+      .then((next) => {
+        if (next.length) setExpandedPosts(next);
+      })
+      .catch(() => {
+        // Keep the already loaded live 18-post set if the expanded request fails.
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setExpandedLoading(false);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  const sourcePosts = expandedPosts.length ? expandedPosts : posts;
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
 
-    for (const post of posts) {
+    for (const post of sourcePosts) {
       const value = post.category?.trim();
       if (!value) continue;
       counts.set(value, (counts.get(value) || 0) + 1);
@@ -33,23 +58,31 @@ export default function ExplorePage({
       'همه',
       ...Array.from(counts.entries())
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
+        .slice(0, 7)
         .map(([value]) => value),
     ];
-  }, [posts]);
+  }, [sourcePosts]);
 
   const visiblePosts = useMemo(
     () =>
       category === 'همه'
-        ? posts
-        : posts.filter((post) => post.category === category),
-    [posts, category],
+        ? sourcePosts
+        : sourcePosts.filter((post) => post.category === category),
+    [sourcePosts, category],
   );
+
+  const positioned = useMemo(
+    () => visiblePosts.map((post, index) => ({ post, index })),
+    [visiblePosts],
+  );
+
+  const rightColumn = positioned.filter((item) => item.index % 2 === 0);
+  const leftColumn = positioned.filter((item) => item.index % 2 === 1);
 
   const count = new Intl.NumberFormat('fa-IR').format(visiblePosts.length);
 
   return (
-    <div className="page explorePageV4">
+    <div className="page explorePageV7">
       <header className="pageHeader exploreHeaderV4">
         <div>
           <h1>اکسپلور</h1>
@@ -65,6 +98,10 @@ export default function ExplorePage({
             </span>
 
             <span className="pageCountChip">{count} محتوا</span>
+
+            {expandedLoading && (
+              <span className="exploreExpandStatusV7">در حال تکمیل…</span>
+            )}
           </div>
         </div>
 
@@ -85,7 +122,7 @@ export default function ExplorePage({
         </div>
       )}
 
-      {state === 'loading' && !posts.length ? (
+      {state === 'loading' && !sourcePosts.length ? (
         <div className="exploreSkeletonV4">
           <span />
           <span />
@@ -96,17 +133,33 @@ export default function ExplorePage({
         </div>
       ) : visiblePosts.length ? (
         <div
-          className={`exploreGridV4 ${state === 'loading' ? 'isRefreshing' : ''}`}
+          className={`exploreMasonryV7 ${
+            state === 'loading' ? 'isRefreshing' : ''
+          }`}
         >
-          {visiblePosts.map((post, index) => (
-            <ExploreTile
-              key={post.id}
-              post={post}
-              tall={index % 5 === 0 || index % 7 === 3}
-              onOpen={onOpen}
-              onImpression={() => onImpression(post, index + 1)}
-            />
-          ))}
+          <div className="exploreColumnV7">
+            {rightColumn.map(({ post, index }) => (
+              <ExploreTile
+                key={post.id}
+                post={post}
+                tall={index % 6 === 0 || index % 9 === 4}
+                onOpen={onOpen}
+                onImpression={() => onImpression(post, index + 1)}
+              />
+            ))}
+          </div>
+
+          <div className="exploreColumnV7">
+            {leftColumn.map(({ post, index }) => (
+              <ExploreTile
+                key={post.id}
+                post={post}
+                tall={index % 7 === 1 || index % 10 === 5}
+                onOpen={onOpen}
+                onImpression={() => onImpression(post, index + 1)}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <div className="emptyState">
