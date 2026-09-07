@@ -11,27 +11,32 @@ const isRow = (value: unknown): value is Row =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
 const row = (value: unknown): Row => (isRow(value) ? value : {});
-const list = (value: unknown) =>
+const list = (value: unknown): Row[] =>
   Array.isArray(value) ? value.filter(isRow) : [];
 
 const text = (source: Row, keys: string[]) => {
   for (const key of keys) {
     const value = source[key];
+
     if (typeof value === 'string' && value.trim()) return value.trim();
     if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   }
+
   return '';
 };
 
 const number = (source: Row, keys: string[]) => {
   for (const key of keys) {
     const value = source[key];
+
     if (typeof value === 'number' && Number.isFinite(value)) return value;
+
     if (typeof value === 'string' && value.trim()) {
       const parsed = Number(value.replace(/[^0-9.-]/g, ''));
       if (Number.isFinite(parsed)) return parsed;
     }
   }
+
   return 0;
 };
 
@@ -39,12 +44,13 @@ const firstObject = (source: Row, keys: string[]) => {
   for (const key of keys) {
     if (isRow(source[key])) return source[key] as Row;
   }
+
   return source;
 };
 
 const candidateList = (raw: unknown, depth = 0): Row[] => {
   if (Array.isArray(raw)) return raw.filter(isRow);
-  if (!isRow(raw) || depth > 5) return [];
+  if (!isRow(raw) || depth > 6) return [];
 
   for (const key of [
     'channels',
@@ -54,6 +60,8 @@ const candidateList = (raw: unknown, depth = 0): Row[] => {
     'results',
     'data',
     'dashboard',
+    'analytics',
+    'content',
   ]) {
     const value = raw[key];
 
@@ -72,7 +80,10 @@ const candidateList = (raw: unknown, depth = 0): Row[] => {
 };
 
 export type CreatorChannel = {
+  // id is always the id that should be sent back to creator dashboard/content APIs.
   id: string;
+  creatorChannelId: string;
+  sourceId: string;
   title: string;
   username: string;
   ownerTelegramUserId: string;
@@ -145,7 +156,7 @@ export type HubData = {
 };
 
 const normalizeChannels = (raw: unknown): CreatorChannel[] => {
-  const currentId = String(getTelegramUser()?.id ?? '');
+  const currentTelegramUserId = String(getTelegramUser()?.id ?? '');
   const top = candidateList(raw);
   const expanded: Row[] = [];
 
@@ -154,7 +165,8 @@ const normalizeChannels = (raw: unknown): CreatorChannel[] => {
 
     if (children.length) {
       for (const child of children) {
-        // Keep parent ownership fields when child rows only contain channel data.
+        // Preserve parent creator/ownership identifiers when the nested row only
+        // contains the Telegram/source metadata.
         expanded.push({ ...item, ...child });
       }
     } else {
@@ -164,45 +176,79 @@ const normalizeChannels = (raw: unknown): CreatorChannel[] => {
 
   const normalized = expanded
     .map((source) => {
-      const channel = isRow(source.channel)
+      const channelObject = isRow(source.channel)
         ? (source.channel as Row)
-        : isRow(source.telegram_source)
-          ? (source.telegram_source as Row)
-          : source;
+        : {};
 
-      const id =
-        text(channel, [
-          'id',
-          'creator_channel_id',
-          'channel_id',
-          'telegram_source_id',
-          'source_id',
-        ]) ||
+      const telegramSourceObject = isRow(source.telegram_source)
+        ? (source.telegram_source as Row)
+        : {};
+
+      const displayObject =
+        Object.keys(channelObject).length > 0
+          ? channelObject
+          : Object.keys(telegramSourceObject).length > 0
+            ? telegramSourceObject
+            : source;
+
+      /*
+       * IMPORTANT:
+       * Metrics RPCs are keyed by creator_channels.id.
+       *
+       * The previous React normalizer preferred nested channel/source `id`
+       * before `creator_channel_id`. When /channels returned a nested
+       * telegram_source, the UI could therefore send telegram_sources.id to
+       * /dashboard. That id is a valid UUID, so the backend can answer 200 with
+       * an all-zero dashboard instead of throwing an obvious error.
+       *
+       * Explicit creator-channel identifiers must win.
+       */
+      const creatorChannelId =
         text(source, [
-          'id',
           'creator_channel_id',
-          'channel_id',
+          'owner_creator_channel_id',
+          'claimed_channel_id',
+        ]) ||
+        text(channelObject, [
+          'creator_channel_id',
+          'owner_creator_channel_id',
+          'claimed_channel_id',
+        ]) ||
+        // Some creator APIs return the creator_channels row directly.
+        text(source, ['channel_id']) ||
+        text(channelObject, ['channel_id']) ||
+        // Only after explicit creator identifiers do we trust a generic id.
+        text(source, ['id']) ||
+        text(channelObject, ['id']);
+
+      const sourceId =
+        text(source, ['telegram_source_id', 'source_id']) ||
+        text(telegramSourceObject, [
           'telegram_source_id',
           'source_id',
-        ]);
+          'id',
+        ]) ||
+        (Object.keys(telegramSourceObject).length ? text(displayObject, ['id']) : '');
 
       const username = (
-        text(channel, [
+        text(displayObject, [
           'username',
           'channel_username',
           'source_username',
           'handle',
+          'telegram_username',
         ]) ||
         text(source, [
           'username',
           'channel_username',
           'source_username',
           'handle',
+          'telegram_username',
         ])
       ).replace(/^@/, '');
 
       const title =
-        text(channel, [
+        text(displayObject, [
           'title',
           'channel_title',
           'source_title',
@@ -224,25 +270,29 @@ const normalizeChannels = (raw: unknown): CreatorChannel[] => {
           source.telegram_user_id ??
           source.creator_telegram_user_id ??
           row(source.creator).telegram_user_id ??
-          channel.owner_telegram_user_id ??
+          displayObject.owner_telegram_user_id ??
           '',
       );
 
+      const id = creatorChannelId || username || sourceId;
+
       return {
-        id: id || username,
+        id,
+        creatorChannelId: creatorChannelId || id,
+        sourceId,
         username,
         title,
         ownerTelegramUserId,
         verified: Boolean(
-          channel.verified ??
-            channel.ownership_verified ??
+          displayObject.verified ??
+            displayObject.ownership_verified ??
             source.verified ??
             source.ownership_verified ??
             source.claim_verified,
         ),
         botAdmin: Boolean(
-          channel.bot_admin ??
-            channel.is_bot_admin ??
+          displayObject.bot_admin ??
+            displayObject.is_bot_admin ??
             source.bot_admin ??
             source.is_bot_admin,
         ),
@@ -250,36 +300,78 @@ const normalizeChannels = (raw: unknown): CreatorChannel[] => {
     })
     .filter((item) => Boolean(item.id));
 
-  // The Creator API is already user-scoped. Some legitimate rows do not carry
-  // owner_telegram_user_id. Previously, as soon as one row had an owner id,
-  // every owner-less row was dropped. That is why a 4-channel response could
-  // collapse to only 2 visible channels. Keep owner-less rows, but still reject
-  // rows explicitly belonging to another Telegram user.
-  const scoped = currentId
+  // The /channels route is already user-scoped. Keep rows without explicit
+  // ownership metadata, but reject rows explicitly owned by somebody else.
+  const scoped = currentTelegramUserId
     ? normalized.filter(
         (item) =>
-          !item.ownerTelegramUserId || item.ownerTelegramUserId === currentId,
+          !item.ownerTelegramUserId ||
+          item.ownerTelegramUserId === currentTelegramUserId,
       )
     : normalized;
 
   const seen = new Set<string>();
 
   return scoped.filter((item) => {
-    const key = (item.username || item.id).toLowerCase();
+    const key = (item.username || item.creatorChannelId || item.id).toLowerCase();
+
     if (!key || seen.has(key)) return false;
+
     seen.add(key);
     return true;
   });
 };
 
-const normalizeMetrics = (raw: unknown): CreatorMetrics => {
+const metricPayload = (raw: unknown, channelId = ''): Row => {
+  if (Array.isArray(raw)) {
+    const rows = raw.filter(isRow);
+    if (!rows.length) return {};
+
+    if (channelId) {
+      const matched = rows.find((item) =>
+        [
+          text(item, ['creator_channel_id']),
+          text(item, ['channel_id']),
+          text(item, ['id']),
+        ].includes(channelId),
+      );
+
+      if (matched) return matched;
+    }
+
+    return rows[0];
+  }
+
   const root = row(raw);
+
+  // If a response wraps a list (analytics fallback commonly does), select the
+  // requested channel instead of normalizing the wrapper into zeros.
+  for (const key of ['channels', 'items', 'rows', 'results']) {
+    if (Array.isArray(root[key])) {
+      return metricPayload(root[key], channelId);
+    }
+  }
+
+  if (Array.isArray(root.data)) {
+    return metricPayload(root.data, channelId);
+  }
+
+  return root;
+};
+
+const normalizeMetrics = (
+  raw: unknown,
+  channelId = '',
+): CreatorMetrics => {
+  const root = metricPayload(raw, channelId);
+
   const source = firstObject(root, [
     'dashboard',
     'data',
     'analytics',
     'summary',
   ]);
+
   const metrics = firstObject(source, ['metrics', 'totals', 'stats']);
 
   return {
@@ -326,27 +418,56 @@ const normalizeMetrics = (raw: unknown): CreatorMetrics => {
   };
 };
 
+const metricWeight = (metrics: CreatorMetrics) =>
+  metrics.views +
+  metrics.uniqueViewers +
+  metrics.telegramOpens +
+  metrics.joinClicks +
+  metrics.telegramJoins +
+  metrics.activeJoins +
+  metrics.leaves +
+  metrics.saves +
+  metrics.botStarts;
+
 const normalizeContent = (raw: unknown): CreatorContent[] => {
   const root = row(raw);
   let items: Row[] = [];
 
-  for (const key of ['items', 'content', 'contents', 'rows', 'data']) {
-    if (Array.isArray(root[key])) {
-      items = list(root[key]);
-      break;
-    }
+  if (Array.isArray(raw)) {
+    items = list(raw);
+  } else {
+    for (const key of [
+      'items',
+      'content',
+      'contents',
+      'rows',
+      'results',
+      'data',
+    ]) {
+      if (Array.isArray(root[key])) {
+        items = list(root[key]);
+        break;
+      }
 
-    if (isRow(root[key])) {
-      const nested = row(root[key]);
-      for (const inner of ['items', 'content', 'rows']) {
-        if (Array.isArray(nested[inner])) {
-          items = list(nested[inner]);
-          break;
+      if (isRow(root[key])) {
+        const nested = row(root[key]);
+
+        for (const inner of [
+          'items',
+          'content',
+          'contents',
+          'rows',
+          'results',
+        ]) {
+          if (Array.isArray(nested[inner])) {
+            items = list(nested[inner]);
+            break;
+          }
         }
       }
-    }
 
-    if (items.length) break;
+      if (items.length) break;
+    }
   }
 
   return items
@@ -372,7 +493,9 @@ const normalizeContent = (raw: unknown): CreatorContent[] => {
 
 const dateLabel = (value: string) => {
   if (!value) return '';
+
   const parsed = new Date(value);
+
   return Number.isNaN(parsed.getTime())
     ? value
     : new Intl.DateTimeFormat('fa-IR', {
@@ -383,13 +506,17 @@ const dateLabel = (value: string) => {
       }).format(parsed);
 };
 
-export async function loadProfileHub(signal?: AbortSignal): Promise<HubData> {
+export async function loadProfileHub(
+  signal?: AbortSignal,
+): Promise<HubData> {
   const paths = [
     '/api/discovery/profile',
     '/api/discovery/notifications?limit=20',
     '/api/discovery/notification-preferences',
     '/api/discovery/topics',
-    '/api/creator/dashboard',
+    // Use the real creator catalog route directly. Do not depend on the
+    // temporary Pages rewrite from /dashboard -> /channels.
+    '/api/creator/channels',
     '/api/creator/claims',
   ];
 
@@ -405,21 +532,25 @@ export async function loadProfileHub(signal?: AbortSignal): Promise<HubData> {
   const profile = row(value(0));
   const user = row(profile.user);
   const tg = getTelegramUser() || {};
+
   const first = text(user, ['first_name']) || text(tg, ['first_name']);
   const last = text(user, ['last_name']) || text(tg, ['last_name']);
+
   const displayName =
     text(user, ['display_name', 'name', 'full_name']) ||
     [first, last].filter(Boolean).join(' ') ||
     'کاربر تلگرام';
-  const username = (text(user, ['username']) || text(tg, ['username'])).replace(
-    /^@/,
-    '',
-  );
+
+  const username = (
+    text(user, ['username']) || text(tg, ['username'])
+  ).replace(/^@/, '');
+
   const initials = (
     displayName.trim().slice(0, 1) ||
     username.slice(0, 1) ||
     'T'
   ).toUpperCase();
+
   const notifications = row(value(1));
   const topics = value(3);
   const claims = value(5);
@@ -447,19 +578,44 @@ export async function loadCreatorMetrics(
   const id = encodeURIComponent(channelId);
   const period = encodeURIComponent(String(days));
 
+  let dashboard: CreatorMetrics | null = null;
+
   try {
-    return normalizeMetrics(
-      await requestJson(`/api/creator/dashboard?channel_id=${id}&days=${period}`, {
-        signal,
-      }),
+    dashboard = normalizeMetrics(
+      await requestJson(
+        `/api/creator/dashboard?channel_id=${id}&days=${period}`,
+        { signal },
+      ),
+      channelId,
     );
   } catch {
-    return normalizeMetrics(
-      await requestJson(`/api/creator/analytics?channel_id=${id}&days=${period}`, {
-        signal,
-      }),
-    );
+    dashboard = null;
   }
+
+  // creator-dashboard-v2 can legally answer 200 with an all-zero dashboard.
+  // If that happens, check the analytics compatibility route before accepting
+  // the zeros. This also handles array-shaped analytics responses.
+  if (!dashboard || metricWeight(dashboard) === 0) {
+    try {
+      const analytics = normalizeMetrics(
+        await requestJson(
+          `/api/creator/analytics?channel_id=${id}&days=${period}`,
+          { signal },
+        ),
+        channelId,
+      );
+
+      if (!dashboard || metricWeight(analytics) > metricWeight(dashboard)) {
+        return analytics;
+      }
+    } catch {
+      // Keep the dashboard response if it existed.
+    }
+  }
+
+  if (dashboard) return dashboard;
+
+  throw new Error('Creator metrics unavailable');
 }
 
 export async function loadCreatorContent(
@@ -471,20 +627,24 @@ export async function loadCreatorContent(
   const period = encodeURIComponent(String(days));
 
   try {
-    return normalizeContent(
+    const primary = normalizeContent(
       await requestJson(
         `/api/creator/content?channel_id=${id}&days=${period}&limit=50`,
         { signal },
       ),
     );
+
+    if (primary.length) return primary;
   } catch {
-    return normalizeContent(
-      await requestJson(
-        `/api/creator/content-performance?channel_id=${id}&days=${period}&limit=50`,
-        { signal },
-      ),
-    );
+    // Try compatibility route below.
   }
+
+  return normalizeContent(
+    await requestJson(
+      `/api/creator/content-performance?channel_id=${id}&days=${period}&limit=50`,
+      { signal },
+    ),
+  );
 }
 
 export async function loadBotOwnerStats(
@@ -498,6 +658,7 @@ export async function loadBotOwnerStats(
       { signal, timeout: 7000 },
     ),
   );
+
   const stats = row(raw.stats);
 
   return {
@@ -519,6 +680,7 @@ export async function loadNotifications(
   const raw = row(
     await requestJson('/api/discovery/notifications?limit=20', { signal }),
   );
+
   const items = list(raw.items).length ? list(raw.items) : candidateList(raw);
 
   return items.map((item) => ({
