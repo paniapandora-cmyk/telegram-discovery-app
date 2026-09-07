@@ -1,0 +1,277 @@
+/* Telegram Discovery — Creator Center v5 */
+
+.creatorHeaderStatusV5 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.creatorHeaderStatusV5 .liveBadge {
+  margin-top: 0 !important;
+}
+
+.creatorCountV5 {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(132,181,215,.14);
+  border-radius: 999px;
+  background: rgba(7,19,29,.72);
+  color: #8195a6;
+  font-size: 6.8px;
+}
+
+.creatorChannelPickerV5 {
+  padding: 12px;
+  border-radius: 19px;
+}
+
+.creatorPickerTitleV5 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.creatorPickerTitleV5 h2 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.creatorPickerTitleV5 p {
+  margin: 4px 0 0;
+  color: #748899;
+  font-size: 6.7px;
+}
+
+.creatorPickerTitleV5 > svg {
+  width: 18px;
+  height: 18px;
+  color: #5ccaff;
+}
+
+.creatorChannelRailV5 {
+  direction: rtl;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.creatorChannelRailV5::-webkit-scrollbar {
+  display: none;
+}
+
+.creatorChannelRailV5 > button {
+  position: relative;
+  flex: 0 0 176px;
+  min-height: 67px;
+  display: grid;
+  grid-template-columns: 40px minmax(0,1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 9px;
+  border: 1px solid rgba(132,181,215,.14);
+  border-radius: 15px;
+  background: linear-gradient(145deg,#081722,#051019);
+  color: #e8f0f5;
+  text-align: right;
+}
+
+.creatorChannelRailV5 > button.active {
+  border-color: rgba(67,198,255,.46);
+  background:
+    radial-gradient(100px 60px at 100% 0,rgba(50,190,248,.10),transparent 72%),
+    linear-gradient(145deg,#0a2438,#06131e);
+  box-shadow: 0 9px 22px rgba(24,142,209,.12);
+}
+
+.creatorChannelInitialV5 {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: linear-gradient(145deg,#12324a,#081824);
+  color: #70d4ff;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.creatorChannelCopyV5 {
+  min-width: 0;
+}
+
+.creatorChannelCopyV5 strong,
+.creatorChannelCopyV5 small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.creatorChannelCopyV5 strong {
+  font-size: 8.8px;
+}
+
+.creatorChannelCopyV5 small {
+  direction: ltr;
+  margin-top: 4px;
+  color: #748899;
+  font-size: 6.2px;
+  text-align: right;
+}
+
+.creatorChannelBadgesV5 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #62d4a6;
+}
+
+.creatorChannelBadgesV5 svg {
+  width: 13px;
+  height: 13px;
+}
+
+.creatorToolbarBottomV5 {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(130,163,188,.08);
+}
+
+.neutralFlagV5 {
+  color: #7f94a6 !important;
+  border-color: rgba(132,181,215,.11) !important;
+  background: rgba(126,164,194,.04) !important;
+}
+
+.creatorSummaryV5 {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.creatorSummaryV5 article {
+  min-height: 116px;
+  padding: 11px 9px;
+  border: 1px solid rgba(132,181,215,.15);
+  border-radius: 17px;
+  background: linear-gradient(145deg,#091925,#051019);
+  box-shadow: 0 12px 26px rgba(0,0,0,.18);
+}
+
+.creatorSummaryV5 article > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #6acfff;
+}
+
+.creatorSummaryV5 article svg {
+  width: 15px;
+  height: 15px;
+}
+
+.creatorSummaryV5 small {
+  color: #8598a8;
+  font-size: 6.4px;
+}
+
+.creatorSummaryV5 strong {
+  display: block;
+  margin-top: 15px;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.creatorSummaryV5 article > span {
+  display: block;
+  margin-top: 7px;
+  color: #718596;
+  font-size: 6.2px;
+}
+
+.creatorSummaryAccentV5 {
+  border-color: rgba(69,199,250,.30) !important;
+  background:
+    radial-gradient(100px 70px at 100% 0,rgba(54,192,247,.10),transparent 72%),
+    linear-gradient(145deg,#0a253a,#06121c) !important;
+}
+
+.creatorMetricSectionLabelV5 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 3px 7px;
+  color: #8799a8;
+  font-size: 7.2px;
+}
+
+.creatorMetricSectionLabelV5 svg {
+  width: 15px;
+  height: 15px;
+  color: #54c9fa;
+}
+
+.creatorMetricsV5 {
+  margin-top: 0;
+}
+
+.creatorMetricsV5 article {
+  min-height: 90px;
+}
+
+.creatorContentV5 {
+  margin-top: 11px;
+}
+
+.creatorContentV5 .creatorContentHead > svg {
+  width: 17px;
+  height: 17px;
+  color: #5bcaff;
+}
+
+.creatorContentListV5 > article {
+  display: grid;
+  grid-template-columns: 26px minmax(0,1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.creatorContentRankV5 {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(69,199,250,.15);
+  border-radius: 8px;
+  background: rgba(57,192,245,.05);
+  color: #65cff9;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.creatorContentMainV5 {
+  min-width: 0;
+}
+
+@media (max-width:370px) {
+  .creatorChannelRailV5 > button {
+    flex-basis: 160px;
+  }
+
+  .creatorSummaryV5 {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+
+  .creatorSummaryV5 .creatorSummaryAccentV5 {
+    grid-column: 1/-1;
+    min-height: 92px;
+  }
+}
