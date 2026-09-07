@@ -1,0 +1,74 @@
+/* Explore v7 — real expanded feed + gap-free two-column masonry */
+
+.exploreMasonryV7 {
+  direction: rtl;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+.exploreMasonryV7.isRefreshing {
+  opacity: .84;
+}
+
+.exploreColumnV7 {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.exploreColumnV7 .exploreTileV4 {
+  width: 100%;
+  margin: 0;
+  grid-row: auto !important;
+  flex: 0 0 auto;
+}
+
+/* Different heights are safe now because each side is its own vertical column. */
+.exploreColumnV7 .exploreTileV4 {
+  height: 184px;
+}
+
+.exploreColumnV7 .exploreTileV4.tall {
+  height: 246px;
+}
+
+.exploreColumnV7 .exploreTileV4.noMedia {
+  min-height: 168px;
+}
+
+.exploreExpandStatusV7 {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(89, 198, 246, .12);
+  border-radius: 999px;
+  background: rgba(32, 146, 202, .05);
+  color: #70cffa;
+  font-size: 6.5px;
+}
+
+.explorePageV7 .exploreTileCopy strong {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 370px) {
+  .exploreMasonryV7 {
+    gap: 7px;
+  }
+
+  .exploreColumnV7 {
+    gap: 7px;
+  }
+
+  .exploreColumnV7 .exploreTileV4 {
+    height: 166px;
+  }
+
+  .exploreColumnV7 .exploreTileV4.tall {
+    height: 220px;
+  }
+}
