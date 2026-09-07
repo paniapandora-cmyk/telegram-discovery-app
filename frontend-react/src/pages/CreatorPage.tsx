@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -13,13 +14,18 @@ import {
   Bot,
   Activity,
   TrendingUp,
+  Link2,
+  LoaderCircle,
 } from 'lucide-react';
-import type {
-  CreatorChannel,
-  CreatorContent,
-  CreatorMetrics,
+import {
+  createCreatorTrackingLink,
+  type CreatorChannel,
+  type CreatorContent,
+  type CreatorMetrics,
 } from '../data/account';
+import { openTelegramUrl } from '../data/live';
 import '../styles/creator-center-v5.css';
+import '../styles/creator-tracking-v7.css';
 
 type LoadState = 'idle' | 'loading' | 'live' | 'fallback';
 
@@ -37,6 +43,7 @@ type Props = {
 };
 
 const fa = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 });
+
 const pct = (value: number) => {
   const normalized = Math.abs(value) <= 1 ? value * 100 : value;
   return `${fa.format(normalized)}٪`;
@@ -56,6 +63,28 @@ export default function CreatorPage({
 }: Props) {
   const selected = channels.find((channel) => channel.id === selectedId);
   const channelCount = fa.format(channels.length);
+
+  const [trackingBusy, setTrackingBusy] = useState(false);
+  const [trackingMessage, setTrackingMessage] = useState('');
+
+  const createTracking = async () => {
+    if (!selected || !selected.botAdmin || trackingBusy) return;
+
+    setTrackingBusy(true);
+    setTrackingMessage('');
+
+    try {
+      const url = await createCreatorTrackingLink(selected.id);
+      setTrackingMessage('لینک ردیابی ساخته شد.');
+      openTelegramUrl(url);
+    } catch (error) {
+      setTrackingMessage(
+        error instanceof Error ? error.message : 'ساخت لینک ردیابی ناموفق بود.',
+      );
+    } finally {
+      setTrackingBusy(false);
+    }
+  };
 
   return (
     <div className="page creatorPageV5">
@@ -100,7 +129,10 @@ export default function CreatorPage({
                 <button
                   key={channel.id}
                   className={channel.id === selectedId ? 'active' : ''}
-                  onClick={() => onSelect(channel.id)}
+                  onClick={() => {
+                    setTrackingMessage('');
+                    onSelect(channel.id);
+                  }}
                 >
                   <span className="creatorChannelInitialV5">
                     {(channel.title || channel.username || 'T')
@@ -146,6 +178,53 @@ export default function CreatorPage({
                 ))}
               </div>
             </div>
+          </section>
+
+          <section className="creatorTrackingV7 surface">
+            <div className="creatorTrackingCopyV7">
+              <div className="creatorTrackingIconV7">
+                <Link2 />
+              </div>
+
+              <div>
+                <h2>ردیابی عضویت</h2>
+                <p>
+                  {selected?.botAdmin
+                    ? 'برای این کانال لینک قابل ردیابی بساز تا کلیک و عضویت واقعی ثبت شود.'
+                    : 'برای ثبت Join واقعی، ربات باید در این کانال Bot Admin باشد.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              className="creatorTrackingButtonV7"
+              type="button"
+              disabled={!selected?.botAdmin || trackingBusy}
+              onClick={createTracking}
+            >
+              {trackingBusy ? (
+                <>
+                  <LoaderCircle className="creatorTrackingSpinV7" />
+                  در حال ساخت…
+                </>
+              ) : (
+                <>
+                  <Link2 />
+                  ساخت Tracking Link
+                </>
+              )}
+            </button>
+
+            {trackingMessage && (
+              <div className="creatorTrackingMessageV7">{trackingMessage}</div>
+            )}
+
+            {!selected?.botAdmin && selected && (
+              <div className="creatorTrackingWarningV7">
+                وضعیت فعلی: مالکیت تأیید شده است، اما Bot Admin فعال نیست؛ بنابراین
+                Telegram Join / Active Join / Leave فعلاً صفر ماندن طبیعی است.
+              </div>
+            )}
           </section>
 
           {state === 'loading' && !metrics ? (
