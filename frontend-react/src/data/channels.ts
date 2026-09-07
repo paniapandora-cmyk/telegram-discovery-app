@@ -105,6 +105,12 @@ const toChannel = (source: Row): Channel | null => {
 
   if (!id) return null;
 
+  const creatorId = pick(source, [
+    'creator_id',
+    'owner_creator_id',
+    'channel_creator_id',
+  ]);
+
   const directAvatar = pick(source, [
     'avatar_url',
     'photo_url',
@@ -125,6 +131,8 @@ const toChannel = (source: Row): Channel | null => {
     initials: title.trim().slice(0, 1).toUpperCase() || 'T',
     accent: accentFor(username || title),
     avatarUrl,
+    creatorId: creatorId || undefined,
+    trackingAvailable: Boolean(creatorId),
   };
 };
 
