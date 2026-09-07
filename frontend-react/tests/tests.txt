@@ -1,0 +1,61 @@
+# Tests
+
+## Test 1 - Use the live Discovery feed through the complete React shell [sanity]
+Viewport: mobile
+Covers: production Discovery feed, Telegram WebApp bootstrap, ranking tabs, impression tracking, post open/view tracking, resilient fallback
+Description: Verifies the primary React flow consumes the existing Worker, keeps the shell stable, and records the same discovery analytics lifecycle as the current app.
+
+Steps:
+1. Open Home and inspect the feed status, then select "داغ امروز" and "کشف تازه"
+2. Scroll until a post card is substantially visible and open it
+3. Return from the viewer using the UI back action
+
+Expected: Live responses render when available, fallback content preserves the UI when unavailable, the viewer opens and returns cleanly, and no frontend error breaks the session.
+
+## Test 2 - Save, unsave, Saved, and History remain consistent
+Viewport: mobile
+Covers: /save, /unsave, /saved, /history, optimistic rollback, reusable live post identity
+Description: Verifies personal content state is backed by the existing Discovery endpoints rather than only local demo state.
+
+Steps:
+1. Save a live Home post, open "علاقه‌مندی‌ها", and inspect Saved
+2. Unsave that post and confirm it leaves Saved
+3. Open Profile, then "تاریخچه", and open a history item when available
+
+Expected: Successful backend state is reflected across Home, Saved, Viewer, and History; unavailable endpoints show a usable empty/fallback state rather than crashing.
+
+## Test 3 - Search and Add Channel use the production Worker with validation
+Viewport: mobile
+Covers: /api/telegram/search, Add Channel /api/add-channel, debounced search, channel/post normalization, required and username-format validation
+Description: Verifies discovery input workflows use existing backend routes and reject invalid channel input before submission.
+
+Steps:
+1. Search for "Piping" and switch between "همه", "کانال‌ها", and "پست‌ها"; open a returned channel when available
+2. Return Home, open "افزودن کانال", enter an invalid value such as "a", and submit
+3. Enter a valid public username format and submit
+
+Expected: Search results or a resilient fallback are shown; channel results open their real Telegram channel; invalid channel input displays an inline error; a valid submission shows progress and only closes after the backend accepts it.
+
+## Test 4 - Profile, Notifications, and owner-protected analytics behave correctly
+Viewport: mobile
+Covers: /profile, /notifications, Bot Owner Analytics Telegram initData protection, Telegram BackButton subpage behavior
+Description: Verifies personal/owner data is only surfaced from real account context and the new Notifications subpage is wired to live data.
+
+Steps:
+1. Open Profile and inspect the live/protected status
+2. Open "اعلان‌ها", inspect returned items or the empty state, then go back
+3. Inspect Bot Analytics both in a normal browser context and, when available, inside Telegram Mini App
+
+Expected: Notifications render without invented data; owner analytics stay protected without valid Telegram initData and show real owner stats only when authorized; subpage back navigation returns to Profile.
+
+## Test 5 - Creator Center and viewer actions are production-wired
+Viewport: mobile
+Covers: creator dashboard/analytics, creator content-performance, 7/30-day range switching, Telegram post/channel opening, sharing, not_interested feedback
+Description: Verifies the final high-value creator and content actions are connected to existing APIs without changing backend contracts.
+
+Steps:
+1. From Profile open Creator Center, select an owned channel, and switch between 7 and 30 days
+2. Inspect summary metrics and the content-performance list
+3. Open a feed post, use Share when a Telegram URL exists, open More, and submit "به من نشان نده"
+
+Expected: Authorized creator channels show real metrics/content for the selected period; protected/empty states appear when authorization or data is missing; Telegram actions use the real post/channel URL and not-interested feedback removes the post from the current React session.
