@@ -11,10 +11,10 @@ import {
 } from 'lucide-react';
 import {
   ORIGIN,
-  openTelegramChannel,
   openTelegramPost,
   shareTelegramPost,
 } from '../data/live';
+import { openTrackedChannel } from '../data/tracking';
 import type { Post } from '../types';
 
 type Props = {
@@ -184,7 +184,13 @@ export default function Viewer({
         </div>
 
         <button
-          onClick={() => openTelegramChannel(post.channel.username)}
+          onClick={() =>
+            void openTrackedChannel(
+              post.channel,
+              post.contentId,
+              post.creatorId,
+            )
+          }
           disabled={!post.channel.username}
         >
           مشاهده کانال

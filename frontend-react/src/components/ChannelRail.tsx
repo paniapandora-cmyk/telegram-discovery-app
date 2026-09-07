@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { loadRecommendedChannels } from '../data/channels';
-import { openTelegramChannel } from '../data/live';
+import { openTrackedChannel } from '../data/tracking';
 import type { Channel } from '../types';
 
 type Props = {
@@ -55,7 +55,7 @@ export default function ChannelRail({ channels }: Props) {
 
             <button
               className="followBtn"
-              onClick={() => openTelegramChannel(channel.username)}
+              onClick={() => void openTrackedChannel(channel)}
               disabled={!channel.username}
             >
               باز کردن
