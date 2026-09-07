@@ -1,1 +1,31 @@
-export type Page='home'|'explore'|'search'|'saved'|'profile'|'history'|'creator'|'notifications';export type Channel={id:string;title:string;username:string;initials:string;accent:string;avatarUrl?:string};export type PostKind='image'|'video'|'text';export type Post={id:string;contentId?:string;creatorId?:string;telegramUrl?:string;score?:number;reason?:string;channel:Channel;category:string;title:string;excerpt:string;kind:PostKind;tone:'blue'|'violet'|'amber'|'teal';mediaUrl?:string;date:string;likes:string;comments:string;saved?:boolean};
+export type Page='home'|'explore'|'search'|'saved'|'profile'|'history'|'creator'|'notifications';
+export type Channel={
+  id:string;
+  title:string;
+  username:string;
+  initials:string;
+  accent:string;
+  avatarUrl?:string;
+  creatorId?:string;
+  trackingAvailable?:boolean;
+};
+export type PostKind='image'|'video'|'text';
+export type Post={
+  id:string;
+  contentId?:string;
+  creatorId?:string;
+  telegramUrl?:string;
+  score?:number;
+  reason?:string;
+  channel:Channel;
+  category:string;
+  title:string;
+  excerpt:string;
+  kind:PostKind;
+  tone:'blue'|'violet'|'amber'|'teal';
+  mediaUrl?:string;
+  date:string;
+  likes:string;
+  comments:string;
+  saved?:boolean;
+};
