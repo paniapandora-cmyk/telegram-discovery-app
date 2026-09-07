@@ -2,8 +2,10 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
+import './styles/live-media-v2.css';
 
-const PRODUCTION_WORKER = 'https://telegram-discovery-app.paniapandora.workers.dev';
+const PRODUCTION_WORKER =
+    'https://telegram-discovery-app.paniapandora.workers.dev';
 
 if (location.hostname.endsWith('.pages.dev')) {
     const nativeFetch = window.fetch.bind(window);
