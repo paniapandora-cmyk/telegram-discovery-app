@@ -8,7 +8,8 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import ExploreTile from '../components/ExploreTile';
 import { loadRecommendedChannels } from '../data/channels';
-import { openTelegramChannel, searchLive } from '../data/live';
+import { searchLive } from '../data/live';
+import { openTrackedChannel } from '../data/tracking';
 import type { Channel, Post } from '../types';
 
 type Props = {
@@ -41,6 +42,27 @@ export default function SearchPage({ channels, onOpen }: Props) {
   }, []);
 
   const realFallbackChannels = recommended.length ? recommended : channels;
+
+  const trackingByUsername = useMemo(() => {
+    const map = new Map<string, Channel>();
+    for (const channel of realFallbackChannels) {
+      const key = channel.username.trim().toLowerCase();
+      if (key) map.set(key, channel);
+    }
+    return map;
+  }, [realFallbackChannels]);
+
+  const withTrackingMetadata = (channel: Channel): Channel => {
+    if (channel.creatorId) return channel;
+    const known = trackingByUsername.get(channel.username.trim().toLowerCase());
+    return known?.creatorId
+      ? {
+          ...channel,
+          creatorId: known.creatorId,
+          trackingAvailable: true,
+        }
+      : channel;
+  };
 
   const localMatches = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -92,12 +114,13 @@ export default function SearchPage({ channels, onOpen }: Props) {
   const showChannels = filter === 'همه' || filter === 'کانال‌ها';
   const showPosts = filter === 'همه' || filter === 'پست‌ها';
 
-  const channelsToShow =
+  const channelsToShow = (
     state === 'idle'
       ? realFallbackChannels.slice(0, 8)
       : state === 'fallback'
         ? localMatches
-        : liveChannels;
+        : liveChannels
+  ).map(withTrackingMetadata);
 
   const postsToShow = state === 'live' ? livePosts : [];
 
@@ -192,7 +215,7 @@ export default function SearchPage({ channels, onOpen }: Props) {
                 <article
                   key={`c-${channel.id}`}
                   className="searchChannelCardV4"
-                  onClick={() => openTelegramChannel(channel.username)}
+                  onClick={() => void openTrackedChannel(channel)}
                 >
                   <div className={`channelAvatar ${channel.accent}`}>
                     <span>{channel.initials}</span>
@@ -215,7 +238,7 @@ export default function SearchPage({ channels, onOpen }: Props) {
                   <button
                     onClick={(event) => {
                       event.stopPropagation();
-                      openTelegramChannel(channel.username);
+                      void openTrackedChannel(channel);
                     }}
                     disabled={!channel.username}
                   >
@@ -254,7 +277,7 @@ export default function SearchPage({ channels, onOpen }: Props) {
                   <article
                     key={`c-${channel.id}`}
                     className="searchChannelCardV4"
-                    onClick={() => openTelegramChannel(channel.username)}
+                    onClick={() => void openTrackedChannel(channel)}
                   >
                     <div className={`channelAvatar ${channel.accent}`}>
                       <span>{channel.initials}</span>
@@ -277,7 +300,7 @@ export default function SearchPage({ channels, onOpen }: Props) {
                     <button
                       onClick={(event) => {
                         event.stopPropagation();
-                        openTelegramChannel(channel.username);
+                        void openTrackedChannel(channel);
                       }}
                       disabled={!channel.username}
                     >
