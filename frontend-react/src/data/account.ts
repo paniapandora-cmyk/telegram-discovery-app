@@ -695,3 +695,27 @@ export async function loadNotifications(
 
 export const openNotification = (item: NotificationItem) =>
   item.actionUrl ? openTelegramUrl(item.actionUrl) : false;
+
+export async function createCreatorTrackingLink(
+  channelId: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const raw = row(
+    await requestJson('/api/creator/tracking-link', {
+      method: 'POST',
+      body: {
+        channel_id: channelId,
+        source: 'creator_center_react_v7',
+      },
+      signal,
+    }),
+  );
+
+  const url = text(raw, ['url', 'tracking_url', 'link']);
+
+  if (!url) {
+    throw new Error('لینک ردیابی ساخته نشد.');
+  }
+
+  return url;
+}
