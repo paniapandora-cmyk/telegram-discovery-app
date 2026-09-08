@@ -62,15 +62,16 @@ async function callTelegram(
 async function ensureMemberUpdates() {
   if (Date.now() < webhookReadyUntil) return;
 
-  if (!WEBHOOK_SECRET) {
+  const secret = await activeWebhookSecret();
+  if (!secret) {
     throw new Error(
-      "Telegram webhook secret is not configured",
+      "Telegram webhook authentication is not configured",
     );
   }
 
   await callTelegram("setWebhook", {
     url: ACTIVE_WEBHOOK_URL,
-    secret_token: WEBHOOK_SECRET,
+    secret_token: secret,
     allowed_updates: [
       "message",
       "my_chat_member",
@@ -95,6 +96,12 @@ async function sha256(value: string) {
       byte.toString(16).padStart(2, "0")
     )
     .join("");
+}
+
+async function activeWebhookSecret() {
+  if (WEBHOOK_SECRET) return WEBHOOK_SECRET;
+  if (!BOT_TOKEN) return "";
+  return sha256(`telegram-webhook:${BOT_TOKEN}`);
 }
 
 async function telegramUser(initData: string) {
@@ -581,3 +588,4 @@ Deno.serve(async (request: Request) => {
     );
   }
 });
+
