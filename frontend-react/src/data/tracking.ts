@@ -9,56 +9,110 @@ import {
 const REFERRAL_API =
   'https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-referral-v2';
 
+const OPEN_GUARD_MS = 1800;
+const recentOpens = new Map<string, number>();
+const inFlight = new Map<string, Promise<boolean>>();
+
 type Row = Record<string, unknown>;
 
 const isRow = (value: unknown): value is Row =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
 const cleanUsername = (value: string) =>
-  value.trim().replace(/^@/, '').replace(/^https?:\/\/t\.me\//i, '').split(/[/?#]/)[0];
+  value
+    .trim()
+    .replace(/^@/, '')
+    .replace(/^https?:\/\/t\.me\//i, '')
+    .split(/[/?#]/)[0];
+
+const openKey = (
+  channel: Channel,
+  contentId?: string,
+  creatorIdOverride?: string,
+) => {
+  const creatorId = String(
+    creatorIdOverride || channel.creatorId || '',
+  ).trim();
+
+  const username = cleanUsername(
+    channel.username || '',
+  ).toLowerCase();
+
+  return `${creatorId}|${contentId || ''}|${username}`;
+};
 
 export async function openTrackedChannel(
   channel: Channel,
   contentId?: string,
   creatorIdOverride?: string,
 ): Promise<boolean> {
-  const creatorId = String(creatorIdOverride || channel.creatorId || '').trim();
-  const username = cleanUsername(channel.username || '');
+  const key = openKey(channel, contentId, creatorIdOverride);
+  const now = Date.now();
 
-  // Inside Telegram, creator-backed channels always try the verified
-  // one-use invite route first. The referral row is the canonical click record.
-  if (creatorId && getTelegramInitData()) {
-    try {
-      const raw = await requestJson(REFERRAL_API, {
-        method: 'POST',
-        body: {
-          creator_id: creatorId,
-          content_id: contentId || undefined,
-          source: contentId
-            ? 'react_post_channel_open'
-            : 'react_channel_open',
-        },
-        timeout: 9000,
-      });
+  const existing = inFlight.get(key);
+  if (existing) return existing;
 
-      if (isRow(raw)) {
-        const inviteUrl =
-          typeof raw.invite_url === 'string'
-            ? raw.invite_url.trim()
-            : typeof raw.url === 'string'
-              ? raw.url.trim()
-              : '';
+  const lastOpen = recentOpens.get(key) || 0;
+  if (now - lastOpen < OPEN_GUARD_MS) return true;
 
-        if (inviteUrl) {
-          return openTelegramUrl(inviteUrl);
+  recentOpens.set(key, now);
+
+  const task = (async () => {
+    const creatorId = String(
+      creatorIdOverride || channel.creatorId || '',
+    ).trim();
+
+    const username = cleanUsername(channel.username || '');
+
+    if (creatorId && getTelegramInitData()) {
+      try {
+        const raw = await requestJson(REFERRAL_API, {
+          method: 'POST',
+          body: {
+            creator_id: creatorId,
+            content_id: contentId || undefined,
+            source: contentId
+              ? 'react_post_channel_open'
+              : 'react_channel_open',
+          },
+          timeout: 9000,
+        });
+
+        if (isRow(raw)) {
+          const inviteUrl =
+            typeof raw.invite_url === 'string'
+              ? raw.invite_url.trim()
+              : typeof raw.url === 'string'
+                ? raw.url.trim()
+                : '';
+
+          if (inviteUrl) {
+            return openTelegramUrl(inviteUrl);
+          }
         }
+      } catch (error) {
+        console.warn('Tracked channel open fallback:', error);
       }
-    } catch (error) {
-      // A public channel must remain usable even if tracking is temporarily
-      // unavailable. The direct channel URL is only the fallback path.
-      console.warn('Tracked channel open fallback:', error);
     }
-  }
 
-  return username ? openTelegramChannel(username) : false;
+    return username ? openTelegramChannel(username) : false;
+  })();
+
+  inFlight.set(key, task);
+
+  try {
+    return await task;
+  } finally {
+    inFlight.delete(key);
+
+    window.setTimeout(() => {
+      const current = recentOpens.get(key);
+      if (
+        current &&
+        Date.now() - current >= OPEN_GUARD_MS
+      ) {
+        recentOpens.delete(key);
+      }
+    }, OPEN_GUARD_MS + 100);
+  }
 }
