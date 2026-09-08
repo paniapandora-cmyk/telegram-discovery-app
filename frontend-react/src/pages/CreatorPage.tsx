@@ -14,8 +14,14 @@ import {
   Activity,
   TrendingUp,
   Link2,
+  AtSign,
+  LoaderCircle,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 import {
+  claimCreatorOwnership,
   type CreatorChannel,
   type CreatorContent,
   type CreatorMetrics,
@@ -35,6 +41,7 @@ type Props = {
   days: number;
   onDays: (days: number) => void;
   onSelect: (id: string) => void;
+  onClaimed: () => void;
   onBack: () => void;
 };
 
@@ -55,10 +62,63 @@ export default function CreatorPage({
   days,
   onDays,
   onSelect,
+  onClaimed,
   onBack,
 }: Props) {
+  const [claimUsername, setClaimUsername] = useState('');
+  const [claimBusy, setClaimBusy] = useState(false);
+  const [claimNotice, setClaimNotice] = useState<{
+    kind: 'success' | 'pending' | 'error';
+    text: string;
+  } | null>(null);
   const selected = channels.find((channel) => channel.id === selectedId);
   const channelCount = fa.format(channels.length);
+
+  const submitClaim = async () => {
+    if (claimBusy) return;
+
+    if (!claimUsername.trim()) {
+      setClaimNotice({
+        kind: 'error',
+        text: 'نام کاربری یا لینک عمومی کانال را وارد کن.',
+      });
+      return;
+    }
+
+    setClaimBusy(true);
+    setClaimNotice(null);
+
+    try {
+      const result = await claimCreatorOwnership(claimUsername);
+
+      if (result.status === 'approved') {
+        setClaimUsername('');
+        setClaimNotice({
+          kind: 'success',
+          text: result.botAdmin
+            ? 'مالکیت تأیید شد و کانال به Creator Center اضافه شد.'
+            : 'مالکیت تأیید شد؛ برای ردیابی عضویت، ربات را ادمین کانال کن.',
+        });
+      } else {
+        setClaimNotice({
+          kind: 'pending',
+          text: 'درخواست مالکیت ثبت شد و در انتظار تأیید است.',
+        });
+      }
+
+      onClaimed();
+    } catch (cause) {
+      setClaimNotice({
+        kind: 'error',
+        text:
+          cause instanceof Error
+            ? cause.message
+            : 'ثبت مالکیت انجام نشد. دوباره تلاش کن.',
+      });
+    } finally {
+      setClaimBusy(false);
+    }
+  };
 
   return (
     <div className="page creatorPageV5">
@@ -86,6 +146,69 @@ export default function CreatorPage({
           <ArrowRight />
         </button>
       </header>
+
+      <section className="creatorClaimV13 surface">
+        <div className="creatorClaimHeadV13">
+          <div className="creatorClaimIconV13">
+            <ShieldCheck />
+          </div>
+
+          <div>
+            <h2>ثبت مالکیت کانال</h2>
+            <p>
+              اگر مالک یا ادمین کانال هستی، نام کاربری آن را وارد کن تا به
+              Creator Center اضافه شود.
+            </p>
+          </div>
+        </div>
+
+        <div className="creatorClaimFormV13">
+          <label>
+            <AtSign />
+            <input
+              dir="ltr"
+              value={claimUsername}
+              onChange={(event) => setClaimUsername(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void submitClaim();
+              }}
+              placeholder="username یا t.me/username"
+              aria-label="نام کاربری کانال"
+              disabled={claimBusy || needsTelegram}
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => void submitClaim()}
+            disabled={claimBusy || needsTelegram}
+          >
+            {claimBusy ? <LoaderCircle className="spin" /> : <ShieldCheck />}
+            {claimBusy ? 'در حال بررسی…' : 'ثبت مالکیت'}
+          </button>
+        </div>
+
+        {needsTelegram ? (
+          <div className="creatorClaimNoticeV13 pending">
+            <AlertCircle />
+            ثبت مالکیت فقط داخل مینی‌اپ تلگرام انجام می‌شود.
+          </div>
+        ) : claimNotice ? (
+          <div className={`creatorClaimNoticeV13 ${claimNotice.kind}`}>
+            {claimNotice.kind === 'success' ? (
+              <CheckCircle2 />
+            ) : (
+              <AlertCircle />
+            )}
+            {claimNotice.text}
+          </div>
+        ) : (
+          <p className="creatorClaimHintV13">
+            برای تأیید فوری، ربات باید ادمین کانال باشد؛ در غیر این صورت
+            درخواست مالکیت برای بررسی ثبت می‌شود.
+          </p>
+        )}
+      </section>
 
       {channels.length ? (
         <>
