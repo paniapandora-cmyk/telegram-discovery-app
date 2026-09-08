@@ -155,6 +155,57 @@ export type HubData = {
   needsTelegram: boolean;
 };
 
+export type CreatorOwnershipResult = {
+  status: 'approved' | 'pending';
+  botAdmin: boolean;
+};
+
+const normalizeChannelUsername = (value: string) =>
+  value
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?(?:t\.me|telegram\.me)\//i, '')
+    .replace(/^@/, '')
+    .split(/[/?#]/)[0]
+    .trim();
+
+export async function claimCreatorOwnership(
+  value: string,
+): Promise<CreatorOwnershipResult> {
+  const username = normalizeChannelUsername(value);
+
+  if (!/^[A-Za-z0-9_]{4,32}$/.test(username)) {
+    throw new Error('نام کاربری یا لینک عمومی کانال معتبر نیست.');
+  }
+
+  try {
+    const response = row(
+      await requestJson('/api/creator/channel/add', {
+        method: 'POST',
+        body: { username },
+      }),
+    );
+
+    return {
+      status: 'approved',
+      botAdmin: Boolean(response.bot_admin ?? row(response.channel).is_bot_admin),
+    };
+  } catch (cause) {
+    const status = (cause as Error & { status?: number }).status;
+
+    // Preserve the original ownership-request flow when Telegram cannot verify
+    // the owner/admin role immediately. Verified owners use /channel/add and
+    // receive Creator Center access without waiting for manual review.
+    if (status !== 403) throw cause;
+
+    await requestJson('/api/creator/claim', {
+      method: 'POST',
+      body: { username },
+    });
+
+    return { status: 'pending', botAdmin: false };
+  }
+}
+
 const normalizeChannels = (raw: unknown): CreatorChannel[] => {
   const currentTelegramUserId = String(getTelegramUser()?.id ?? '');
   const top = candidateList(raw);
