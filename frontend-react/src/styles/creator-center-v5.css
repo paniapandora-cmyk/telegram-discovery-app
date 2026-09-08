@@ -23,6 +23,175 @@
   font-size: 6.8px;
 }
 
+.creatorClaimV13 {
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 19px;
+}
+
+.creatorClaimHeadV13 {
+  display: grid;
+  grid-template-columns: 39px minmax(0,1fr);
+  gap: 9px;
+  align-items: center;
+}
+
+.creatorClaimIconV13 {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(79,202,255,.20);
+  border-radius: 12px;
+  background: rgba(55,190,246,.07);
+  color: #63cefb;
+}
+
+.creatorClaimIconV13 svg {
+  width: 19px;
+  height: 19px;
+}
+
+.creatorClaimHeadV13 h2 {
+  margin: 0;
+  font-size: 11px;
+}
+
+.creatorClaimHeadV13 p {
+  margin: 4px 0 0;
+  color: #7d91a1;
+  font-size: 6.8px;
+  line-height: 1.75;
+}
+
+.creatorClaimFormV13 {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.creatorClaimFormV13 label {
+  min-width: 0;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid rgba(132,181,215,.18);
+  border-radius: 12px;
+  background: #06121c;
+  color: #6bcdfa;
+}
+
+.creatorClaimFormV13 label:focus-within {
+  border-color: rgba(77,201,255,.50);
+  box-shadow: 0 0 0 3px rgba(45,179,239,.07);
+}
+
+.creatorClaimFormV13 label svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.creatorClaimFormV13 input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #eef6fa;
+  font-size: 8px;
+}
+
+.creatorClaimFormV13 input::placeholder {
+  color: #62798a;
+}
+
+.creatorClaimFormV13 > button {
+  min-width: 102px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid rgba(115,220,255,.24);
+  border-radius: 12px;
+  background: linear-gradient(145deg,#25aeea,#117fc5);
+  color: #fff;
+  font-size: 7.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.creatorClaimFormV13 > button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.creatorClaimFormV13 > button:disabled,
+.creatorClaimFormV13 input:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+.creatorClaimFormV13 .spin {
+  animation: creatorClaimSpinV13 .85s linear infinite;
+}
+
+.creatorClaimHintV13,
+.creatorClaimNoticeV13 {
+  margin: 8px 1px 0;
+  font-size: 6.5px;
+  line-height: 1.7;
+}
+
+.creatorClaimHintV13 {
+  color: #6f8495;
+}
+
+.creatorClaimNoticeV13 {
+  min-height: 31px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(132,181,215,.14);
+  border-radius: 10px;
+  background: rgba(113,153,183,.05);
+  color: #a5b5c1;
+}
+
+.creatorClaimNoticeV13 svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.creatorClaimNoticeV13.success {
+  border-color: rgba(64,211,151,.19);
+  background: rgba(52,199,139,.06);
+  color: #6ee0ad;
+}
+
+.creatorClaimNoticeV13.pending {
+  border-color: rgba(246,184,80,.17);
+  background: rgba(223,160,55,.05);
+  color: #e5b969;
+}
+
+.creatorClaimNoticeV13.error {
+  border-color: rgba(255,111,122,.18);
+  background: rgba(255,83,98,.05);
+  color: #ff8c94;
+}
+
+@keyframes creatorClaimSpinV13 {
+  to { transform: rotate(360deg); }
+}
+
 .creatorChannelPickerV5 {
   padding: 12px;
   border-radius: 19px;
