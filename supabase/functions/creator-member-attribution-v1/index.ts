@@ -61,7 +61,7 @@ function isMember(member: any) {
 
 async function creatorEvent(
   referral: any,
-  eventType: "JOIN" | "LEAVE",
+  eventType: "join" | "leave",
   update: any,
 ) {
   const channel = await db
@@ -78,46 +78,59 @@ async function creatorEvent(
   if (channel.error) throw channel.error;
   if (!channel.data?.id) return;
 
+  const idempotencyKey =
+    `${eventType}:` +
+    `${referral.id}:` +
+    `${eventType === "join"
+      ? "joined"
+      : update?.update_id || Date.now()}`;
+
+  const existing = await db
+    .from("creator_events")
+    .select("id")
+    .eq("idempotency_key", idempotencyKey)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing.error) throw existing.error;
+  if (existing.data?.id) return;
+
   const event = await db
     .from("creator_events")
-    .upsert(
-      {
-        creator_channel_id:
-          channel.data.id,
-        creator_user_id:
-          channel.data.creator_user_id,
-        creator_id:
-          referral.creator_id ||
-          channel.data.creator_id,
-        content_id:
-          referral.content_id || null,
-        viewer_user_id:
-          referral.user_id || null,
-        telegram_user_id: Number(
-          referral.telegram_user_id,
-        ),
-        event_type: eventType,
-        source: "telegram_webhook",
-        idempotency_key:
-          `${eventType.toLowerCase()}:` +
-          `${referral.id}:` +
-          `${eventType === "JOIN"
-            ? "joined"
-            : update?.update_id || Date.now()}`,
-        metadata: {
-          referral_id: referral.id,
-          telegram_update_id:
-            update?.update_id ?? null,
-          verified: true,
-        },
+    .insert({
+      creator_channel_id:
+        channel.data.id,
+      creator_user_id:
+        channel.data.creator_user_id,
+      creator_id:
+        referral.creator_id ||
+        channel.data.creator_id,
+      content_id:
+        referral.content_id || null,
+      viewer_user_id:
+        referral.user_id || null,
+      telegram_user_id: Number(
+        referral.telegram_user_id,
+      ),
+      event_type: eventType,
+      source: "telegram_webhook",
+      idempotency_key: idempotencyKey,
+      metadata: {
+        referral_id: referral.id,
+        telegram_update_id:
+          update?.update_id ?? null,
+        verified: true,
       },
-      {
-        onConflict: "idempotency_key",
-        ignoreDuplicates: true,
-      },
-    );
+    });
 
-  if (event.error) throw event.error;
+  if (
+    event.error &&
+    !String(event.error.message || "")
+      .toLowerCase()
+      .includes("duplicate")
+  ) {
+    throw event.error;
+  }
 }
 
 async function latestClickedReferral(
@@ -236,9 +249,20 @@ Deno.serve(async (request: Request) => {
       !isMember(member.old_chat_member) &&
       isMember(member.new_chat_member);
 
+    const oldStatus = String(
+      member?.old_chat_member?.status || "",
+    );
+    const newStatus = String(
+      member?.new_chat_member?.status || "",
+    );
+
+    // Telegram may omit or normalize details of the previous member
+    // state on channel departures. A transition to left/kicked is the
+    // authoritative signal; requiring the old state to be fully
+    // populated can otherwise miss real leaves.
     const left =
-      isMember(member.old_chat_member) &&
-      !isMember(member.new_chat_member);
+      ["left", "kicked"].includes(newStatus) &&
+      oldStatus !== newStatus;
 
     const now = new Date().toISOString();
 
@@ -289,7 +313,7 @@ Deno.serve(async (request: Request) => {
 
       await creatorEvent(
         referral,
-        "JOIN",
+        "join",
         update,
       );
 
@@ -345,7 +369,7 @@ Deno.serve(async (request: Request) => {
 
       await creatorEvent(
         referral.data,
-        "LEAVE",
+        "leave",
         update,
       );
 
@@ -379,3 +403,4 @@ Deno.serve(async (request: Request) => {
     );
   }
 });
+
