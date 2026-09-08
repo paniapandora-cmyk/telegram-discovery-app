@@ -13,6 +13,22 @@ const BOT_TOKEN =
 const WEBHOOK_SECRET =
   Deno.env.get("TELEGRAM_WEBHOOK_SECRET") || "";
 
+async function sha256(value: string) {
+  const bytes = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(bytes))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function activeWebhookSecret() {
+  if (WEBHOOK_SECRET) return WEBHOOK_SECRET;
+  if (!BOT_TOKEN) return "";
+  return sha256(`telegram-webhook:${BOT_TOKEN}`);
+}
+
 const MINI_APP_URL =
   "https://telegram-discovery-react-preview.pages.dev/";
 
@@ -152,10 +168,11 @@ async function forward(
     "Content-Type": "application/json",
   };
 
-  if (WEBHOOK_SECRET) {
+  const secret = await activeWebhookSecret();
+  if (secret) {
     headers[
       "x-telegram-bot-api-secret-token"
-    ] = WEBHOOK_SECRET;
+    ] = secret;
   }
 
   const response = await fetch(url, {
@@ -176,11 +193,14 @@ Deno.serve(async (request: Request) => {
       return new Response("ok");
     }
 
+    const expectedSecret =
+      await activeWebhookSecret();
+
     if (
-      WEBHOOK_SECRET &&
+      !expectedSecret ||
       request.headers.get(
         "x-telegram-bot-api-secret-token",
-      ) !== WEBHOOK_SECRET
+      ) !== expectedSecret
     ) {
       return new Response(
         "unauthorized",
@@ -375,3 +395,4 @@ Deno.serve(async (request: Request) => {
     );
   }
 });
+
