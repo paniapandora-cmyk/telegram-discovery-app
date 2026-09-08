@@ -7,6 +7,10 @@ const SUPABASE_URL =
   Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const BOT_TOKEN =
+  Deno.env.get("TELEGRAM_BOT_TOKEN") ||
+  Deno.env.get("DISCOVERY_TELEGRAM_BOT_TOKEN") ||
+  "";
 const WEBHOOK_SECRET =
   Deno.env.get("TELEGRAM_WEBHOOK_SECRET") || "";
 
@@ -39,6 +43,12 @@ async function sha256(value: string) {
       byte.toString(16).padStart(2, "0")
     )
     .join("");
+}
+
+async function activeWebhookSecret() {
+  if (WEBHOOK_SECRET) return WEBHOOK_SECRET;
+  if (!BOT_TOKEN) return "";
+  return sha256(`telegram-webhook:${BOT_TOKEN}`);
 }
 
 function isMember(member: any) {
@@ -199,11 +209,14 @@ Deno.serve(async (request: Request) => {
       return out({ ok: true });
     }
 
+    const expectedSecret =
+      await activeWebhookSecret();
+
     if (
-      WEBHOOK_SECRET &&
+      !expectedSecret ||
       request.headers.get(
         "x-telegram-bot-api-secret-token",
-      ) !== WEBHOOK_SECRET
+      ) !== expectedSecret
     ) {
       return out(
         {
@@ -403,4 +416,5 @@ Deno.serve(async (request: Request) => {
     );
   }
 });
+
 
