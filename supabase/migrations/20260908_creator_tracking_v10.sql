@@ -32,6 +32,20 @@ alter table public.creator_referrals
 alter table public.creator_referrals
   add column if not exists source text;
 
+alter table public.creator_referrals
+  drop constraint if exists creator_referrals_status_check;
+
+alter table public.creator_referrals
+  add constraint creator_referrals_status_check
+  check (status in ('CLICKED','JOINED','LEFT','EXPIRED','DUPLICATE'));
+
+alter table public.creator_referrals
+  drop constraint if exists creator_referrals_invite_link_hash_key;
+
+create index if not exists
+  creator_referrals_invite_link_hash_idx
+on public.creator_referrals(invite_link_hash);
+
 create unique index if not exists
   creator_referrals_user_click_key_uidx
 on public.creator_referrals(user_id, click_key);
