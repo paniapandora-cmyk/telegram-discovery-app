@@ -20,6 +20,9 @@ const CREATOR_API_URL =
 const CHANNELS_API_URL =
   "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/discovery-channels-v1";
 
+const ADD_CHANNEL_API_URL =
+  "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/creator-channel-add-v1";
+
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": [
@@ -58,6 +61,7 @@ function isAllowedOrigin(
     return (
       source.origin === target.origin ||
       source.origin === "https://web.telegram.org" ||
+      source.origin === "https://telegram-discovery-react-preview.pages.dev" ||
       source.hostname === "telegram.org" ||
       source.hostname.endsWith(".telegram.org") ||
       source.hostname ===
@@ -985,6 +989,13 @@ export default {
         CHANNELS_API_URL,
         "/"
       );
+    }
+
+    if (url.pathname === "/api/add-channel" || url.pathname === "/api/add-channel/") {
+      if (request.method !== "POST") {
+        return json({ ok: false, error: "POST required" }, 405, request);
+      }
+      return proxyJsonApi(request, ADD_CHANNEL_API_URL, "");
     }
 
     const discoveryPath = getSubPath(
