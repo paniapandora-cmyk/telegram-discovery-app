@@ -3,9 +3,14 @@
   "name": "telegram-discovery-app",
   "main": "worker.ts",
   "compatibility_date": "2026-08-28",
+  "build": {
+    "command": "npm ci --prefix frontend-react && npm run build --prefix frontend-react"
+  },
   "assets": {
-    "directory": ".",
-    "binding": "ASSETS"
+    "directory": "./frontend-react/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api", "/api/*"]
   },
   "observability": {
     "enabled": true

@@ -1024,6 +1024,10 @@ export default {
       );
     }
 
+    if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
+      return json({ ok: false, error: "API route not found" }, 404, request);
+    }
+
     return env.ASSETS.fetch(request);
   }
 };
