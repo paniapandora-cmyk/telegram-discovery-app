@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import ExploreTile from '../components/ExploreTile';
-import { loadExpandedExplore } from '../data/explore';
+import { loadExplorePage } from '../data/explore';
 import type { Post } from '../types';
 import '../styles/explore-masonry-v7.css';
 
@@ -23,25 +23,52 @@ export default function ExplorePage({
   const [category, setCategory] = useState('همه');
   const [expandedPosts, setExpandedPosts] = useState<Post[]>([]);
   const [expandedLoading, setExpandedLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const loaded = useRef<Post[]>([]);
+  const pending = useRef<AbortController | null>(null);
+  const sentinel = useRef<HTMLDivElement | null>(null);
+
+  const loadMore = useCallback(async () => {
+    if (pending.current) return;
+    const controller = new AbortController();
+    pending.current = controller;
+    setExpandedLoading(true);
+    setLoadError('');
+    try {
+      const ids = loaded.current.map(post => post.contentId).filter((id): id is string => Boolean(id));
+      if (ids.length > 5000) throw new Error('برای دریافت تازه‌ترین پست‌ها صفحه را دوباره باز کن.');
+      const next = await loadExplorePage(ids, controller.signal);
+      if (controller.signal.aborted) return;
+      const seen = new Set(loaded.current.map(post => post.id));
+      const added = next.posts.filter(post => !seen.has(post.id));
+      if (next.hasMore && !added.length) throw new Error('پست تازه‌ای دریافت نشد. دوباره تلاش کن.');
+      loaded.current = [...loaded.current, ...added];
+      setExpandedPosts(loaded.current);
+      setHasMore(next.hasMore);
+    } catch (error) {
+      if (!controller.signal.aborted) setLoadError(error instanceof Error ? error.message : 'دریافت پست‌ها انجام نشد.');
+    } finally {
+      if (pending.current === controller) {
+        pending.current = null;
+        setExpandedLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
+    void loadMore();
+    return () => { pending.current?.abort(); pending.current = null; };
+  }, [loadMore]);
 
-    setExpandedLoading(true);
-
-    loadExpandedExplore(controller.signal, 100)
-      .then((next) => {
-        if (next.length) setExpandedPosts(next);
-      })
-      .catch(() => {
-        // Keep the already loaded live 18-post set if the expanded request fails.
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setExpandedLoading(false);
-      });
-
-    return () => controller.abort();
-  }, []);
+  useEffect(() => {
+    if (!hasMore || expandedLoading || loadError || !sentinel.current || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) void loadMore();
+    }, { rootMargin: '300px' });
+    observer.observe(sentinel.current);
+    return () => observer.disconnect();
+  }, [hasMore, expandedLoading, loadError, loadMore]);
 
   const sourcePosts = expandedPosts.length ? expandedPosts : posts;
 
@@ -168,6 +195,13 @@ export default function ExplorePage({
           <p>موضوع دیگری را انتخاب کن یا دوباره کمی بعد برگرد.</p>
         </div>
       )}
+      <div ref={sentinel} style={{ padding: '24px 0 110px', textAlign: 'center' }} aria-live="polite">
+        {loadError && <p role="alert">{loadError}</p>}
+        {hasMore && <button className="sheetPrimary" onClick={() => void loadMore()} disabled={expandedLoading}>
+          {expandedLoading ? 'در حال دریافت…' : loadError ? 'تلاش دوباره' : 'پست‌های بیشتر'}
+        </button>}
+        {!hasMore && <p>همه پست‌های پیشنهادی را دیدی.</p>}
+      </div>
     </div>
   );
 }
