@@ -253,6 +253,7 @@ const hasPostSignal = (source: Row) =>
       'telegram_message_id',
       'message_id',
       'post_id',
+      'text_content',
       'text',
       'caption',
       'message',
@@ -269,6 +270,7 @@ const normalizePost = (source: Row, index: number): Post => {
 
   const text = clean(
     pick(source, [
+      'text_content',
       'text',
       'caption',
       'message',
@@ -284,13 +286,13 @@ const normalizePost = (source: Row, index: number): Post => {
   const media = mediaUrl(source, username);
 
   const type = (
-    `${pick(source, ['media_type', 'post_type', 'type', 'kind'])} ` +
+    `${pick(source, ['content_type', 'media_type', 'post_type', 'type', 'kind'])} ` +
     pick(source, ['video_url'])
   ).toLowerCase();
 
   const kind: PostKind = /video|mp4|reel/.test(type)
     ? 'video'
-    : media
+    : /audio|document|text/.test(type) ? 'text' : media
       ? 'image'
       : 'text';
 
@@ -382,4 +384,15 @@ export async function loadExpandedExplore(
   const rows = extractRows(raw).filter(hasPostSignal);
 
   return dedupe(rows.map(normalizePost)).slice(0, safeLimit);
+}
+
+export async function loadExplorePage(excludeIds: string[], signal?: AbortSignal): Promise<{ posts: Post[]; hasMore: boolean }> {
+  const raw = await requestJson('/api/discovery/explore', {
+    method: 'POST', body: { limit: 24, exclude_ids: excludeIds }, signal, timeout: 20000,
+  });
+  if (!isRow(raw) || !Array.isArray(raw.items) || typeof raw.has_more !== 'boolean') {
+    throw new Error('پاسخ دریافت پست‌ها معتبر نیست. دوباره تلاش کن.');
+  }
+  const posts = dedupe(raw.items.filter(isRow).filter(hasPostSignal).map(normalizePost));
+  return { posts, hasMore: raw.has_more };
 }
