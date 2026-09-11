@@ -7,6 +7,7 @@ import {
 } from '../data/account';
 import CreatorAdsCard from './CreatorAdsCard';
 import '../styles/ads-v1.css';
+import '../styles/creator-ads-launcher.css';
 
 type Props = {
   channels: CreatorChannel[];
