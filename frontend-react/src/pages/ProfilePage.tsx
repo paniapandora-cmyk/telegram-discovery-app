@@ -10,6 +10,7 @@ import {
 import type { BotOwnerStats, HubData } from '../data/account';
 import GrowthCard from '../components/GrowthCard';
 import BroadcastCard from '../components/BroadcastCard';
+import CreatorPromoKit from '../components/CreatorPromoKit';
 
 type LoadState = 'idle' | 'loading' | 'live' | 'fallback';
 
@@ -88,6 +89,13 @@ export default function ProfilePage({
         </div>
         <button onClick={onCreator}>باز کردن</button>
       </section>
+
+      {hub?.creators.length ? (
+        <CreatorPromoKit
+          channels={hub.creators}
+          needsTelegram={hub.needsTelegram}
+        />
+      ) : null}
 
       <section className="analytics surface">
         <div className="analyticsTitle">
