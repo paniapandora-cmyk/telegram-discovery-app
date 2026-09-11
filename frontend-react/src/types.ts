@@ -15,6 +15,8 @@ export type Post={
   contentId?:string;
   creatorId?:string;
   telegramUrl?:string;
+  promotionId?:string;
+  sponsored?:boolean;
   score?:number;
   reason?:string;
   channel:Channel;
