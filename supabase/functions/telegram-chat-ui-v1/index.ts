@@ -30,7 +30,7 @@ async function activeWebhookSecret() {
 }
 
 const MINI_APP_URL =
-  "https://telegram-discovery-react-preview.pages.dev/";
+  "https://telegram-discovery-app.paniapandora.workers.dev/";
 
 const CORE_URL =
   `${SUPABASE_URL}/functions/v1/telegram-webhook`;
@@ -187,6 +187,48 @@ async function forward(
   };
 }
 
+const START_SERVICE_KEY =
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+  Deno.env.get("DISCOVERY_SUPABASE_SERVICE_ROLE_KEY") || "";
+
+async function recordPrivateBotStart(update: any) {
+  const message = update?.message;
+  const match = String(message?.text || "").trim()
+    .match(/^\/start(?:@\w+)?(?:\s+([\s\S]*))?$/i);
+  if (message?.chat?.type !== "private" || !match || message?.from?.is_bot) return;
+  const userId = Number(message?.from?.id);
+  const chatId = Number(message?.chat?.id);
+  const messageId = Number(message?.message_id);
+  const updateId = Number(update?.update_id);
+  const sentAt = Number(message?.date);
+  if (![userId, chatId, messageId, updateId, sentAt].every(Number.isSafeInteger) ||
+      userId <= 0 || messageId <= 0 || sentAt <= 0) {
+    throw new Error("Invalid bot start update");
+  }
+  if (!START_SERVICE_KEY || !SUPABASE_URL) throw new Error("Start tracking not configured");
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/bot_start_events?on_conflict=chat_id,message_id`,
+    {
+      method: "POST",
+      headers: {
+        apikey: START_SERVICE_KEY,
+        Authorization: `Bearer ${START_SERVICE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=ignore-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        telegram_update_id: updateId,
+        telegram_user_id: userId,
+        start_payload: (match[1] || "").trim().slice(0, 512) || null,
+        occurred_at: new Date(sentAt * 1000).toISOString(),
+      }),
+    },
+  );
+  if (!response.ok) throw new Error(`Bot start recording failed (${response.status})`);
+}
+
 Deno.serve(async (request: Request) => {
   try {
     if (request.method !== "POST") {
@@ -209,6 +251,7 @@ Deno.serve(async (request: Request) => {
     }
 
     const update = await request.json();
+    await recordPrivateBotStart(update);
 
     // Membership attribution must be handled first.
     if (update?.chat_member?.chat?.id) {
@@ -395,4 +438,3 @@ Deno.serve(async (request: Request) => {
     );
   }
 });
-
