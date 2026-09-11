@@ -1,7 +1,13 @@
 import DiscoveryApp from './app/DiscoveryApp';
+import AIChat from './components/AIChat';
 
 function App() {
-    return <DiscoveryApp />;
+    return (
+        <>
+            <DiscoveryApp />
+            <AIChat />
+        </>
+    );
 }
 
 export default App;
