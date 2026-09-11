@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react';
-import { RefreshCw, Share2, Sparkles, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Award,
+  RefreshCw,
+  Share2,
+  Sparkles,
+  Trophy,
+  Users,
+} from 'lucide-react';
 import {
   loadGrowthSummary,
   shareInvite,
@@ -8,6 +15,13 @@ import {
 import '../styles/growth.css';
 
 const fa = new Intl.NumberFormat('fa-IR');
+
+const milestones = [
+  { count: 1, label: 'کاشف' },
+  { count: 3, label: 'کاشف فعال' },
+  { count: 10, label: 'سفیر کشف' },
+  { count: 25, label: 'پیشگام' },
+];
 
 export default function GrowthCard() {
   const [summary, setSummary] = useState<GrowthSummary | null>(null);
@@ -35,6 +49,27 @@ export default function GrowthCard() {
     void load(controller.signal);
     return () => controller.abort();
   }, []);
+
+  const reward = useMemo(() => {
+    const success = summary?.invite.successful_invites || 0;
+    const unlocked = [...milestones].reverse().find((item) => success >= item.count);
+    const next = milestones.find((item) => success < item.count);
+    const previousCount = unlocked?.count || 0;
+    const progress = next
+      ? Math.max(
+          0,
+          Math.min(100, ((success - previousCount) / (next.count - previousCount)) * 100),
+        )
+      : 100;
+
+    return {
+      success,
+      current: unlocked?.label || 'تازه‌وارد',
+      next,
+      progress,
+      remaining: next ? Math.max(0, next.count - success) : 0,
+    };
+  }, [summary]);
 
   const share = async () => {
     if (!summary || sharing) return;
@@ -100,6 +135,37 @@ export default function GrowthCard() {
               <small>ورود از لینک</small>
               <strong>{fa.format(summary?.invite.bot_starts || 0)}</strong>
             </article>
+          </div>
+
+          <div className="growthReward">
+            <div className="growthRewardTitle">
+              <span><Award /></span>
+              <div>
+                <small>نشان فعلی تو</small>
+                <strong>{reward.current}</strong>
+              </div>
+              <Trophy />
+            </div>
+
+            <div className="growthRewardProgress">
+              <span>
+                {reward.next
+                  ? `${fa.format(reward.remaining)} دعوت واقعی تا نشان «${reward.next.label}»`
+                  : 'همه نشان‌های فعلی را گرفتی ✦'}
+              </span>
+              <div><i style={{ width: `${reward.progress}%` }} /></div>
+            </div>
+
+            <div className="growthMilestones">
+              {milestones.map((item) => (
+                <span
+                  key={item.count}
+                  className={reward.success >= item.count ? 'unlocked' : ''}
+                >
+                  {fa.format(item.count)} · {item.label}
+                </span>
+              ))}
+            </div>
           </div>
 
           <button
