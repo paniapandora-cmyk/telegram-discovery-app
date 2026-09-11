@@ -9,11 +9,8 @@ import {
   Play,
   EyeOff,
 } from 'lucide-react';
-import {
-  ORIGIN,
-  openTelegramPost,
-  shareTelegramPost,
-} from '../data/live';
+import { ORIGIN, openTelegramPost } from '../data/live';
+import { shareDiscoveryPost } from '../data/growth';
 import { openTrackedChannel } from '../data/tracking';
 import type { Post } from '../types';
 
@@ -39,6 +36,7 @@ export default function Viewer({
   const [feedbackBusy, setFeedbackBusy] = useState(false);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [mediaReady, setMediaReady] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
 
   const previewOrigin =
     typeof window !== 'undefined' &&
@@ -64,6 +62,7 @@ export default function Viewer({
     setMediaIndex(0);
     setMediaReady(false);
     setShowFeedback(false);
+    setShareBusy(false);
   }, [post.id, post.mediaUrl, post.telegramUrl]);
 
   const activeMedia = mediaCandidates[mediaIndex];
@@ -96,6 +95,16 @@ export default function Viewer({
       await onFeedback(post, 'not_interested');
     } finally {
       setFeedbackBusy(false);
+    }
+  };
+
+  const share = async () => {
+    if (shareBusy) return;
+    setShareBusy(true);
+    try {
+      await shareDiscoveryPost(post);
+    } finally {
+      setShareBusy(false);
     }
   };
 
@@ -215,12 +224,9 @@ export default function Viewer({
             <span>{post.saved ? 'ذخیره شد' : 'ذخیره'}</span>
           </button>
 
-          <button
-            onClick={() => shareTelegramPost(post)}
-            disabled={!hasTelegram}
-          >
+          <button onClick={() => void share()} disabled={shareBusy}>
             <Share2 />
-            <span>اشتراک</span>
+            <span>{shareBusy ? 'آماده‌سازی…' : 'اشتراک'}</span>
           </button>
         </div>
 
