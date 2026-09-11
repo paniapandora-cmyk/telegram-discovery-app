@@ -68,4 +68,15 @@
   });
 
   console.info("Telegram Discovery AI Client v1 loaded");
+
+  if (!document.getElementById("telegramDiscoveryAiChatUiV1")) {
+    const script = document.createElement("script");
+    script.id = "telegramDiscoveryAiChatUiV1";
+    script.src = "./ai-chat-ui.js?v=20260911-1";
+    script.defer = true;
+    script.onerror = () => {
+      console.error("Telegram Discovery AI Chat UI failed to load");
+    };
+    document.head.appendChild(script);
+  }
 })();
