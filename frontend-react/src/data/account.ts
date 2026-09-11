@@ -122,6 +122,10 @@ export type CreatorContent = {
 };
 
 export type BotOwnerStats = {
+  botStartsTotal: number;
+  botStartUsersTotal: number;
+  botStartsToday: number;
+  botStartUsersNonOwner: number;
   uniqueUsers: number;
   active30d: number;
   newToday: number;
@@ -713,6 +717,10 @@ export async function loadBotOwnerStats(
   const stats = row(raw.stats);
 
   return {
+    botStartsTotal: number(stats, ['bot_starts_total']),
+    botStartUsersTotal: number(stats, ['bot_start_users_total']),
+    botStartsToday: number(stats, ['bot_starts_today']),
+    botStartUsersNonOwner: number(stats, ['bot_start_users_non_owner']),
     uniqueUsers: number(stats, ['unique_telegram_users', 'total_users']),
     active30d: number(stats, ['active_30d']),
     newToday: number(stats, ['new_today']),
