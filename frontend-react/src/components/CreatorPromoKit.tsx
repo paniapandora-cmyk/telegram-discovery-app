@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Check,
   Copy,
@@ -16,15 +16,29 @@ import {
 import '../styles/creator-promo.css';
 
 type Props = {
-  channel: CreatorChannel | undefined;
+  channels: CreatorChannel[];
   needsTelegram: boolean;
 };
 
-export default function CreatorPromoKit({ channel, needsTelegram }: Props) {
+export default function CreatorPromoKit({ channels, needsTelegram }: Props) {
+  const [channelId, setChannelId] = useState(channels[0]?.id || '');
   const [url, setUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<'link' | 'text' | ''>('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    setChannelId((current) =>
+      current && channels.some((item) => item.id === current)
+        ? current
+        : channels[0]?.id || '',
+    );
+  }, [channels]);
+
+  const channel = useMemo(
+    () => channels.find((item) => item.id === channelId),
+    [channels, channelId],
+  );
 
   useEffect(() => {
     setUrl('');
@@ -58,7 +72,7 @@ export default function CreatorPromoKit({ channel, needsTelegram }: Props) {
     }
   };
 
-  if (!channel) return null;
+  if (!channels.length || !channel) return null;
 
   return (
     <section className="creatorPromoKit surface">
@@ -73,10 +87,27 @@ export default function CreatorPromoKit({ channel, needsTelegram }: Props) {
         </div>
       </div>
 
-      <div className="creatorPromoIdentity">
-        <b>{channel.title}</b>
-        <span>{channel.username ? `@${channel.username.replace(/^@/, '')}` : 'Telegram channel'}</span>
-      </div>
+      {channels.length > 1 ? (
+        <label className="creatorPromoSelect">
+          <span>کانال</span>
+          <select
+            value={channel.id}
+            onChange={(event) => setChannelId(event.target.value)}
+            disabled={busy}
+          >
+            {channels.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title || item.username}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <div className="creatorPromoIdentity">
+          <b>{channel.title}</b>
+          <span>{channel.username ? `@${channel.username.replace(/^@/, '')}` : 'Telegram channel'}</span>
+        </div>
+      )}
 
       {!url ? (
         <button
@@ -111,8 +142,8 @@ export default function CreatorPromoKit({ channel, needsTelegram }: Props) {
       )}
 
       <div className="creatorPromoNote">
-        این ابزار پیام خودکار به افراد ناشناس نمی‌فرستد؛ لینک را در کانال‌ها، گروه‌ها
-        یا همکاری‌هایی که خودت مجاز به انتشار در آن‌ها هستی استفاده کن.
+        لینک را در کانال‌ها، گروه‌ها یا همکاری‌هایی که مجاز به انتشار در آن‌ها هستی
+        استفاده کن؛ ورودی‌های همان لینک جداگانه قابل سنجش می‌مانند.
       </div>
 
       {needsTelegram && (
