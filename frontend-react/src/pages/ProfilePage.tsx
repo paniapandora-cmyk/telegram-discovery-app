@@ -11,6 +11,7 @@ import type { BotOwnerStats, HubData } from '../data/account';
 import GrowthCard from '../components/GrowthCard';
 import BroadcastCard from '../components/BroadcastCard';
 import CreatorPromoKit from '../components/CreatorPromoKit';
+import CreatorAdsLauncher from '../components/CreatorAdsLauncher';
 import OwnerAdsDashboard from '../components/OwnerAdsDashboard';
 
 type LoadState = 'idle' | 'loading' | 'live' | 'fallback';
@@ -58,6 +59,7 @@ export default function ProfilePage({ hub, botStats, state, onCreator, onSaved, 
       </section>
 
       {hub?.creators.length ? <CreatorPromoKit channels={hub.creators} needsTelegram={hub.needsTelegram} /> : null}
+      {hub?.creators.length ? <CreatorAdsLauncher channels={hub.creators} needsTelegram={hub.needsTelegram} /> : null}
 
       <section className="analytics surface">
         <div className="analyticsTitle"><div><BarChart3 /><h2>Bot Analytics</h2></div><span>{botStats ? 'Owner' : 'Protected'}</span></div>
