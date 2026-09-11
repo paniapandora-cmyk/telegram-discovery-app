@@ -14,81 +14,104 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify frontend exists
-        run: test -s index.html
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Verify discovery proxy configuration
+      - name: Verify current app layout
         shell: bash
         run: |
           set -euo pipefail
 
-          grep -q "'/api/discovery'" index.html
-          grep -q 'discovery-api-live' worker.ts
+          test -s frontend-react/index.html
+          test -s frontend-react/src/App.tsx
+          test -s frontend-react/src/data/live.ts
+          test -s worker.ts
+
+          grep -q 'telegram.org/js/telegram-web-app.js' frontend-react/index.html
+          grep -q 'x-telegram-init-data' frontend-react/src/data/live.ts
+          grep -q '/api/discovery' frontend-react/src/data/live.ts
+
+          echo "React Telegram Mini App layout found."
+
+      - name: Verify proxy configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          grep -q 'discovery-api-v33' worker.ts
+          grep -q 'discovery-search-v7' worker.ts
           grep -q 'discovery-search-v6' worker.ts
-
-          echo "Cloudflare-to-Supabase proxy configuration found."
-
-      - name: Start frontend locally
-        run: |
-          python3 -m http.server 8080 \
-            --bind 127.0.0.1 \
-            >/tmp/telegram-discovery-http.log 2>&1 &
-
-          echo $! > /tmp/server.pid
-
-      - name: Wait for frontend
-        run: |
-          set -e
-
-          for i in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:8080/ >/tmp/index.html; then
-              echo "Frontend is reachable."
-              exit 0
-            fi
-
-            sleep 1
-          done
-
-          cat /tmp/telegram-discovery-http.log
-          exit 1
-
-      - name: Verify Telegram Mini App
-        run: |
-          set -euo pipefail
-
-          grep -qi "Telegram" /tmp/index.html
-          grep -Eq 'Telegram(\?\.|\.)WebApp' index.html
-
-          echo "Telegram WebApp integration found."
-
-      - name: Verify Discovery API integration
-        run: |
-          set -euo pipefail
-
-          grep -q "/api/discovery" index.html
-          grep -q "x-telegram-init-data" index.html
-
-          echo "Discovery API integration found."
-
-      - name: Verify worker routing
-        run: |
-          set -euo pipefail
+          grep -q 'creator-dashboard-v2' worker.ts
 
           grep -q '"/api/discovery"' worker.ts
           grep -q '"/api/telegram/search"' worker.ts
           grep -q '"/api/creator"' worker.ts
 
-          echo "Worker routes found."
+          echo "Current Cloudflare-to-Supabase routes found."
 
-      - name: Verify discovery features
+      - name: Verify growth stack
+        shell: bash
         run: |
           set -euo pipefail
 
-          grep -Eiq \
-            "feed|search|trending|explore" \
-            index.html
+          test -s frontend-react/src/components/GrowthCard.tsx
+          test -s frontend-react/src/components/OnboardingGate.tsx
+          test -s frontend-react/src/components/CreatorPromoKit.tsx
+          test -s supabase/functions/growth-referral-v1/index.ts
+          test -s supabase/functions/onboarding-v1/index.ts
 
-          echo "Discovery feature markers found."
+          grep -q 'OnboardingGate' frontend-react/src/App.tsx
+          grep -q 'successful_invites' frontend-react/src/components/GrowthCard.tsx
+          grep -q 'tracking-link' frontend-react/src/data/creator-promo.ts
+
+          echo "Onboarding, referral and creator growth modules found."
+
+      - name: Install frontend dependencies
+        working-directory: frontend-react
+        run: npm install
+
+      - name: Build React frontend
+        working-directory: frontend-react
+        run: npm run build
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s frontend-react/dist/index.html
+          test -d frontend-react/dist/assets
+          grep -qi 'Telegram Discovery React UI' frontend-react/dist/index.html
+
+          echo "React build output is valid."
+
+      - name: Start built frontend locally
+        run: |
+          python3 -m http.server 8080 \
+            --directory frontend-react/dist \
+            --bind 127.0.0.1 \
+            >/tmp/telegram-discovery-http.log 2>&1 &
+
+          echo $! > /tmp/server.pid
+
+      - name: Verify built Mini App is reachable
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/ >/tmp/react-index.html; then
+              grep -qi 'Telegram Discovery React UI' /tmp/react-index.html
+              echo "Built Telegram Mini App is reachable."
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/telegram-discovery-http.log
+          exit 1
 
       - name: Final result
         run: |
