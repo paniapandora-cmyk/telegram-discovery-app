@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { BotOwnerStats, HubData } from '../data/account';
 import GrowthCard from '../components/GrowthCard';
+import BroadcastCard from '../components/BroadcastCard';
 
 type LoadState = 'idle' | 'loading' | 'live' | 'fallback';
 
@@ -159,6 +160,8 @@ export default function ProfilePage({
           </div>
         )}
       </section>
+
+      {botStats && <BroadcastCard />}
 
       <div className="quickGrid">
         <button onClick={onSaved}>
