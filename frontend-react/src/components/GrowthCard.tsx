@@ -13,6 +13,7 @@ import {
   type GrowthSummary,
 } from '../data/growth';
 import '../styles/growth.css';
+import '../styles/growth-rewards.css';
 
 const fa = new Intl.NumberFormat('fa-IR');
 
