@@ -14,6 +14,7 @@ import {
   shareCreatorPromo,
 } from '../data/creator-promo';
 import '../styles/creator-promo.css';
+import '../styles/creator-promo-select.css';
 
 type Props = {
   channels: CreatorChannel[];
