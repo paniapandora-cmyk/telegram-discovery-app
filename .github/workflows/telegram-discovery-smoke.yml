@@ -68,6 +68,26 @@ jobs:
 
           echo "Onboarding, referral and creator growth modules found."
 
+      - name: Verify sponsored ads stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s frontend-react/src/data/ads.ts
+          test -s frontend-react/src/components/CreatorAdsCard.tsx
+          test -s frontend-react/src/components/CreatorAdsLauncher.tsx
+          test -s frontend-react/src/components/OwnerAdsDashboard.tsx
+          test -s frontend-react/src/styles/ads-v1.css
+
+          grep -q 'creator-ads-v1' frontend-react/src/data/ads.ts
+          grep -q 'loadSponsoredPosts' frontend-react/src/pages/ExplorePage.tsx
+          grep -q 'تبلیغ · Sponsored' frontend-react/src/components/ExploreTile.tsx
+          grep -q 'sponsored:' frontend-react/src/data/tracking.ts
+          grep -q 'OwnerAdsDashboard' frontend-react/src/pages/ProfilePage.tsx
+          grep -q 'CreatorAdsLauncher' frontend-react/src/pages/ProfilePage.tsx
+
+          echo "Sponsored campaigns, attribution and owner revenue modules found."
+
       - name: Install frontend dependencies
         working-directory: frontend-react
         run: npm install
