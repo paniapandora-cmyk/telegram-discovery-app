@@ -370,3 +370,27 @@
     boot();
   }
 })();
+
+/* Load the base AI client without changing the existing index.html. */
+(() => {
+  "use strict";
+
+  const SCRIPT_ID = "telegramDiscoveryAiClientV1";
+
+  if (window.TelegramDiscoveryAI || document.getElementById(SCRIPT_ID)) {
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.id = SCRIPT_ID;
+  script.src = "./ai-client.js?v=20260911-1";
+  script.defer = true;
+  script.onload = () => {
+    console.info("Telegram Discovery AI bridge ready");
+  };
+  script.onerror = () => {
+    console.error("Telegram Discovery AI client failed to load");
+  };
+
+  document.head.appendChild(script);
+})();
