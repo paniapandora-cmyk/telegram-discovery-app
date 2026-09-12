@@ -11,6 +11,7 @@ import './styles/premium-v4.css';
 import './styles/premium-v5.css';
 import './styles/reference-v6.css';
 import './styles/mobile-hotfix-v7.css';
+import './styles/detail-pass-v8.css';
 
 const PRODUCTION_WORKER =
     'https://telegram-discovery-app.paniapandora.workers.dev';
