@@ -27,6 +27,7 @@ async function activeWebhookSecret() {
 }
 
 const MINI_APP_URL = "https://telegram-discovery-app.paniapandora.workers.dev/";
+const SUPPORT_CHANNEL_URL = "https://t.me/discovery_te";
 const CORE_URL = `${SUPABASE_URL}/functions/v1/telegram-webhook`;
 const MEMBER_URL = `${SUPABASE_URL}/functions/v1/creator-member-attribution-v1`;
 const TG = `https://api.telegram.org/bot${BOT_TOKEN}`;
@@ -50,6 +51,7 @@ function replyKeyboard() {
       [{ text: "🔥 داغ امروز" }, { text: "🔎 جستجو" }],
       [{ text: "❤️ ذخیره‌ها" }, { text: "📊 کانال من" }],
       [{ text: "📣 معرفی کشف" }, { text: "🔔 دریافت پیشنهادها" }],
+      [{ text: "🛟 پشتیبانی و به‌روزرسانی" }],
     ],
     resize_keyboard: true,
     is_persistent: true,
@@ -101,6 +103,20 @@ async function menu(chatId: number) {
     chat_id: chatId,
     text: "از دکمه‌های پایین استفاده کن 👇",
     reply_markup: replyKeyboard(),
+  });
+}
+
+async function sendSupport(chatId: number) {
+  await tg("sendMessage", {
+    chat_id: chatId,
+    text: "🛟 پشتیبانی و به‌روزرسانی کشف\n\nبرای آموزش‌ها، اعلام قابلیت‌های جدید، رفع باگ‌ها و اطلاعیه‌های رسمی وارد کانال @discovery_te شو.",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "📢 کانال رسمی کشف", url: SUPPORT_CHANNEL_URL }],
+        [{ text: "🚀 ورود به مینی‌اپ", web_app: { url: MINI_APP_URL } }],
+      ],
+    },
+    disable_web_page_preview: true,
   });
 }
 
@@ -306,6 +322,11 @@ Deno.serve(async (request: Request) => {
       if (text === "📣 معرفی کشف") {
         await cta(chatId, "📣 کشف را معرفی کن", "اگر «کشف» برات مفید بوده، برای دوستات هم بفرست.", true);
         return new Response(JSON.stringify({ ok: true }), { headers: H });
+      }
+
+      if (text === "🛟 پشتیبانی و به‌روزرسانی" || /^\/(?:support|updates)(?:@\w+)?$/i.test(text)) {
+        await sendSupport(chatId);
+        return new Response(JSON.stringify({ ok: true, type: "support" }), { headers: H });
       }
 
       if (text === "🔔 دریافت پیشنهادها") {
