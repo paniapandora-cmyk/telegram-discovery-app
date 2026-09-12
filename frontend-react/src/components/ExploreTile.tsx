@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
-import { ORIGIN } from '../data/live';
+import { postMediaCandidates } from '../lib/postMedia';
 import type { Post } from '../types';
 
 type Props = { post: Post; onOpen: (post: Post) => void; onImpression?: () => void; tall?: boolean; compact?: boolean };
-const uniqueStrings = (values: Array<string | undefined>) => Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 
 export default function ExploreTile({ post, onOpen, onImpression, tall = false, compact = false }: Props) {
   const root = useRef<HTMLElement | null>(null);
   const impressed = useRef(false);
-  const previewOrigin = typeof window !== 'undefined' && window.location.hostname.endsWith('.pages.dev') ? window.location.origin : ORIGIN;
-  const candidates = useMemo(() => {
-    const localizedDirect = post.mediaUrl?.startsWith(`${ORIGIN}/api/`) ? `${previewOrigin}${post.mediaUrl.slice(ORIGIN.length)}` : post.mediaUrl;
-    const telegramPreview = post.telegramUrl ? `${previewOrigin}/api/telegram/preview-image?url=${encodeURIComponent(post.telegramUrl)}` : undefined;
-    return uniqueStrings([localizedDirect, telegramPreview]);
-  }, [post.mediaUrl, post.telegramUrl, previewOrigin]);
+  const candidates = useMemo(
+    () => postMediaCandidates(post),
+    [post.id, post.mediaUrl, post.telegramUrl],
+  );
   const [mediaIndex, setMediaIndex] = useState(0);
   const [mediaReady, setMediaReady] = useState(false);
 
