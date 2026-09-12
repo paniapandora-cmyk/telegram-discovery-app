@@ -88,6 +88,27 @@ jobs:
 
           echo "Ranked search, recent search, and explore diversity modules found."
 
+      - name: Verify library and related content stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s frontend-react/src/data/library.ts
+          test -s frontend-react/src/components/LibraryThumb.tsx
+          test -s frontend-react/src/styles/library-viewer-v12.css
+          test -s supabase/functions/related-content-v1/index.ts
+          test -s supabase/migrations/20260913010000_related_content_v1.sql
+
+          grep -q 'loadLibrarySaved' frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'loadLibraryHistory' frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'recordViewerExit' frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'loadRelatedPosts' frontend-react/src/components/Viewer.tsx
+          grep -q 'get_related_content_v1' supabase/functions/related-content-v1/index.ts
+          grep -q 'operator(extensions.<=>)' supabase/migrations/20260913010000_related_content_v1.sql
+          grep -q 'library-viewer-v12.css' frontend-react/src/main.tsx
+
+          echo "Saved library, viewing history, dwell time, and related-content modules found."
+
       - name: Verify growth stack
         shell: bash
         run: |
