@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Clock3, Shuffle, Sparkles, Target } from 'lucide-react';
 import ExploreTile from '../components/ExploreTile';
 import { loadExplorePage } from '../data/explore';
 import { loadSponsoredPosts, recordPromotionEvent } from '../data/ads';
 import type { Post } from '../types';
 import '../styles/explore-masonry-v7.css';
+import '../styles/explore-ranking-v11.css';
 import '../styles/ads-v1.css';
 
 type FeedState = 'loading' | 'live' | 'fallback';
@@ -14,6 +15,34 @@ type Props = {
   state: FeedState;
   onOpen: (post: Post) => void;
   onImpression: (post: Post, position: number) => void;
+};
+
+const diversifyByChannel = (items: Post[]) => {
+  const result = [...items];
+
+  for (let index = 1; index < result.length; index += 1) {
+    const current = result[index];
+    const previous = result[index - 1];
+    const previous2 = result[index - 2];
+    const currentKey = current.channel.username || current.channel.id;
+    const repeats = currentKey === (previous.channel.username || previous.channel.id)
+      || (previous2 && currentKey === (previous2.channel.username || previous2.channel.id));
+
+    if (!repeats) continue;
+
+    const swapIndex = result.findIndex((candidate, candidateIndex) => {
+      if (candidateIndex <= index || candidateIndex > index + 6) return false;
+      const candidateKey = candidate.channel.username || candidate.channel.id;
+      return candidateKey !== (previous.channel.username || previous.channel.id)
+        && (!previous2 || candidateKey !== (previous2.channel.username || previous2.channel.id));
+    });
+
+    if (swapIndex > index) {
+      [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+    }
+  }
+
+  return result;
 };
 
 export default function ExplorePage({ posts, state, onOpen, onImpression }: Props) {
@@ -77,6 +106,7 @@ export default function ExplorePage({ posts, state, onOpen, onImpression }: Prop
   }, [hasMore, expandedLoading, loadError, loadMore]);
 
   const sourcePosts = expandedPosts.length ? expandedPosts : posts;
+  const diversifiedPosts = useMemo(() => diversifyByChannel(sourcePosts), [sourcePosts]);
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
@@ -89,14 +119,18 @@ export default function ExplorePage({ posts, state, onOpen, onImpression }: Prop
   }, [sourcePosts]);
 
   const visiblePosts = useMemo(() => {
-    if (category !== 'همه') return sourcePosts.filter((post) => post.category === category);
-    if (!sponsoredPosts.length) return sourcePosts;
-    const mixed = [...sourcePosts];
+    const base = category !== 'همه'
+      ? sourcePosts.filter((post) => post.category === category)
+      : diversifiedPosts;
+
+    if (category !== 'همه' || !sponsoredPosts.length) return base;
+
+    const mixed = [...base];
     sponsoredPosts.slice(0, 2).forEach((post, index) => {
       mixed.splice(Math.min(mixed.length, 2 + index * 8), 0, post);
     });
     return mixed;
-  }, [sourcePosts, category, sponsoredPosts]);
+  }, [sourcePosts, diversifiedPosts, category, sponsoredPosts]);
 
   const positioned = useMemo(() => visiblePosts.map((post, index) => ({ post, index })), [visiblePosts]);
   const rightColumn = positioned.filter((item) => item.index % 2 === 0);
@@ -130,6 +164,13 @@ export default function ExplorePage({ posts, state, onOpen, onImpression }: Prop
         </div>
         <Sparkles />
       </header>
+
+      <div className="exploreRankingStripV11" aria-label="سیگنال‌های رتبه‌بندی اکسپلور">
+        <span className="exploreRankLeadV11"><Sparkles /> رتبه‌بندی هوشمند</span>
+        <span><Target /> ارتباط</span>
+        <span><Clock3 /> تازگی</span>
+        <span><Shuffle /> تنوع</span>
+      </div>
 
       {categories.length > 1 && (
         <div className="exploreCategoryRail" aria-label="فیلتر موضوع">
