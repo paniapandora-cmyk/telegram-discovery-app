@@ -47,6 +47,10 @@ export default function PostCard({
   }, [post.id, post.mediaUrl, post.telegramUrl]);
 
   useEffect(() => {
+    impressed.current = false;
+  }, [post.id]);
+
+  useEffect(() => {
     if (!onImpression || impressed.current || !root.current) return;
 
     const node = root.current;
@@ -134,12 +138,12 @@ export default function PostCard({
         <span className="categoryChip">{post.category}</span>
 
         {post.kind === 'video' && (
-          <span className="playBadge">
-            <Play size={15} fill="currentColor" />
+          <span className="playBadge" aria-label="ویدیو">
+            <Play size={15} fill="currentColor" aria-hidden="true" />
           </span>
         )}
 
-        {!mediaReady && <span className="textQuoteMark">“</span>}
+        {!mediaReady && <span className="textQuoteMark" aria-hidden="true">“</span>}
 
         <h3>{post.title}</h3>
       </div>
@@ -168,17 +172,18 @@ export default function PostCard({
         <p>{post.excerpt}</p>
 
         <footer>
-          <span className="statPill">
-            <Heart />
+          <span className="statPill" aria-label={`${post.likes} پسند`}>
+            <Heart aria-hidden="true" />
             <span>{post.likes}</span>
           </span>
 
-          <span className="statPill">
-            <MessageCircle />
+          <span className="statPill" aria-label={`${post.comments} نظر`}>
+            <MessageCircle aria-hidden="true" />
             <span>{post.comments}</span>
           </span>
 
           <button
+            type="button"
             className={post.saved ? 'saved' : ''}
             onClick={(event) => {
               event.stopPropagation();
@@ -187,7 +192,7 @@ export default function PostCard({
             aria-label={post.saved ? 'حذف از ذخیره‌ها' : 'ذخیره'}
             aria-pressed={post.saved}
           >
-            <Bookmark fill={post.saved ? 'currentColor' : 'none'} />
+            <Bookmark fill={post.saved ? 'currentColor' : 'none'} aria-hidden="true" />
           </button>
         </footer>
       </div>
