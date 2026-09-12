@@ -7,6 +7,7 @@ import './styles/viewer-saved-v3.css';
 import './styles/explore-search-v4.css';
 import './styles/premium-v2.css';
 import './styles/premium-v3.css';
+import './styles/premium-v4.css';
 
 const PRODUCTION_WORKER =
     'https://telegram-discovery-app.paniapandora.workers.dev';
