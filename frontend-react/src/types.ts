@@ -30,4 +30,10 @@ export type Post={
   likes:string;
   comments:string;
   saved?:boolean;
+  savedAt?:string;
+  viewedAt?:string;
+  historyEvent?:string;
+  watchSeconds?:number;
+  relatedScore?:number;
+  relatedReason?:string;
 };
