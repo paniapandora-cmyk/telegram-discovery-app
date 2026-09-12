@@ -25,12 +25,14 @@ returns table(
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 as $function$
 with target as (
   select
     c.id,
     c.creator_id,
+    c.title,
+    c.description,
     lower(coalesce(c.title,'') || ' ' || coalesce(c.description,'') || ' ' || coalesce(c.text_content,'')) as body,
     ce.embedding_vector
   from public.contents c
@@ -59,7 +61,7 @@ candidates as (
     ) as is_saved,
     case
       when t.embedding_vector is not null and ce.embedding_vector is not null
-      then greatest(0, 1 - (ce.embedding_vector <=> t.embedding_vector))
+      then greatest(0, 1 - (ce.embedding_vector operator(extensions.<=>) t.embedding_vector))
       else 0
     end::double precision as vector_similarity,
     least(1.0, coalesce((
@@ -69,8 +71,8 @@ candidates as (
       where src.content_id = t.id and dst.content_id = c.id
     ), 0))::double precision as topic_overlap,
     greatest(
-      similarity(lower(coalesce(c.title,'')), lower(coalesce((select title from public.contents where id=t.id),''))),
-      similarity(lower(coalesce(c.description,'')), lower(coalesce((select description from public.contents where id=t.id),''))),
+      similarity(lower(coalesce(c.title,'')), lower(coalesce(t.title,''))),
+      similarity(lower(coalesce(c.description,'')), lower(coalesce(t.description,''))),
       similarity(lower(coalesce(c.text_content,'')), t.body)
     )::double precision as lexical_similarity,
     least(1.0, greatest(0.0, coalesce(cf.normalized_quality, c.quality_score, 0.5)))::double precision as quality,
