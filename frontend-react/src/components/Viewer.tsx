@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Heart, Bookmark, Share2, ExternalLink, MoreHorizontal, Play, EyeOff } from 'lucide-react';
-import { ORIGIN, openTelegramPost } from '../data/live';
+import { openTelegramPost } from '../data/live';
 import { shareDiscoveryPost } from '../data/growth';
 import { recordPromotionEvent } from '../data/ads';
 import { openTrackedChannel } from '../data/tracking';
+import { postMediaCandidates } from '../lib/postMedia';
 import type { Post } from '../types';
 
 type Props = { post: Post; onClose: () => void; onToggleSave: (id: string) => void; onFeedback: (post: Post, type: string) => Promise<void> };
-const uniqueStrings = (values: Array<string | undefined>) => Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 
 export default function Viewer({ post, onClose, onToggleSave, onFeedback }: Props) {
   const [showFeedback, setShowFeedback] = useState(false);
@@ -15,12 +15,10 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback }: Prop
   const [mediaIndex, setMediaIndex] = useState(0);
   const [mediaReady, setMediaReady] = useState(false);
   const [shareBusy, setShareBusy] = useState(false);
-  const previewOrigin = typeof window !== 'undefined' && window.location.hostname.endsWith('.pages.dev') ? window.location.origin : ORIGIN;
-  const mediaCandidates = useMemo(() => {
-    const localizedDirect = post.mediaUrl?.startsWith(`${ORIGIN}/api/`) ? `${previewOrigin}${post.mediaUrl.slice(ORIGIN.length)}` : post.mediaUrl;
-    const telegramPreview = post.telegramUrl ? `${previewOrigin}/api/telegram/preview-image?url=${encodeURIComponent(post.telegramUrl)}` : undefined;
-    return uniqueStrings([localizedDirect, telegramPreview]);
-  }, [post.mediaUrl, post.telegramUrl, previewOrigin]);
+  const mediaCandidates = useMemo(
+    () => postMediaCandidates(post),
+    [post.id, post.mediaUrl, post.telegramUrl],
+  );
 
   useEffect(() => { setMediaIndex(0); setMediaReady(false); setShowFeedback(false); setShareBusy(false); }, [post.id, post.mediaUrl, post.telegramUrl]);
   const activeMedia = mediaCandidates[mediaIndex];
