@@ -26,6 +26,7 @@ import '../styles/search-discovery-v11.css';
 type Props = {
   channels: Channel[];
   onOpen: (post: Post) => void;
+  onOpenChannel?: (channel: Channel) => void;
 };
 
 type SearchState = 'idle' | 'loading' | 'live' | 'fallback';
@@ -42,7 +43,7 @@ const fold = (value: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-export default function SearchPage({ channels, onOpen }: Props) {
+export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<SearchFilter>('all');
   const [recommended, setRecommended] = useState<Channel[]>([]);
@@ -186,7 +187,8 @@ export default function SearchPage({ channels, onOpen }: Props) {
 
   const openChannel = (channel: Channel) => {
     if (q.trim().length >= 2) pushRecent(q);
-    void openTrackedChannel(channel);
+    if (onOpenChannel && channel.creatorId) onOpenChannel(channel);
+    else void openTrackedChannel(channel);
   };
 
   const openPost = (post: Post) => {
@@ -338,7 +340,7 @@ export default function SearchPage({ channels, onOpen }: Props) {
                       {channel.avatarUrl && <img src={channel.avatarUrl} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} />}
                     </div>
                     <div><strong>{channel.title}</strong><small>{channel.username}</small></div>
-                    <button type="button" onClick={(event) => { event.stopPropagation(); openChannel(channel); }} disabled={!channel.username}>مشاهده</button>
+                    <button type="button" onClick={(event) => { event.stopPropagation(); openChannel(channel); }} disabled={!channel.creatorId && !channel.username}>مشاهده</button>
                   </article>
                 ))}
               </div>
@@ -380,7 +382,7 @@ export default function SearchPage({ channels, onOpen }: Props) {
                       {channel.avatarUrl && <img src={channel.avatarUrl} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} />}
                     </div>
                     <div><strong>{channel.title}</strong><small>{channel.username}</small></div>
-                    <button type="button" onClick={(event) => { event.stopPropagation(); openChannel(channel); }} disabled={!channel.username}>مشاهده</button>
+                    <button type="button" onClick={(event) => { event.stopPropagation(); openChannel(channel); }} disabled={!channel.creatorId && !channel.username}>مشاهده</button>
                   </article>
                 ))}
               </div>
