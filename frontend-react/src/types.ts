@@ -1,4 +1,4 @@
-export type Page='home'|'explore'|'search'|'saved'|'profile'|'history'|'creator'|'notifications';
+export type Page='home'|'explore'|'search'|'saved'|'profile'|'history'|'creator'|'notifications'|'invite'|'support'|'ads';
 export type Channel={
   id:string;
   title:string;
