@@ -26,7 +26,7 @@ import {
   type HubData,
   type NotificationItem,
 } from '../data/account';
-import type { Page, Post } from '../types';
+import type { Channel, Page, Post } from '../types';
 import BottomNav from '../components/BottomNav';
 import AddChannelSheet from '../components/AddChannelSheet';
 import Viewer from '../components/Viewer';
@@ -42,6 +42,7 @@ import InvitePage from '../pages/InvitePage';
 import SupportPage from '../pages/SupportPage';
 import AdsPage from '../pages/AdsPage';
 import PersonalizationPage from '../pages/PersonalizationPage';
+import ChannelPage from '../pages/ChannelPage';
 import '../styles/app.css';
 import '../styles/live.css';
 import '../styles/functional.css';
@@ -63,6 +64,8 @@ export default function DiscoveryApp() {
   const [historyPosts, setHistoryPosts] = useState<Post[]>([]);
   const [viewer, setViewer] = useState<Post | null>(null);
   const viewerStarted = useRef(0);
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
+  const [channelReturnPage, setChannelReturnPage] = useState<Page>('home');
   const [addOpen, setAddOpen] = useState(false);
   const [feedState, setFeedState] = useState<FeedState>('loading');
   const [exploreState, setExploreState] = useState<FeedState>('loading');
@@ -99,10 +102,27 @@ export default function DiscoveryApp() {
     setViewer(null);
   };
 
+  const closeChannel = () => {
+    setSelectedChannel(null);
+    setPage(channelReturnPage === 'channel' ? 'home' : channelReturnPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const changePage = (next: Page) => {
     if (viewer) finalizeViewer();
     setViewer(null);
+    if (next !== 'channel') setSelectedChannel(null);
     setPage(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openChannel = (channel: Channel) => {
+    if (!channel.creatorId && !/^[0-9a-f-]{36}$/i.test(channel.id)) return;
+    if (viewer) finalizeViewer();
+    setViewer(null);
+    if (page !== 'channel') setChannelReturnPage(page);
+    setSelectedChannel(channel);
+    setPage('channel');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -136,10 +156,11 @@ export default function DiscoveryApp() {
     const subpage = ['creator', 'history', 'notifications', 'invite', 'support', 'ads', 'personalization'].includes(page);
     const handler = () => {
       if (viewer) closeViewer();
+      else if (page === 'channel') closeChannel();
       else if (subpage) changePage('profile');
     };
 
-    if (viewer || subpage) {
+    if (viewer || subpage || page === 'channel') {
       back.show?.();
       back.onClick?.(handler);
     } else {
@@ -147,7 +168,7 @@ export default function DiscoveryApp() {
     }
 
     return () => back.offClick?.(handler);
-  }, [viewer, page]);
+  }, [viewer, page, channelReturnPage]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -287,13 +308,17 @@ export default function DiscoveryApp() {
     setViewer((current) => current?.id === id ? { ...current, saved: value } : current);
   };
 
+  const toggleSavePost = (target: Post) => {
+    const before = Boolean(target.saved);
+    const next = !before;
+    applySaved(target.id, next, target);
+    void persistSaved(target, next).catch(() => applySaved(target.id, before, target));
+  };
+
   const toggleSave = (id: string) => {
     const target = findPost(id);
     if (!target) return;
-    const before = Boolean(target.saved);
-    const next = !before;
-    applySaved(id, next, target);
-    void persistSaved(target, next).catch(() => applySaved(id, before, target));
+    toggleSavePost(target);
   };
 
   const openViewer = (post: Post) => {
@@ -350,6 +375,7 @@ export default function DiscoveryApp() {
           onToggleSave={toggleSave}
           onFeedback={feedbackPost}
           onOpenRelated={openViewer}
+          onOpenChannel={openChannel}
         />
       ) : (
         <>
@@ -364,6 +390,7 @@ export default function DiscoveryApp() {
                 onSearch={() => changePage('search')}
                 onAdd={() => setAddOpen(true)}
                 onOpen={openViewer}
+                onOpenChannel={openChannel}
                 onToggleSave={toggleSave}
                 onImpression={(post, position) => recordImpression(post, position, tab)}
               />
@@ -442,6 +469,16 @@ export default function DiscoveryApp() {
             {page === 'personalization' && (
               <PersonalizationPage
                 onBack={() => changePage('profile')}
+                onChanged={personalizationChanged}
+              />
+            )}
+            {page === 'channel' && selectedChannel && (
+              <ChannelPage
+                channel={selectedChannel}
+                onBack={closeChannel}
+                onOpenPost={openViewer}
+                onToggleSavePost={toggleSavePost}
+                onOpenChannel={openChannel}
                 onChanged={personalizationChanged}
               />
             )}
