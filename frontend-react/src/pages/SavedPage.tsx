@@ -1,5 +1,6 @@
-import { Bookmark, FileText, Image as ImageIcon, PlayCircle, Search } from 'lucide-react';
-import type { Post } from '../types';
+import { useMemo, useState } from 'react';
+import { Bookmark, FileText, Image as ImageIcon, PlayCircle, Search, X } from 'lucide-react';
+import type { Post, PostKind } from '../types';
 
 type LoadState = 'idle' | 'loading' | 'live' | 'fallback';
 
@@ -10,15 +11,32 @@ type Props = {
   onToggleSave: (id: string) => void;
 };
 
-const filters = [
+type Filter = 'all' | PostKind;
+
+const filters: Array<{ id: Filter; label: string }> = [
   { id: 'all', label: 'همه' },
-  { id: 'channels', label: 'کانال‌ها' },
-  { id: 'posts', label: 'پست‌ها' },
-] as const;
+  { id: 'text', label: 'مقاله‌ها' },
+  { id: 'video', label: 'ویدیوها' },
+  { id: 'image', label: 'تصاویر' },
+];
 
 export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props) {
-  const saved = posts.filter((post) => post.saved !== false);
-  const count = new Intl.NumberFormat('fa-IR').format(saved.length);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
+  const saved = useMemo(() => posts.filter((post) => post.saved !== false), [posts]);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase('fa-IR');
+    return saved.filter((post) => {
+      if (filter !== 'all' && post.kind !== filter) return false;
+      if (!normalized) return true;
+      return [post.title, post.excerpt, post.channel.title, post.channel.username, post.category]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase('fa-IR').includes(normalized));
+    });
+  }, [saved, query, filter]);
+
+  const count = new Intl.NumberFormat('fa-IR').format(filtered.length);
 
   return (
     <div className="page referenceSavedPage">
@@ -30,24 +48,57 @@ export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props)
         <span className={`liveBadge ${state}`}>{state === 'live' ? 'همگام' : state === 'loading' ? 'در حال دریافت…' : 'آماده'}</span>
       </header>
 
-      <button type="button" className="referenceSavedSearch" aria-label="جست‌وجو در ذخیره‌ها">
-        <Search />
-        <span>جست‌وجو در ذخیره‌ها...</span>
-      </button>
+      <label className="referenceSavedSearch" aria-label="جست‌وجو در ذخیره‌ها">
+        <Search aria-hidden="true" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="جست‌وجو در ذخیره‌ها..."
+          inputMode="search"
+          autoComplete="off"
+        />
+        {query && (
+          <button type="button" className="referenceSavedClear" onClick={() => setQuery('')} aria-label="پاک کردن جست‌وجو">
+            <X />
+          </button>
+        )}
+      </label>
 
       <div className="referenceSavedFilters" aria-label="فیلتر ذخیره‌ها">
-        {filters.map((item, index) => <button key={item.id} className={index === 0 ? 'active' : ''}>{item.label}</button>)}
+        {filters.map((item) => (
+          <button
+            type="button"
+            key={item.id}
+            className={filter === item.id ? 'active' : ''}
+            onClick={() => setFilter(item.id)}
+            aria-pressed={filter === item.id}
+          >
+            {item.label}
+          </button>
+        ))}
         <span>{count} مورد</span>
       </div>
 
       {state === 'loading' && !saved.length ? (
-        <div className="searchLoading"><span /><span /><span /></div>
-      ) : saved.length ? (
+        <div className="searchLoading" aria-label="در حال دریافت ذخیره‌ها"><span /><span /><span /></div>
+      ) : filtered.length ? (
         <div className="referenceSavedList">
-          {saved.map((post) => {
+          {filtered.map((post) => {
             const KindIcon = post.kind === 'video' ? PlayCircle : post.kind === 'image' ? ImageIcon : FileText;
             return (
-              <article key={post.id} className="referenceSavedCard" onClick={() => onOpen(post)}>
+              <article
+                key={post.id}
+                className="referenceSavedCard"
+                onClick={() => onOpen(post)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onOpen(post);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
                 <div className="referenceSavedThumb">
                   {post.mediaUrl ? <img src={post.mediaUrl} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} /> : <KindIcon />}
                   <span><KindIcon /> {post.kind === 'video' ? 'ویدیو' : post.kind === 'image' ? 'تصویر' : 'مقاله'}</span>
@@ -61,13 +112,22 @@ export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props)
                   type="button"
                   className="referenceSavedRemove"
                   onClick={(event) => { event.stopPropagation(); onToggleSave(post.id); }}
-                  aria-label="حذف از ذخیره‌ها"
+                  aria-label={`حذف ${post.title} از ذخیره‌ها`}
                 >
                   <Bookmark fill="currentColor" />
                 </button>
               </article>
             );
           })}
+        </div>
+      ) : saved.length ? (
+        <div className="emptyState referenceSavedEmpty">
+          <Search />
+          <h2>نتیجه‌ای پیدا نشد</h2>
+          <p>عبارت جست‌وجو یا فیلتر را تغییر بده.</p>
+          {(query || filter !== 'all') && (
+            <button type="button" onClick={() => { setQuery(''); setFilter('all'); }}>نمایش همه ذخیره‌ها</button>
+          )}
         </div>
       ) : (
         <div className="emptyState referenceSavedEmpty">
