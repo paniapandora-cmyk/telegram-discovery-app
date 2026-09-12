@@ -1,0 +1,56 @@
+/* Mobile Hotfix V7 — repairs viewport overflow introduced by reference-v6. */
+
+*,*::before,*::after{box-sizing:border-box}
+html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
+body{margin:0}
+.appShell{width:100%;max-width:100vw;overflow-x:clip}
+.pageViewport{width:100%!important;max-width:760px!important;min-width:0!important;margin-inline:auto!important;padding-inline:12px!important;box-sizing:border-box!important}
+.page,.referenceHomePage,.referenceSavedPage,.referenceProfilePage,.explorePageV7,.searchPageV4{width:100%;max-width:100%;min-width:0;overflow-x:visible}
+.surface,.channelSection,.referenceFeedSection,.feedSection,.inviteNudge,.profileHero{max-width:100%;min-width:0}
+
+/* The legacy bottom nav used left:50% + translateX(-50%). reference-v6 changed left/right but did not clear the transform. */
+.referenceBottomNav.bottomNav{
+  left:10px!important;
+  right:10px!important;
+  width:auto!important;
+  max-width:calc(100vw - 20px)!important;
+  margin:0!important;
+  transform:none!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+.referenceBottomNav.bottomNav button{min-width:0!important;width:auto!important;padding-inline:2px!important;overflow:hidden}
+.referenceBottomNav.bottomNav button span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.channelRail{width:100%;max-width:100%;min-width:0;overflow-x:auto!important;overscroll-behavior-inline:contain;padding-bottom:2px}
+.channelCard{min-width:86px!important;flex:0 0 86px!important}
+
+.referenceFeedTabs.feedTabs{width:100%!important;max-width:100%!important;min-width:0!important}
+.referenceFeedTabs.feedTabs button{min-width:0!important;padding-inline:4px!important}
+.referenceFeedTabs.feedTabs button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.referenceLeadStory,.referenceLeadStory .postCard,.referenceFeedSection,.referenceFeedSection .feedGrid,.referenceFeedSection .postCard{max-width:100%!important;min-width:0!important}
+
+/* Keep the assistant useful without covering half of a phone screen. */
+.tdai-launch{right:14px!important;bottom:92px!important;min-height:44px!important;max-width:138px!important;padding:0 13px!important;font-size:.72rem!important;white-space:nowrap!important}
+
+@media(max-width:430px){
+  .pageViewport{padding-inline:10px!important;padding-bottom:108px!important}
+  .referenceBottomNav.bottomNav{left:8px!important;right:8px!important;max-width:calc(100vw - 16px)!important;height:66px!important;padding:4px!important}
+  .referenceBottomNav.bottomNav button{height:56px!important;border-radius:14px!important}
+  .referenceBottomNav.bottomNav button svg{width:20px!important;height:20px!important}
+  .referenceBottomNav.bottomNav button span{font-size:7px!important}
+  .referenceHomeHeader{grid-template-columns:42px minmax(0,1fr) 42px!important;gap:7px!important}
+  .referenceHomeBrand h1{font-size:25px!important}
+  .referenceHomeBrand small{font-size:8px!important}
+  .referenceFeedTabs.feedTabs button{font-size:10px!important;gap:4px!important}
+  .channelSection{padding-inline:9px!important}
+  .tdai-launch{right:12px!important;bottom:86px!important;max-width:126px!important;min-height:42px!important;padding:0 12px!important;font-size:.68rem!important}
+}
+
+@media(max-width:360px){
+  .pageViewport{padding-inline:8px!important}
+  .referenceBottomNav.bottomNav{left:6px!important;right:6px!important;max-width:calc(100vw - 12px)!important}
+  .referenceBottomNav.bottomNav button span{font-size:6.5px!important}
+  .referenceHomeBrand h1{font-size:23px!important}
+}
