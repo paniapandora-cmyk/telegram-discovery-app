@@ -30,14 +30,15 @@ export default function ChannelRail({ channels }: Props) {
   );
 
   return (
-    <section className="surface channelSection">
+    <section className="surface channelSection" aria-labelledby="recommended-channels-title">
       <div className="sectionTitle">
-        <h2>کانال‌های پیشنهادی</h2>
+        <h2 id="recommended-channels-title">کانال‌های پیشنهادی</h2>
+        <small>{new Intl.NumberFormat('fa-IR').format(visibleChannels.length)} کانال</small>
       </div>
 
-      <div className="channelRail">
+      <div className="channelRail" role="list" aria-label="کانال‌های پیشنهادی">
         {visibleChannels.map((channel) => (
-          <article className="channelCard" key={channel.id}>
+          <article className="channelCard" key={channel.id} role="listitem">
             <div className={`channelAvatar ${channel.accent}`}>
               <span>{channel.initials}</span>
               {channel.avatarUrl && (
@@ -45,18 +46,21 @@ export default function ChannelRail({ channels }: Props) {
                   src={channel.avatarUrl}
                   alt=""
                   loading="lazy"
+                  decoding="async"
                   onError={(event) => event.currentTarget.remove()}
                 />
               )}
             </div>
 
-            <strong>{channel.title}</strong>
-            <small>{channel.username}</small>
+            <strong title={channel.title}>{channel.title}</strong>
+            <small title={channel.username}>{channel.username}</small>
 
             <button
+              type="button"
               className="followBtn"
               onClick={() => void openTrackedChannel(channel)}
               disabled={!channel.username}
+              aria-label={`باز کردن ${channel.title} در تلگرام`}
             >
               باز کردن
             </button>
