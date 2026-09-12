@@ -10,10 +10,17 @@ const items = [
 
 export default function FeedTabs({ value, onChange }: Props) {
   return (
-    <div className="feedTabs referenceFeedTabs">
+    <div className="feedTabs referenceFeedTabs" role="tablist" aria-label="نوع فید">
       {items.map(([id, label, Icon]) => (
-        <button key={id} className={value === id ? 'active' : ''} onClick={() => onChange(id)}>
-          <Icon size={17} />
+        <button
+          key={id}
+          type="button"
+          role="tab"
+          aria-selected={value === id}
+          className={value === id ? 'active' : ''}
+          onClick={() => onChange(id)}
+        >
+          <Icon size={17} aria-hidden="true" />
           <span>{label}</span>
         </button>
       ))}
