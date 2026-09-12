@@ -109,6 +109,26 @@ jobs:
 
           echo "Saved library, viewing history, dwell time, and related-content modules found."
 
+      - name: Verify personalization center stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s frontend-react/src/pages/PersonalizationPage.tsx
+          test -s frontend-react/src/data/personalization.ts
+          test -s frontend-react/src/styles/personalization-v13.css
+          test -s supabase/functions/personalization-v1/index.ts
+          test -s supabase/migrations/20260913014200_personalization_center_v1.sql
+
+          grep -q "page === 'personalization'" frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'onPersonalization' frontend-react/src/pages/ProfilePage.tsx
+          grep -q 'saveInterests' frontend-react/src/pages/PersonalizationPage.tsx
+          grep -q 'setCreatorFollow' frontend-react/src/pages/PersonalizationPage.tsx
+          grep -q 'get_personalization_creators_v1' supabase/functions/personalization-v1/index.ts
+          grep -q 'followed_creator' supabase/migrations/20260913014200_personalization_center_v1.sql
+
+          echo "Interests, creator follows, recommendations, and follow-aware feed modules found."
+
       - name: Verify growth stack
         shell: bash
         run: |
