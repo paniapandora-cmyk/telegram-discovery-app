@@ -3,6 +3,7 @@ import FeedTabs from '../components/FeedTabs';
 import ChannelRail from '../components/ChannelRail';
 import PostCard from '../components/PostCard';
 import InviteNudge from '../components/InviteNudge';
+import { posts as seedPosts } from '../data/demo';
 import type { Channel, Post } from '../types';
 
 type FeedState = 'loading' | 'live' | 'fallback';
@@ -32,7 +33,12 @@ export default function HomePage({
   onToggleSave,
   onImpression,
 }: Props) {
-  const [leadPost, ...morePosts] = posts;
+  // A personalized endpoint can legitimately return an empty array while a user
+  // is new or has very narrow interests. Never collapse the whole home screen in
+  // that case: keep the existing seed/fallback feed visible until live content is available.
+  const displayPosts = posts.length ? posts : seedPosts;
+  const effectiveState: FeedState = posts.length ? state : state === 'loading' ? 'loading' : 'fallback';
+  const [leadPost, ...morePosts] = displayPosts;
 
   return (
     <div className="referenceHomePage">
@@ -48,7 +54,7 @@ export default function HomePage({
             onImpression={() => onImpression(leadPost, 1)}
           />
         </section>
-      ) : state === 'loading' ? (
+      ) : effectiveState === 'loading' ? (
         <div className="premiumLeadSkeleton" aria-label="در حال دریافت محتوا" />
       ) : null}
 
@@ -60,20 +66,20 @@ export default function HomePage({
           <div>
             <h2>{leadPost ? 'پیشنهادهای بیشتر' : 'منتخب برای تو'}</h2>
             <div className="liveMeta">
-              <small>{posts.length.toLocaleString('fa-IR')} محتوا</small>
-              <span className={`liveBadge ${state}`}>
-                {state === 'live'
+              <small>{displayPosts.length.toLocaleString('fa-IR')} محتوا</small>
+              <span className={`liveBadge ${effectiveState}`}>
+                {effectiveState === 'live'
                   ? 'داده زنده'
-                  : state === 'loading'
+                  : effectiveState === 'loading'
                     ? 'در حال دریافت…'
-                    : 'نسخه پشتیبان'}
+                    : 'پیشنهاد جایگزین'}
               </span>
             </div>
           </div>
         </div>
 
         {morePosts.length ? (
-          <div className={`feedGrid ${state === 'loading' ? 'isRefreshing' : ''}`}>
+          <div className={`feedGrid ${effectiveState === 'loading' ? 'isRefreshing' : ''}`}>
             {morePosts.map((post, index) => (
               <PostCard
                 key={post.id}
