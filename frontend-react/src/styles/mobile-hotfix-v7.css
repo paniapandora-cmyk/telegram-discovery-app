@@ -1,15 +1,67 @@
-/* Mobile Hotfix V7 — repairs viewport overflow introduced by reference-v6. */
+/* Mobile Hotfix V7 — repairs viewport overflow and restores vertical page scrolling. */
 
 *,*::before,*::after{box-sizing:border-box}
-html,body,#root{width:100%;max-width:100%;overflow-x:hidden}
-body{margin:0}
-.appShell{width:100%;max-width:100vw;overflow-x:clip}
-.pageViewport{width:100%!important;max-width:760px!important;min-width:0!important;margin-inline:auto!important;padding-inline:12px!important;box-sizing:border-box!important}
-.page,.referenceHomePage,.referenceSavedPage,.referenceProfilePage,.explorePageV7,.searchPageV4{width:100%;max-width:100%;min-width:0;overflow-x:visible}
+
+/* Do not turn html/body/#root into nested horizontal scroll containers.
+   Using overflow-x:hidden here made Chromium compute the other axis as auto in
+   places, which can swallow vertical touch scrolling inside Telegram WebView. */
+html{
+  width:100%;
+  max-width:100%;
+  min-height:100%;
+  overflow-x:clip!important;
+  overflow-y:auto!important;
+}
+body,#root{
+  width:100%;
+  max-width:100%;
+  min-height:100dvh;
+  height:auto!important;
+  overflow-x:clip!important;
+  overflow-y:visible!important;
+}
+body{
+  margin:0;
+  overscroll-behavior-y:auto!important;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* Let the document remain the vertical scroll surface. This is more reliable
+   in Telegram Android/iOS WebViews than competing nested page scrollers. */
+.appShell{
+  width:100%;
+  max-width:100vw;
+  min-height:100dvh!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow-x:clip!important;
+  overflow-y:visible!important;
+}
+.pageViewport{
+  width:100%!important;
+  max-width:760px!important;
+  min-width:0!important;
+  min-height:100dvh;
+  height:auto!important;
+  margin-inline:auto!important;
+  padding-inline:12px!important;
+  box-sizing:border-box!important;
+  overflow-y:visible!important;
+}
+.page,.referenceHomePage,.referenceSavedPage,.referenceProfilePage,.explorePageV7,.searchPageV4{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  height:auto!important;
+  max-height:none!important;
+  overflow-x:visible;
+  overflow-y:visible!important;
+}
 .surface,.channelSection,.referenceFeedSection,.feedSection,.inviteNudge,.profileHero{max-width:100%;min-width:0}
 
 /* The legacy bottom nav used left:50% + translateX(-50%). reference-v6 changed left/right but did not clear the transform. */
 .referenceBottomNav.bottomNav{
+  position:fixed!important;
   left:10px!important;
   right:10px!important;
   width:auto!important;
@@ -22,7 +74,17 @@ body{margin:0}
 .referenceBottomNav.bottomNav button{min-width:0!important;width:auto!important;padding-inline:2px!important;overflow:hidden}
 .referenceBottomNav.bottomNav button span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.channelRail{width:100%;max-width:100%;min-width:0;overflow-x:auto!important;overscroll-behavior-inline:contain;padding-bottom:2px}
+/* Horizontal channel swipe must not lock the document's vertical swipe. */
+.channelRail{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  overscroll-behavior-inline:contain;
+  touch-action:auto!important;
+  padding-bottom:2px;
+}
 .channelCard{min-width:86px!important;flex:0 0 86px!important}
 
 .referenceFeedTabs.feedTabs{width:100%!important;max-width:100%!important;min-width:0!important}
