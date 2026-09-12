@@ -18,6 +18,13 @@ export type GrowthSummary = {
     bot_starts: number;
     share_clicks: number;
     miniapp_opens: number;
+    last_success_at?: string | null;
+    last_7d?: {
+      successful_invites: number;
+      bot_starts: number;
+      share_clicks: number;
+      miniapp_opens: number;
+    };
   };
   social_proof: {
     active_users: number;
@@ -76,10 +83,14 @@ export async function createPostGrowthLink(post: Post) {
   });
 }
 
-export async function recordGrowthShare(token: string) {
+export async function recordGrowthShare(
+  token: string,
+  channel: 'telegram' | 'native' | 'copy' | 'post' | 'unknown' = 'unknown',
+) {
   return growthRequest<{ ok: true }>('POST', {
     action: 'share',
     token,
+    channel,
     session_id: getSessionId(),
   });
 }
@@ -105,19 +116,58 @@ function telegramShare(url: string, text: string) {
   );
 }
 
+export const inviteShareText =
+  '✨ بیا «کشف»؛ بهترین کانال‌ها و پست‌های تلگرام رو راحت‌تر پیدا کن.';
+
 export async function shareInvite(summary: GrowthSummary) {
-  await recordGrowthShare(summary.invite.token).catch(() => {});
-  return telegramShare(
-    summary.invite.url,
-    '✨ بیا «کشف»؛ بهترین کانال‌ها و پست‌های تلگرام رو راحت‌تر پیدا کن.',
-  );
+  await recordGrowthShare(summary.invite.token, 'telegram').catch(() => {});
+  return telegramShare(summary.invite.url, inviteShareText);
+}
+
+export async function nativeShareInvite(summary: GrowthSummary) {
+  const share = navigator.share;
+  if (typeof share !== 'function') return shareInvite(summary);
+
+  try {
+    await navigator.share({
+      title: 'کشف',
+      text: inviteShareText,
+      url: summary.invite.url,
+    });
+    await recordGrowthShare(summary.invite.token, 'native').catch(() => {});
+    return true;
+  } catch (error) {
+    if ((error as DOMException)?.name === 'AbortError') return false;
+    return shareInvite(summary);
+  }
+}
+
+export async function copyInviteLink(summary: GrowthSummary) {
+  const value = summary.invite.url;
+
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    const input = document.createElement('textarea');
+    input.value = value;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    document.execCommand('copy');
+    input.remove();
+  }
+
+  await recordGrowthShare(summary.invite.token, 'copy').catch(() => {});
+  return true;
 }
 
 export async function shareDiscoveryPost(post: Post) {
   try {
     const link = await createPostGrowthLink(post);
     await Promise.all([
-      recordGrowthShare(link.token).catch(() => {}),
+      recordGrowthShare(link.token, 'post').catch(() => {}),
       post.contentId
         ? requestJson('/api/discovery/events', {
             method: 'POST',
