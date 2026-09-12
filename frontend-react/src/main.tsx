@@ -9,6 +9,7 @@ import './styles/premium-v2.css';
 import './styles/premium-v3.css';
 import './styles/premium-v4.css';
 import './styles/premium-v5.css';
+import './styles/reference-v6.css';
 
 const PRODUCTION_WORKER =
     'https://telegram-discovery-app.paniapandora.workers.dev';
