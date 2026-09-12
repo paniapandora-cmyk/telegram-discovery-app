@@ -1,9 +1,11 @@
+import { useEffect, useMemo, useState } from 'react';
 import Header from '../components/Header';
 import FeedTabs from '../components/FeedTabs';
 import ChannelRail from '../components/ChannelRail';
 import PostCard from '../components/PostCard';
 import InviteNudge from '../components/InviteNudge';
 import { posts as seedPosts } from '../data/demo';
+import { loadLivePosts } from '../data/live';
 import type { Channel, Post } from '../types';
 
 type FeedState = 'loading' | 'live' | 'fallback';
@@ -21,6 +23,8 @@ type Props = {
   onImpression: (post: Post, position: number) => void;
 };
 
+const seedIds = new Set(seedPosts.map((post) => post.id));
+
 export default function HomePage({
   channels,
   posts,
@@ -33,11 +37,70 @@ export default function HomePage({
   onToggleSave,
   onImpression,
 }: Props) {
-  // A personalized endpoint can legitimately return an empty array while a user
-  // is new or has very narrow interests. Never collapse the whole home screen in
-  // that case: keep the existing seed/fallback feed visible until live content is available.
-  const displayPosts = posts.length ? posts : seedPosts;
-  const effectiveState: FeedState = posts.length ? state : state === 'loading' ? 'loading' : 'fallback';
+  const [recoveryPosts, setRecoveryPosts] = useState<Post[]>([]);
+
+  const hasLivePosts = useMemo(
+    () => posts.some((post) => !seedIds.has(post.id)),
+    [posts],
+  );
+
+  // The personalized feed can occasionally be empty or fail while Telegram
+  // authorization is being refreshed. In that case, recover from the live
+  // Explore/Trending sources instead of leaving Home without posts.
+  useEffect(() => {
+    if (hasLivePosts) {
+      setRecoveryPosts([]);
+      return;
+    }
+
+    if (state === 'loading') return;
+
+    const controller = new AbortController();
+    let active = true;
+
+    const recover = async () => {
+      const modes = tab === 'hot'
+        ? (['fresh'] as const)
+        : (['fresh', 'hot'] as const);
+
+      for (const mode of modes) {
+        try {
+          const next = await loadLivePosts(mode, controller.signal);
+          if (!active || controller.signal.aborted) return;
+
+          if (next.length) {
+            setRecoveryPosts(next);
+            return;
+          }
+        } catch {
+          if (controller.signal.aborted) return;
+        }
+      }
+    };
+
+    void recover();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [hasLivePosts, state, tab]);
+
+  const displayPosts = useMemo(() => {
+    if (hasLivePosts) return posts;
+    if (recoveryPosts.length) return recoveryPosts;
+    if (posts.length) return posts;
+    return seedPosts;
+  }, [hasLivePosts, posts, recoveryPosts]);
+
+  const effectiveState: FeedState = recoveryPosts.length
+    ? 'live'
+    : hasLivePosts
+      ? state
+      : state === 'loading'
+        ? 'loading'
+        : 'fallback';
+
   const [leadPost, ...morePosts] = displayPosts;
 
   return (
