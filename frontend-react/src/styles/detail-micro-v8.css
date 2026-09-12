@@ -1,0 +1,39 @@
+/* V8 micro details kept separate to avoid disturbing the scroll hotfix layer. */
+.sectionTitle{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sectionTitle>small{font-size:7px;color:#6f899d;white-space:nowrap}
+
+.referenceSavedSearch{cursor:text}
+.referenceSavedSearch>svg:first-child{flex:0 0 auto;color:#6e91aa}
+.referenceSavedClear{
+  flex:0 0 auto;
+  width:30px;height:30px;
+  display:grid;place-items:center;
+  border:1px solid rgba(74,156,210,.13);
+  border-radius:10px;
+  background:rgba(11,33,50,.72);
+  color:#86a6bb;
+  padding:0;
+}
+.referenceSavedClear svg{width:14px;height:14px}
+.referenceSavedClear:active{transform:scale(.92)}
+.referenceSavedEmpty>button{
+  min-height:38px;
+  padding:0 14px;
+  border:0;
+  border-radius:12px;
+  background:linear-gradient(135deg,#27c8ff,#6d62ff);
+  color:#fff;
+  font-weight:800;
+  box-shadow:0 8px 20px rgba(61,112,255,.22);
+}
+.referenceSavedEmpty>button:active{transform:scale(.97)}
+
+.postCard[role="button"]:focus-visible,.referenceSavedCard[role="button"]:focus-visible{
+  outline:2px solid rgba(57,215,255,.78)!important;
+  outline-offset:2px!important;
+}
+
+@media(max-width:430px){
+  .referenceSavedClear{width:28px;height:28px;border-radius:9px}
+  .sectionTitle>small{font-size:6.5px}
+}
