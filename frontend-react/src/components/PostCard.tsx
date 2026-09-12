@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bookmark, Heart, MessageCircle, Play } from 'lucide-react';
-import { ORIGIN } from '../data/live';
+import { postMediaCandidates } from '../lib/postMedia';
 import type { Post } from '../types';
 
 type Props = {
@@ -9,9 +9,6 @@ type Props = {
   onToggleSave: (id: string) => void;
   onImpression?: () => void;
 };
-
-const uniqueStrings = (values: Array<string | undefined>) =>
-  Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 
 function saveHaptic(saved: boolean) {
   const haptic = (window as any)?.Telegram?.WebApp?.HapticFeedback;
@@ -26,23 +23,10 @@ export default function PostCard({
 }: Props) {
   const root = useRef<HTMLElement | null>(null);
   const impressed = useRef(false);
-
-  const previewOrigin =
-    typeof window !== 'undefined' &&
-    window.location.hostname.endsWith('.pages.dev')
-      ? window.location.origin
-      : ORIGIN;
-
-  const mediaCandidates = useMemo(() => {
-    const telegramPreview = post.telegramUrl
-      ? `${previewOrigin}/api/telegram/preview-image?url=${encodeURIComponent(
-          post.telegramUrl,
-        )}`
-      : undefined;
-
-    return uniqueStrings([post.mediaUrl, telegramPreview]);
-  }, [post.mediaUrl, post.telegramUrl, previewOrigin]);
-
+  const mediaCandidates = useMemo(
+    () => postMediaCandidates(post),
+    [post.id, post.mediaUrl, post.telegramUrl],
+  );
   const [mediaIndex, setMediaIndex] = useState(0);
   const [mediaReady, setMediaReady] = useState(false);
 
