@@ -1,14 +1,15 @@
-import { Bell, Plus, Sparkles } from 'lucide-react';
+import { Plus, Search, Sparkles } from 'lucide-react';
 
 type Props = {
+  onSearch?: () => void;
   onAdd?: () => void;
 };
 
-export default function Header({ onAdd }: Props) {
+export default function Header({ onSearch, onAdd }: Props) {
   return (
     <header className="referenceHomeHeader">
-      <button type="button" className="referenceHeaderUtility" aria-label="اعلان‌ها">
-        <Bell />
+      <button type="button" className="referenceHeaderUtility" onClick={onSearch} aria-label="جست‌وجو">
+        <Search />
       </button>
 
       <div className="referenceHomeBrand">
