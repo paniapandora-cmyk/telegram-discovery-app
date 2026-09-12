@@ -177,21 +177,58 @@ async function invitationStats(ownerId: number, token: string) {
   const { body } = await rest(`bot_start_events?${params.toString()}`);
   const starters = Array.isArray(body) ? body : [];
   const unique = new Set<number>();
+  const unique7d = new Set<number>();
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  let starts7d = 0;
+  let lastSuccessAt: string | null = null;
+
   for (const row of starters) {
     const id = Number(row?.telegram_user_id);
-    if (Number.isSafeInteger(id) && id > 0 && id !== ownerId) unique.add(id);
+    const occurredAt = String(row?.occurred_at || "");
+    const occurredMs = occurredAt ? Date.parse(occurredAt) : NaN;
+    const validOtherUser = Number.isSafeInteger(id) && id > 0 && id !== ownerId;
+
+    if (Number.isFinite(occurredMs) && occurredMs >= weekAgo) starts7d += 1;
+    if (!validOtherUser) continue;
+
+    unique.add(id);
+    if (!lastSuccessAt && occurredAt) lastSuccessAt = occurredAt;
+    if (Number.isFinite(occurredMs) && occurredMs >= weekAgo) unique7d.add(id);
   }
+
   const shareParams = new URLSearchParams({ token: `eq.${token}`, event_type: "eq.share" });
   const openParams = new URLSearchParams({ token: `eq.${token}`, event_type: "eq.miniapp_open" });
-  const [shares, opens] = await Promise.all([
+  const since = new Date(weekAgo).toISOString();
+  const share7dParams = new URLSearchParams({
+    token: `eq.${token}`,
+    event_type: "eq.share",
+    created_at: `gte.${since}`,
+  });
+  const open7dParams = new URLSearchParams({
+    token: `eq.${token}`,
+    event_type: "eq.miniapp_open",
+    created_at: `gte.${since}`,
+  });
+
+  const [shares, opens, shares7d, opens7d] = await Promise.all([
     countRows(`growth_events?${shareParams.toString()}`),
     countRows(`growth_events?${openParams.toString()}`),
+    countRows(`growth_events?${share7dParams.toString()}`),
+    countRows(`growth_events?${open7dParams.toString()}`),
   ]);
+
   return {
     successful_invites: unique.size,
     bot_starts: starters.length,
     share_clicks: shares,
     miniapp_opens: opens,
+    last_success_at: lastSuccessAt,
+    last_7d: {
+      successful_invites: unique7d.size,
+      bot_starts: starts7d,
+      share_clicks: shares7d,
+      miniapp_opens: opens7d,
+    },
   };
 }
 
@@ -281,7 +318,15 @@ Deno.serve(async (req: Request) => {
     if (action === "share") {
       const token = String(body?.token || "").trim();
       if (!/^g_[A-Za-z0-9_-]{8,50}$/.test(token)) return json({ ok: false, error: "invalid_token" }, 400);
-      await recordEvent(ownerId, token, "share", String(body?.session_id || "") || null, {}, true);
+      const channel = String(body?.channel || "unknown").trim().slice(0, 32) || "unknown";
+      await recordEvent(
+        ownerId,
+        token,
+        "share",
+        String(body?.session_id || "") || null,
+        { channel },
+        true,
+      );
       return json({ ok: true });
     }
 
