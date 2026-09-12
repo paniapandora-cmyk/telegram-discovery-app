@@ -41,6 +41,7 @@ import NotificationsPage from '../pages/NotificationsPage';
 import InvitePage from '../pages/InvitePage';
 import SupportPage from '../pages/SupportPage';
 import AdsPage from '../pages/AdsPage';
+import PersonalizationPage from '../pages/PersonalizationPage';
 import '../styles/app.css';
 import '../styles/live.css';
 import '../styles/functional.css';
@@ -71,6 +72,7 @@ export default function DiscoveryApp() {
   const [hubState, setHubState] = useState<LoadState>('idle');
   const [botStats, setBotStats] = useState<BotOwnerStats | null>(null);
   const [hubNonce, setHubNonce] = useState(0);
+  const [feedNonce, setFeedNonce] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsState, setNotificationsState] = useState<LoadState>('idle');
   const [selectedCreatorId, setSelectedCreatorId] = useState('');
@@ -104,6 +106,11 @@ export default function DiscoveryApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const personalizationChanged = () => {
+    setFeedNonce((value) => value + 1);
+    setHubNonce((value) => value + 1);
+  };
+
   useEffect(() => {
     const holder = window as unknown as { Telegram?: { WebApp?: { ready?: () => void; expand?: () => void } } };
     holder.Telegram?.WebApp?.ready?.();
@@ -126,7 +133,7 @@ export default function DiscoveryApp() {
     const back = holder.Telegram?.WebApp?.BackButton;
     if (!back) return;
 
-    const subpage = ['creator', 'history', 'notifications', 'invite', 'support', 'ads'].includes(page);
+    const subpage = ['creator', 'history', 'notifications', 'invite', 'support', 'ads', 'personalization'].includes(page);
     const handler = () => {
       if (viewer) closeViewer();
       else if (subpage) changePage('profile');
@@ -154,7 +161,7 @@ export default function DiscoveryApp() {
         if (!controller.signal.aborted) setFeedState('fallback');
       });
     return () => controller.abort();
-  }, [tab]);
+  }, [tab, feedNonce]);
 
   useEffect(() => {
     if (page !== 'explore') return;
@@ -384,6 +391,7 @@ export default function DiscoveryApp() {
                 onInvite={() => changePage('invite')}
                 onSupport={() => changePage('support')}
                 onAds={() => changePage('ads')}
+                onPersonalization={() => changePage('personalization')}
                 onRefresh={() => setHubNonce((value) => value + 1)}
               />
             )}
@@ -429,6 +437,12 @@ export default function DiscoveryApp() {
                 needsTelegram={hub?.needsTelegram ?? true}
                 owner={Boolean(botStats)}
                 onBack={() => changePage('profile')}
+              />
+            )}
+            {page === 'personalization' && (
+              <PersonalizationPage
+                onBack={() => changePage('profile')}
+                onChanged={personalizationChanged}
               />
             )}
           </div>
