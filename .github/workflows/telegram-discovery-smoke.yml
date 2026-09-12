@@ -68,6 +68,26 @@ jobs:
 
           echo "Current Cloudflare-to-Supabase routes found."
 
+      - name: Verify ranked search and explore stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s frontend-react/src/pages/SearchPage.tsx
+          test -s frontend-react/src/data/search.ts
+          test -s frontend-react/src/styles/search-discovery-v11.css
+          test -s frontend-react/src/styles/explore-ranking-v11.css
+          test -s supabase/migrations/20260913003500_search_discovery_ranking_v2.sql
+          test -s supabase/migrations/20260913003600_explore_discovery_ranking_v4.sql
+
+          grep -q 'loadSearchHistory' frontend-react/src/pages/SearchPage.tsx
+          grep -q 'recordSearchHistory' frontend-react/src/pages/SearchPage.tsx
+          grep -q 'رتبه‌بندی هوشمند' frontend-react/src/pages/ExplorePage.tsx
+          grep -q "'post'::text as result_type" supabase/migrations/20260913003500_search_discovery_ranking_v2.sql
+          grep -q 'creator_fatigue' supabase/migrations/20260913003600_explore_discovery_ranking_v4.sql
+
+          echo "Ranked search, recent search, and explore diversity modules found."
+
       - name: Verify growth stack
         shell: bash
         run: |
