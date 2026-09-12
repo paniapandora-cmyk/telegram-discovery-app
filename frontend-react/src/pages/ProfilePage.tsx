@@ -6,6 +6,7 @@ import {
   RefreshCw,
   Bell,
   ShieldCheck,
+  MessageCircle,
 } from 'lucide-react';
 import type { BotOwnerStats, HubData } from '../data/account';
 import GrowthCard from '../components/GrowthCard';
@@ -26,6 +27,16 @@ type Props = {
   onRefresh: () => void;
 };
 const fa = new Intl.NumberFormat('fa-IR');
+const SUPPORT_CHANNEL_URL = 'https://t.me/discovery_te';
+
+function openSupportChannel() {
+  const telegram = (window as any)?.Telegram?.WebApp;
+  if (telegram?.openTelegramLink) {
+    telegram.openTelegramLink(SUPPORT_CHANNEL_URL);
+    return;
+  }
+  window.open(SUPPORT_CHANNEL_URL, '_blank', 'noopener,noreferrer');
+}
 
 export default function ProfilePage({ hub, botStats, state, onCreator, onSaved, onHistory, onNotifications, onRefresh }: Props) {
   const displayName = hub?.displayName || 'کاربر تلگرام';
@@ -91,6 +102,14 @@ export default function ProfilePage({ hub, botStats, state, onCreator, onSaved, 
 
       {botStats && <OwnerAdsDashboard />}
       {botStats && <BroadcastCard />}
+
+      <section className="creatorEntry surface">
+        <div>
+          <span className="entryIcon"><MessageCircle /></span>
+          <div><h3>پشتیبانی و به‌روزرسانی</h3><p>@discovery_te · آموزش‌ها، تغییرات و اطلاعیه‌های رسمی کشف</p></div>
+        </div>
+        <button onClick={openSupportChannel}>مشاهده</button>
+      </section>
 
       <div className="quickGrid">
         <button onClick={onSaved}><Heart />ذخیره‌ها</button>
