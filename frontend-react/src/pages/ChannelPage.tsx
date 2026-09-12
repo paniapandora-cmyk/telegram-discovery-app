@@ -10,7 +10,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import PostCard from '../components/PostCard';
 import {
   loadChannelProfile,
@@ -177,7 +177,7 @@ export default function ChannelPage({
               <div className="channelSectionHeadV14"><div><h2>موضوعات کانال</h2><p>بر اساس محتوای واقعی ایندکس‌شده</p></div><Sparkles /></div>
               <div className="channelTopicGridV14">
                 {data.topics.map((topic) => (
-                  <span key={topic.id} style={{ '--strength': `${Math.max(.18, topic.weight / topicMax)}` } as React.CSSProperties}>
+                  <span key={topic.id} style={{ '--strength': `${Math.max(.18, topic.weight / topicMax)}` } as CSSProperties}>
                     <b>{topic.name}</b><small>{fa.format(topic.weight)}</small>
                   </span>
                 ))}
