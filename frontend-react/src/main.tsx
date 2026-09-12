@@ -13,6 +13,7 @@ import './styles/reference-v6.css';
 import './styles/mobile-hotfix-v7.css';
 import './styles/detail-pass-v8.css';
 import './styles/detail-micro-v8.css';
+import './styles/library-viewer-v12.css';
 
 const PRODUCTION_WORKER =
     'https://telegram-discovery-app.paniapandora.workers.dev';
