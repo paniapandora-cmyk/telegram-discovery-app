@@ -19,71 +19,34 @@ type Props = {
   onSearch: () => void;
   onAdd: () => void;
   onOpen: (post: Post) => void;
+  onOpenChannel: (channel: Channel) => void;
   onToggleSave: (id: string) => void;
   onImpression: (post: Post, position: number) => void;
 };
 
 const seedIds = new Set(seedPosts.map((post) => post.id));
 
-export default function HomePage({
-  channels,
-  posts,
-  tab,
-  state,
-  onTab,
-  onSearch,
-  onAdd,
-  onOpen,
-  onToggleSave,
-  onImpression,
-}: Props) {
+export default function HomePage({ channels, posts, tab, state, onTab, onSearch, onAdd, onOpen, onOpenChannel, onToggleSave, onImpression }: Props) {
   const [recoveryPosts, setRecoveryPosts] = useState<Post[]>([]);
+  const hasLivePosts = useMemo(() => posts.some((post) => !seedIds.has(post.id)), [posts]);
 
-  const hasLivePosts = useMemo(
-    () => posts.some((post) => !seedIds.has(post.id)),
-    [posts],
-  );
-
-  // The personalized feed can occasionally be empty or fail while Telegram
-  // authorization is being refreshed. In that case, recover from the live
-  // Explore/Trending sources instead of leaving Home without posts.
   useEffect(() => {
-    if (hasLivePosts) {
-      setRecoveryPosts([]);
-      return;
-    }
-
+    if (hasLivePosts) { setRecoveryPosts([]); return; }
     if (state === 'loading') return;
-
     const controller = new AbortController();
     let active = true;
-
     const recover = async () => {
-      const modes = tab === 'hot'
-        ? (['fresh'] as const)
-        : (['fresh', 'hot'] as const);
-
+      const modes = tab === 'hot' ? (['fresh'] as const) : (['fresh', 'hot'] as const);
       for (const mode of modes) {
         try {
           const next = await loadLivePosts(mode, controller.signal);
           if (!active || controller.signal.aborted) return;
-
-          if (next.length) {
-            setRecoveryPosts(next);
-            return;
-          }
-        } catch {
-          if (controller.signal.aborted) return;
-        }
+          if (next.length) { setRecoveryPosts(next); return; }
+        } catch { if (controller.signal.aborted) return; }
       }
     };
-
     void recover();
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
+    return () => { active = false; controller.abort(); };
   }, [hasLivePosts, state, tab]);
 
   const displayPosts = useMemo(() => {
@@ -93,14 +56,7 @@ export default function HomePage({
     return seedPosts;
   }, [hasLivePosts, posts, recoveryPosts]);
 
-  const effectiveState: FeedState = recoveryPosts.length
-    ? 'live'
-    : hasLivePosts
-      ? state
-      : state === 'loading'
-        ? 'loading'
-        : 'fallback';
-
+  const effectiveState: FeedState = recoveryPosts.length ? 'live' : hasLivePosts ? state : state === 'loading' ? 'loading' : 'fallback';
   const [leadPost, ...morePosts] = displayPosts;
 
   return (
@@ -110,18 +66,13 @@ export default function HomePage({
 
       {leadPost ? (
         <section className="premiumLeadStory referenceLeadStory" aria-label="پیشنهاد ویژه برای تو">
-          <PostCard
-            post={leadPost}
-            onOpen={onOpen}
-            onToggleSave={onToggleSave}
-            onImpression={() => onImpression(leadPost, 1)}
-          />
+          <PostCard post={leadPost} onOpen={onOpen} onToggleSave={onToggleSave} onImpression={() => onImpression(leadPost, 1)} />
         </section>
       ) : effectiveState === 'loading' ? (
         <div className="premiumLeadSkeleton" aria-label="در حال دریافت محتوا" />
       ) : null}
 
-      <ChannelRail channels={channels} />
+      <ChannelRail channels={channels} onOpenChannel={onOpenChannel} />
       <InviteNudge />
 
       <section className="feedSection surface referenceFeedSection">
@@ -131,11 +82,7 @@ export default function HomePage({
             <div className="liveMeta">
               <small>{displayPosts.length.toLocaleString('fa-IR')} محتوا</small>
               <span className={`liveBadge ${effectiveState}`}>
-                {effectiveState === 'live'
-                  ? 'داده زنده'
-                  : effectiveState === 'loading'
-                    ? 'در حال دریافت…'
-                    : 'پیشنهاد جایگزین'}
+                {effectiveState === 'live' ? 'داده زنده' : effectiveState === 'loading' ? 'در حال دریافت…' : 'پیشنهاد جایگزین'}
               </span>
             </div>
           </div>
@@ -144,18 +91,10 @@ export default function HomePage({
         {morePosts.length ? (
           <div className={`feedGrid ${effectiveState === 'loading' ? 'isRefreshing' : ''}`}>
             {morePosts.map((post, index) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onOpen={onOpen}
-                onToggleSave={onToggleSave}
-                onImpression={() => onImpression(post, index + 2)}
-              />
+              <PostCard key={post.id} post={post} onOpen={onOpen} onToggleSave={onToggleSave} onImpression={() => onImpression(post, index + 2)} />
             ))}
           </div>
-        ) : leadPost ? null : (
-          <div className="inlineEmpty">محتوایی برای نمایش پیدا نشد.</div>
-        )}
+        ) : leadPost ? null : <div className="inlineEmpty">محتوایی برای نمایش پیدا نشد.</div>}
       </section>
     </div>
   );
