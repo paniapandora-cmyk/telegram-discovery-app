@@ -1,0 +1,474 @@
+/* Premium V4 — deeper visual hierarchy, tactile mobile interactions, and calmer density.
+   This file intentionally overrides earlier theme layers without changing data/analytics behavior. */
+
+:root{
+  --premium-radius-xl:28px;
+  --premium-radius-lg:22px;
+  --premium-radius-md:17px;
+  --premium-glass:rgba(7,20,33,.86);
+  --premium-glass-strong:rgba(8,23,38,.96);
+  --premium-border:rgba(125,188,230,.16);
+  --premium-border-hot:rgba(67,200,255,.42);
+  --premium-text-soft:#a8b7c5;
+  --premium-shadow:0 18px 46px rgba(0,0,0,.28);
+  --premium-shadow-soft:0 10px 28px rgba(0,0,0,.18);
+}
+
+/* Better tap/focus behavior without changing interaction logic */
+.appShell button,
+.appShell [role="button"]{
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.appShell button:focus-visible,
+.appShell [role="button"]:focus-visible,
+.appShell input:focus-visible,
+.appShell select:focus-visible,
+.appShell textarea:focus-visible{
+  outline:2px solid rgba(67,200,255,.72);
+  outline-offset:3px;
+}
+
+/* Shell: more depth at the top, cleaner content well lower down */
+.appShell{
+  background:
+    radial-gradient(360px 260px at 12% -2%,rgba(44,176,255,.16),transparent 68%),
+    radial-gradient(300px 250px at 94% 4%,rgba(112,104,255,.14),transparent 70%),
+    linear-gradient(180deg,#071625 0,#030b14 30%,#020812 100%)!important;
+}
+.pageViewport{padding-inline:14px!important}
+
+/* Brand: a tighter, more app-like identity block */
+.hero{
+  min-height:112px!important;
+  height:auto!important;
+  padding:10px 2px 16px!important;
+  align-items:center!important;
+}
+.brand{gap:12px!important}
+.brandMark{
+  width:64px!important;
+  height:64px!important;
+  border-radius:21px!important;
+  position:relative;
+  isolation:isolate;
+}
+.brandMark:before{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  background:linear-gradient(140deg,rgba(255,255,255,.28),transparent 32%,rgba(125,116,255,.3));
+  z-index:-1;
+  opacity:.85;
+}
+.brandCopy h1{font-size:35px!important;letter-spacing:-1.6px!important}
+.brandCopy p{font-size:11px!important;color:#9fb0bf!important}
+.heroAside{
+  padding:8px 10px!important;
+  border:1px solid rgba(125,188,230,.10);
+  border-radius:16px;
+  background:rgba(5,16,27,.36);
+  backdrop-filter:blur(10px);
+}
+
+/* Search: looks like one coherent command surface rather than two disconnected boxes */
+.searchControls{
+  gap:9px!important;
+  padding:5px;
+  border:1px solid rgba(125,188,230,.13);
+  border-radius:24px;
+  background:linear-gradient(145deg,rgba(10,29,46,.86),rgba(4,14,24,.88));
+  box-shadow:0 14px 34px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.025);
+}
+.searchBox,.addButton{height:55px!important;border-radius:18px!important}
+.searchBox{
+  border-color:rgba(125,188,230,.12)!important;
+  background:rgba(4,15,25,.76)!important;
+  box-shadow:none!important;
+}
+.searchBox span{font-size:11px!important;color:#91a2b3!important}
+.addButton{
+  border-color:rgba(167,223,255,.36)!important;
+  background:linear-gradient(135deg,#2bc8ff 0%,#138fe9 52%,#665eff 100%)!important;
+  box-shadow:0 10px 24px rgba(30,146,235,.22),inset 0 1px rgba(255,255,255,.28)!important;
+}
+
+/* Feed tabs: segmented control, calmer inactive states */
+.feedTabs{
+  display:flex!important;
+  gap:4px!important;
+  padding:5px!important;
+  border:1px solid rgba(125,188,230,.12);
+  border-radius:22px;
+  background:rgba(5,16,27,.72);
+  box-shadow:inset 0 1px rgba(255,255,255,.02);
+}
+.feedTabs button{
+  flex:1;
+  height:45px!important;
+  border:0!important;
+  border-radius:16px!important;
+  background:transparent!important;
+  color:#8798a8!important;
+  box-shadow:none!important;
+}
+.feedTabs button.active{
+  color:#fff!important;
+  background:linear-gradient(145deg,rgba(24,100,155,.78),rgba(32,63,134,.62))!important;
+  box-shadow:0 8px 20px rgba(14,79,133,.24),inset 0 1px rgba(255,255,255,.09)!important;
+}
+.feedTabs button.active svg{color:#55d4ff;filter:drop-shadow(0 0 8px rgba(67,200,255,.45))}
+
+/* Lead story: editorial spotlight */
+.premiumLeadStory{
+  position:relative;
+  margin:16px 0 18px!important;
+  padding:1px;
+  border-radius:30px;
+  background:linear-gradient(145deg,rgba(88,214,255,.34),rgba(112,104,255,.20) 46%,rgba(125,188,230,.08));
+  box-shadow:0 24px 54px rgba(0,0,0,.33);
+}
+.premiumLeadStory:before{
+  content:'پیشنهاد ویژه';
+  position:absolute;
+  z-index:8;
+  top:14px;
+  right:14px;
+  padding:7px 11px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:999px;
+  background:linear-gradient(135deg,rgba(12,43,69,.84),rgba(45,39,96,.76));
+  backdrop-filter:blur(12px);
+  color:#eaf8ff;
+  font-size:8.5px;
+  font-weight:800;
+  box-shadow:0 8px 20px rgba(0,0,0,.24);
+}
+.premiumLeadStory .postCard{
+  border:0!important;
+  border-radius:29px!important;
+  background:#06111c!important;
+  overflow:hidden;
+}
+.premiumLeadStory .postMedia{height:292px!important}
+.premiumLeadStory .postMedia:before{
+  background:linear-gradient(180deg,rgba(0,0,0,.02) 20%,rgba(1,7,12,.08) 44%,rgba(1,7,12,.92) 100%)!important;
+}
+.premiumLeadStory .postMedia h3{
+  right:18px!important;
+  bottom:18px!important;
+  max-width:82%!important;
+  font-size:22px!important;
+  line-height:1.55!important;
+  text-wrap:balance;
+}
+.premiumLeadStory .postBody{padding:12px 13px 11px!important}
+.premiumLeadStory .postBody p{font-size:10px!important;line-height:2!important;color:#c8d5df!important}
+.premiumLeadSkeleton{height:390px!important;border-radius:30px!important}
+
+/* Horizontal channel discovery should feel swipeable */
+.channelSection{
+  padding:14px 12px 15px!important;
+  border-radius:24px!important;
+  background:linear-gradient(145deg,rgba(9,27,43,.90),rgba(4,14,24,.94))!important;
+  box-shadow:var(--premium-shadow-soft)!important;
+}
+.channelSection .sectionTitle h2{font-size:14px!important}
+.channelRail{
+  gap:10px!important;
+  scroll-snap-type:x proximity;
+  padding-bottom:2px;
+}
+.channelCard{
+  min-width:92px!important;
+  max-width:104px!important;
+  flex:0 0 92px!important;
+  scroll-snap-align:start;
+  padding:10px 7px 8px!important;
+  border-color:rgba(125,188,230,.11)!important;
+  background:linear-gradient(180deg,rgba(12,31,47,.92),rgba(5,16,26,.96))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.025),0 8px 20px rgba(0,0,0,.12)!important;
+}
+.channelAvatar{
+  width:52px!important;
+  height:52px!important;
+  padding:2px;
+  box-shadow:0 0 0 3px rgba(67,200,255,.055),0 9px 22px rgba(0,0,0,.26)!important;
+}
+.channelCard strong{font-size:9px!important;margin-top:7px!important}
+.channelCard small{font-size:6.8px!important;margin-bottom:7px!important}
+.followBtn{
+  height:30px!important;
+  background:linear-gradient(135deg,#188ed9,#4466df)!important;
+  box-shadow:0 6px 15px rgba(29,117,202,.18);
+}
+
+/* Invitation nudge: visible but not louder than content */
+.inviteNudge{
+  border-radius:22px!important;
+  padding:13px 12px!important;
+  border-color:rgba(112,104,255,.18)!important;
+  background:
+    radial-gradient(120px 80px at 0 0,rgba(67,200,255,.10),transparent 70%),
+    linear-gradient(135deg,rgba(11,28,44,.94),rgba(15,19,43,.94))!important;
+  box-shadow:var(--premium-shadow-soft)!important;
+}
+.inviteNudgeIcon{
+  background:linear-gradient(145deg,rgba(67,200,255,.16),rgba(112,104,255,.16))!important;
+  border-color:rgba(116,191,235,.15)!important;
+}
+.inviteNudge button{
+  border-radius:14px!important;
+  background:linear-gradient(135deg,#1fa8ed,#5e5be9)!important;
+  box-shadow:0 8px 18px rgba(32,113,202,.18)!important;
+}
+
+/* Secondary feed: stronger spacing and text hierarchy */
+.feedSection{
+  border-radius:25px!important;
+  padding:14px 11px 13px!important;
+  background:linear-gradient(145deg,rgba(8,24,37,.92),rgba(4,13,22,.96))!important;
+  box-shadow:var(--premium-shadow)!important;
+}
+.feedHeading{margin-bottom:13px!important}
+.feedHeading h2{font-size:21px!important}
+.feedHeading small{font-size:8px!important;color:#8194a5!important}
+.feedGrid{gap:10px!important}
+.feedSection .feedGrid .postCard{
+  border-color:rgba(125,188,230,.12)!important;
+  background:#06121d!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.20)!important;
+}
+.feedSection .feedGrid .postMedia{height:214px!important}
+.feedSection .feedGrid .postMedia h3{right:12px!important;bottom:12px!important;max-width:82%!important}
+.postCard{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease!important}
+@media(hover:hover) and (pointer:fine){
+  .postCard:hover{transform:translateY(-2px);border-color:rgba(67,200,255,.26)!important;box-shadow:0 18px 34px rgba(0,0,0,.27)!important}
+}
+.postCard:active{transform:scale(.985)!important}
+.postBody footer{gap:4px}
+.statPill{border-radius:10px!important;background:rgba(125,188,230,.04)!important;padding:5px 6px!important}
+
+/* Explore: more immersive editorial canvas */
+.explorePageV7 .exploreHeaderV4{
+  min-height:112px!important;
+  border-radius:26px!important;
+  padding:19px 17px!important;
+  background:
+    radial-gradient(170px 110px at 100% 0,rgba(67,200,255,.16),transparent 72%),
+    linear-gradient(145deg,rgba(9,30,48,.96),rgba(8,16,32,.96))!important;
+}
+.explorePageV7 .exploreHeaderV4 h1{font-size:27px!important;letter-spacing:-.7px}
+.exploreCategoryRail{
+  position:sticky;
+  top:calc(6px + env(safe-area-inset-top));
+  z-index:20;
+  padding:7px!important;
+  border:1px solid rgba(125,188,230,.12);
+  border-radius:19px;
+  background:rgba(3,12,21,.86);
+  backdrop-filter:blur(18px);
+  box-shadow:0 12px 30px rgba(0,0,0,.20);
+}
+.exploreCategoryRail button{border-radius:13px!important}
+.exploreCategoryRail button.active{
+  background:linear-gradient(135deg,rgba(30,145,211,.82),rgba(80,78,218,.72))!important;
+  color:#fff!important;
+  box-shadow:0 6px 16px rgba(38,111,199,.18);
+}
+.exploreMasonryV7{gap:10px!important}
+.exploreColumnV7{gap:10px!important}
+.exploreTile{
+  border-radius:21px!important;
+  overflow:hidden;
+  border-color:rgba(125,188,230,.12)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.24)!important;
+}
+
+/* Page headers across Search / Saved / Notifications / Creator */
+.pageHeader{
+  min-height:92px!important;
+  padding:16px 15px!important;
+  border-radius:24px!important;
+  border-color:rgba(125,188,230,.14)!important;
+  background:
+    radial-gradient(150px 90px at 100% 0,rgba(67,200,255,.08),transparent 72%),
+    linear-gradient(145deg,rgba(9,27,42,.94),rgba(5,15,26,.96))!important;
+  box-shadow:var(--premium-shadow-soft)!important;
+}
+.pageHeader h1{font-size:24px!important;letter-spacing:-.5px}
+.pageHeader p{color:#899cad!important}
+
+/* Profile: stronger identity / reward / monetization hierarchy */
+.profileHero{
+  border-radius:27px!important;
+  padding:25px 16px 20px!important;
+  background:
+    radial-gradient(180px 100px at 50% 0,rgba(67,200,255,.13),transparent 72%),
+    linear-gradient(160deg,rgba(11,31,48,.98),rgba(7,16,30,.98))!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.25)!important;
+}
+.profileAvatar{
+  width:76px!important;
+  height:76px!important;
+  border-radius:24px!important;
+  background:linear-gradient(145deg,#28c7ff,#168fea 54%,#6d65ff)!important;
+  box-shadow:0 14px 30px rgba(26,140,225,.28),0 0 0 5px rgba(67,200,255,.06)!important;
+}
+.profileHero h2{font-size:21px!important;margin-top:4px!important}
+.profileHero>strong{
+  padding:7px 12px;
+  border:1px solid rgba(125,188,230,.11);
+  border-radius:999px;
+  background:rgba(4,14,24,.58);
+}
+
+.growthCard,
+.creatorEntry,
+.analytics,
+.creatorPromoKit,
+.creatorAdsLauncher,
+.ownerAdsDashboard,
+.broadcastCard{
+  border-radius:24px!important;
+  box-shadow:var(--premium-shadow-soft)!important;
+}
+.growthCard{
+  background:
+    radial-gradient(170px 100px at 100% 0,rgba(112,104,255,.12),transparent 72%),
+    linear-gradient(145deg,rgba(9,28,44,.96),rgba(7,15,29,.97))!important;
+}
+.growthMetrics article,
+.metricHero article,
+.metricRow article{
+  border-radius:17px!important;
+  background:rgba(5,16,27,.66)!important;
+  border-color:rgba(125,188,230,.10)!important;
+}
+.growthShareButton{
+  min-height:50px!important;
+  border-radius:16px!important;
+  background:linear-gradient(135deg,#1fa8ed,#5f5de9)!important;
+  box-shadow:0 10px 24px rgba(32,111,201,.20)!important;
+}
+.creatorEntry>button{
+  border-radius:14px!important;
+  background:linear-gradient(135deg,#168fdb,#5266e7)!important;
+}
+.quickGrid button{
+  min-height:82px!important;
+  border-radius:19px!important;
+  background:linear-gradient(145deg,rgba(10,28,43,.94),rgba(5,15,25,.96))!important;
+  border-color:rgba(125,188,230,.11)!important;
+}
+
+/* Creator Center: give metrics a clear scan order */
+.creatorPageV5 .creatorClaimV13,
+.creatorPageV5 .creatorChannelPickerV5,
+.creatorPageV5 .creatorTrackingV7,
+.creatorPageV5 .creatorContentV5{
+  border-radius:24px!important;
+  box-shadow:var(--premium-shadow-soft)!important;
+}
+.creatorSummaryV5 article,
+.creatorMetricsV5 article{
+  border-radius:20px!important;
+  border-color:rgba(125,188,230,.11)!important;
+  background:
+    linear-gradient(145deg,rgba(11,31,47,.94),rgba(5,16,27,.96))!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.16)!important;
+}
+.creatorSummaryAccentV5{
+  background:
+    radial-gradient(120px 80px at 100% 0,rgba(67,200,255,.12),transparent 72%),
+    linear-gradient(145deg,rgba(13,46,68,.96),rgba(19,28,63,.96))!important;
+  border-color:rgba(67,200,255,.22)!important;
+}
+.creatorChannelRailV5 button{
+  border-radius:18px!important;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease;
+}
+.creatorChannelRailV5 button.active{
+  border-color:rgba(67,200,255,.36)!important;
+  background:linear-gradient(145deg,rgba(15,55,80,.90),rgba(18,30,67,.88))!important;
+}
+
+/* Ads / promotion: make commercial surfaces coherent with product UI */
+.ownerAdsDashboard,
+.creatorAdsLauncher,
+.creatorPromoKit,
+.broadcastCard{
+  border:1px solid rgba(125,188,230,.13)!important;
+  background:
+    radial-gradient(150px 100px at 100% 0,rgba(67,200,255,.08),transparent 75%),
+    linear-gradient(145deg,rgba(9,27,42,.96),rgba(5,15,26,.98))!important;
+}
+.ownerAdsDashboard button,
+.creatorAdsLauncher button,
+.creatorPromoKit button,
+.broadcastCard button{
+  min-height:44px;
+  border-radius:14px!important;
+}
+
+/* Bottom navigation: active tab becomes a compact glowing island */
+.bottomNav{
+  height:74px!important;
+  padding:6px!important;
+  border-radius:25px!important;
+  border-color:rgba(125,188,230,.18)!important;
+  background:rgba(2,9,16,.90)!important;
+  backdrop-filter:blur(24px) saturate(1.2)!important;
+  box-shadow:0 20px 48px rgba(0,0,0,.46),inset 0 1px rgba(255,255,255,.03)!important;
+}
+.bottomNav button{
+  border-radius:18px!important;
+  transition:background .18s ease,color .18s ease,transform .14s ease!important;
+}
+.bottomNav button.active{
+  color:#e9f9ff!important;
+  background:linear-gradient(145deg,rgba(29,113,166,.34),rgba(57,56,133,.30))!important;
+  text-shadow:none!important;
+}
+.bottomNav button.active:before{
+  top:auto!important;
+  bottom:4px!important;
+  width:18px!important;
+  height:2px!important;
+  background:#52d2ff!important;
+  box-shadow:0 0 13px rgba(82,210,255,.80)!important;
+}
+.bottomNav button.active svg{color:#52d2ff;filter:drop-shadow(0 0 8px rgba(82,210,255,.35))}
+
+/* Motion: premium but subtle. */
+@keyframes premiumRise{
+  from{opacity:0;transform:translateY(7px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.pageViewport>.page,
+.pageViewport>.premiumLeadStory,
+.pageViewport>.channelSection,
+.pageViewport>.inviteNudge,
+.pageViewport>.feedSection{
+  animation:premiumRise .28s ease both;
+}
+
+@media(max-width:380px){
+  .pageViewport{padding-inline:10px!important}
+  .heroAside{display:none!important}
+  .searchControls{grid-template-columns:minmax(0,1fr) 112px!important}
+  .premiumLeadStory .postMedia{height:248px!important}
+  .premiumLeadStory .postMedia h3{font-size:18px!important}
+  .feedSection .feedGrid .postMedia{height:188px!important}
+  .channelCard{min-width:86px!important;flex-basis:86px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .pageViewport>.page,
+  .pageViewport>.premiumLeadStory,
+  .pageViewport>.channelSection,
+  .pageViewport>.inviteNudge,
+  .pageViewport>.feedSection{animation:none!important}
+  .postCard,.creatorChannelRailV5 button,.bottomNav button{transition:none!important}
+}
