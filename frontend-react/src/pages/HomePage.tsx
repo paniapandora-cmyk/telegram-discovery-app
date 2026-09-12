@@ -33,17 +33,34 @@ export default function HomePage({
   onToggleSave,
   onImpression,
 }: Props) {
+  const [leadPost, ...morePosts] = posts;
+
   return (
     <>
       <Header />
       <SearchControls onSearch={onSearch} onAdd={onAdd} />
       <FeedTabs value={tab} onChange={onTab} />
+
+      {leadPost ? (
+        <section className="premiumLeadStory" aria-label="پیشنهاد ویژه برای تو">
+          <PostCard
+            post={leadPost}
+            onOpen={onOpen}
+            onToggleSave={onToggleSave}
+            onImpression={() => onImpression(leadPost, 1)}
+          />
+        </section>
+      ) : state === 'loading' ? (
+        <div className="premiumLeadSkeleton" aria-label="در حال دریافت محتوا" />
+      ) : null}
+
       <ChannelRail channels={channels} />
       <InviteNudge />
+
       <section className="feedSection surface">
         <div className="feedHeading">
           <div>
-            <h2>منتخب برای تو</h2>
+            <h2>{leadPost ? 'بیشتر برای تو' : 'منتخب برای تو'}</h2>
             <div className="liveMeta">
               <small>{posts.length.toLocaleString('fa-IR')} محتوا</small>
               <span className={`liveBadge ${state}`}>
@@ -56,19 +73,20 @@ export default function HomePage({
             </div>
           </div>
         </div>
-        {posts.length ? (
+
+        {morePosts.length ? (
           <div className={`feedGrid ${state === 'loading' ? 'isRefreshing' : ''}`}>
-            {posts.map((post, index) => (
+            {morePosts.map((post, index) => (
               <PostCard
                 key={post.id}
                 post={post}
                 onOpen={onOpen}
                 onToggleSave={onToggleSave}
-                onImpression={() => onImpression(post, index + 1)}
+                onImpression={() => onImpression(post, index + 2)}
               />
             ))}
           </div>
-        ) : (
+        ) : leadPost ? null : (
           <div className="inlineEmpty">محتوایی برای نمایش پیدا نشد.</div>
         )}
       </section>
