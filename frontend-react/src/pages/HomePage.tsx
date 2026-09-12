@@ -1,5 +1,4 @@
 import Header from '../components/Header';
-import SearchControls from '../components/SearchControls';
 import FeedTabs from '../components/FeedTabs';
 import ChannelRail from '../components/ChannelRail';
 import PostCard from '../components/PostCard';
@@ -36,13 +35,12 @@ export default function HomePage({
   const [leadPost, ...morePosts] = posts;
 
   return (
-    <>
-      <Header />
-      <SearchControls onSearch={onSearch} onAdd={onAdd} />
+    <div className="referenceHomePage">
+      <Header onSearch={onSearch} onAdd={onAdd} />
       <FeedTabs value={tab} onChange={onTab} />
 
       {leadPost ? (
-        <section className="premiumLeadStory" aria-label="پیشنهاد ویژه برای تو">
+        <section className="premiumLeadStory referenceLeadStory" aria-label="پیشنهاد ویژه برای تو">
           <PostCard
             post={leadPost}
             onOpen={onOpen}
@@ -57,10 +55,10 @@ export default function HomePage({
       <ChannelRail channels={channels} />
       <InviteNudge />
 
-      <section className="feedSection surface">
+      <section className="feedSection surface referenceFeedSection">
         <div className="feedHeading">
           <div>
-            <h2>{leadPost ? 'بیشتر برای تو' : 'منتخب برای تو'}</h2>
+            <h2>{leadPost ? 'پیشنهادهای بیشتر' : 'منتخب برای تو'}</h2>
             <div className="liveMeta">
               <small>{posts.length.toLocaleString('fa-IR')} محتوا</small>
               <span className={`liveBadge ${state}`}>
@@ -90,6 +88,6 @@ export default function HomePage({
           <div className="inlineEmpty">محتوایی برای نمایش پیدا نشد.</div>
         )}
       </section>
-    </>
+    </div>
   );
 }
