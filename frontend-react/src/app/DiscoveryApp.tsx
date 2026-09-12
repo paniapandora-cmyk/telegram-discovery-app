@@ -198,7 +198,7 @@ export default function DiscoveryApp() {
   }, [page]);
 
   useEffect(() => {
-    if (page !== 'notifications') return;
+    if (!['notifications', 'profile'].includes(page)) return;
     const controller = new AbortController();
     setNotificationsState('loading');
     loadNotifications(controller.signal)
@@ -313,6 +313,7 @@ export default function DiscoveryApp() {
 
   const localSaved = posts.filter((post) => post.saved);
   const savedDisplay = savedState === 'live' ? savedPosts : savedPosts.length ? savedPosts : localSaved;
+  const notificationUnreadCount = notifications.filter((item) => item.unread).length;
 
   return (
     <main className="appShell">
@@ -350,6 +351,7 @@ export default function DiscoveryApp() {
                 hub={hub}
                 botStats={botStats}
                 state={hubState}
+                notificationUnreadCount={notificationsState === 'live' ? notificationUnreadCount : undefined}
                 onCreator={() => changePage('creator')}
                 onSaved={() => changePage('saved')}
                 onHistory={() => changePage('history')}
@@ -361,7 +363,15 @@ export default function DiscoveryApp() {
               />
             )}
             {page === 'history' && <HistoryPage posts={historyPosts} state={historyState} onBack={() => changePage('profile')} onOpen={openViewer} onToggleSave={toggleSave} />}
-            {page === 'notifications' && <NotificationsPage items={notifications} state={notificationsState} onBack={() => changePage('profile')} />}
+            {page === 'notifications' && (
+              <NotificationsPage
+                items={notifications}
+                state={notificationsState}
+                onBack={() => changePage('profile')}
+                onChange={setNotifications}
+                onRefresh={() => setHubNonce((value) => value + 1)}
+              />
+            )}
             {page === 'creator' && (
               <CreatorPage
                 channels={hub?.creators || []}
