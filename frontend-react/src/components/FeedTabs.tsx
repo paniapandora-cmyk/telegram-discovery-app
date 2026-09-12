@@ -1,1 +1,22 @@
-import{UserRound,Flame,Sparkles}from'lucide-react';type Props={value:string;onChange:(v:string)=>void};const items=[['fresh','کشف تازه',Sparkles],['hot','داغ امروز',Flame],['for-you','برای تو',UserRound]]as const;export default function FeedTabs({value,onChange}:Props){return <div className='feedTabs'>{items.map(([id,label,Icon])=><button key={id} className={value===id?'active':''} onClick={()=>onChange(id)}><Icon size={17}/><span>{label}</span></button>)}</div>}
+import { UserRound, Flame, Sparkles } from 'lucide-react';
+
+type Props = { value: string; onChange: (v: string) => void };
+
+const items = [
+  ['fresh', 'اکسپلور', Sparkles],
+  ['hot', 'داغ امروز', Flame],
+  ['for-you', 'برای تو', UserRound],
+] as const;
+
+export default function FeedTabs({ value, onChange }: Props) {
+  return (
+    <div className="feedTabs referenceFeedTabs">
+      {items.map(([id, label, Icon]) => (
+        <button key={id} className={value === id ? 'active' : ''} onClick={() => onChange(id)}>
+          <Icon size={17} />
+          <span>{label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
