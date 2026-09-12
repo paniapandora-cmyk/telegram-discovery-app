@@ -1,25 +1,24 @@
-import { Send, Sparkles } from 'lucide-react';
+import { Bell, Plus, Sparkles } from 'lucide-react';
 
-export default function Header() {
+type Props = {
+  onAdd?: () => void;
+};
+
+export default function Header({ onAdd }: Props) {
   return (
-    <header className="hero">
-      <div className="brand">
-        <div className="brandMark" aria-hidden="true">
-          <Sparkles />
-        </div>
-        <div className="brandCopy">
-          <h1>کشف</h1>
-          <p>بهترین‌های تلگرام برای تو</p>
-        </div>
+    <header className="referenceHomeHeader">
+      <button type="button" className="referenceHeaderUtility" aria-label="اعلان‌ها">
+        <Bell />
+      </button>
+
+      <div className="referenceHomeBrand">
+        <span><Sparkles /></span>
+        <div><h1>کشف</h1><small>بهترین‌های تلگرام برای تو</small></div>
       </div>
 
-      <div className="heroAside" aria-label="کشف محتوای بهتر">
-        <Send className="plane" aria-hidden="true" />
-        <div>
-          <small>محتوای بهتر<br />دنیای بزرگ‌تر</small>
-          <span className="heroLiveDot">پیشنهاد زنده</span>
-        </div>
-      </div>
+      <button type="button" className="referenceHeaderAvatar" onClick={onAdd} aria-label="افزودن کانال">
+        <Plus />
+      </button>
     </header>
   );
 }
