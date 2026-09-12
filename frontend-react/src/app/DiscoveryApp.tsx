@@ -2,15 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { channels, posts as seedPosts } from '../data/demo';
 import {
   decorateChannels,
-  loadHistoryPosts,
   loadLivePosts,
-  loadSavedPosts,
   persistSaved,
   sendPostFeedback,
   trackImpression,
   trackPostOpen,
-  trackPostView,
 } from '../data/live';
+import {
+  clearViewingHistory,
+  loadLibraryHistory,
+  loadLibrarySaved,
+  recordViewerExit,
+} from '../data/library';
 import {
   loadBotOwnerStats,
   loadCreatorContent,
@@ -79,12 +82,13 @@ export default function DiscoveryApp() {
   const liveChannels = useMemo(() => decorateChannels(channels), []);
 
   const findPost = (id: string) =>
-    [...posts, ...explorePosts, ...savedPosts, ...historyPosts].find((post) => post.id === id);
+    (viewer?.id === id ? viewer : undefined)
+    || [...posts, ...explorePosts, ...savedPosts, ...historyPosts].find((post) => post.id === id);
 
   const finalizeViewer = () => {
     if (!viewer) return;
     const elapsed = viewerStarted.current ? Date.now() - viewerStarted.current : 0;
-    void trackPostView(viewer, elapsed >= 12000).catch(() => {});
+    void recordViewerExit(viewer, elapsed).catch(() => {});
     viewerStarted.current = 0;
   };
 
@@ -171,7 +175,7 @@ export default function DiscoveryApp() {
     if (page !== 'saved') return;
     const controller = new AbortController();
     setSavedState('loading');
-    loadSavedPosts(controller.signal)
+    loadLibrarySaved(controller.signal)
       .then((next) => {
         setSavedPosts(next);
         setSavedState('live');
@@ -186,7 +190,7 @@ export default function DiscoveryApp() {
     if (page !== 'history') return;
     const controller = new AbortController();
     setHistoryState('loading');
-    loadHistoryPosts(controller.signal)
+    loadLibraryHistory(controller.signal)
       .then((next) => {
         setHistoryPosts(next);
         setHistoryState('live');
@@ -268,7 +272,9 @@ export default function DiscoveryApp() {
     setHistoryPosts(update);
     setSavedPosts((current) => {
       const mapped = current.map((post) => post.id === id ? { ...post, saved: value } : post);
-      if (value && target && !mapped.some((post) => post.id === id)) return [{ ...target, saved: true }, ...mapped];
+      if (value && target && !mapped.some((post) => post.id === id)) {
+        return [{ ...target, saved: true, savedAt: new Date().toISOString() }, ...mapped];
+      }
       return value ? mapped : mapped.filter((post) => post.id !== id);
     });
     setViewer((current) => current?.id === id ? { ...current, saved: value } : current);
@@ -284,9 +290,22 @@ export default function DiscoveryApp() {
   };
 
   const openViewer = (post: Post) => {
+    if (viewer && viewer.id !== post.id) finalizeViewer();
+    const openedAt = new Date().toISOString();
     setViewer(post);
     viewerStarted.current = Date.now();
+    setHistoryPosts((current) => {
+      const without = current.filter((item) => item.id !== post.id);
+      return [{ ...post, viewedAt: openedAt, historyEvent: 'open' }, ...without].slice(0, 100);
+    });
     void trackPostOpen(post).catch(() => {});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const clearHistory = async () => {
+    await clearViewingHistory();
+    setHistoryPosts([]);
+    setHistoryState('live');
   };
 
   const feedbackPost = async (post: Post, type: string) => {
@@ -318,7 +337,13 @@ export default function DiscoveryApp() {
   return (
     <main className="appShell">
       {resolvedViewer ? (
-        <Viewer post={resolvedViewer} onClose={closeViewer} onToggleSave={toggleSave} onFeedback={feedbackPost} />
+        <Viewer
+          post={resolvedViewer}
+          onClose={closeViewer}
+          onToggleSave={toggleSave}
+          onFeedback={feedbackPost}
+          onOpenRelated={openViewer}
+        />
       ) : (
         <>
           <div className="pageViewport">
@@ -362,7 +387,16 @@ export default function DiscoveryApp() {
                 onRefresh={() => setHubNonce((value) => value + 1)}
               />
             )}
-            {page === 'history' && <HistoryPage posts={historyPosts} state={historyState} onBack={() => changePage('profile')} onOpen={openViewer} onToggleSave={toggleSave} />}
+            {page === 'history' && (
+              <HistoryPage
+                posts={historyPosts}
+                state={historyState}
+                onBack={() => changePage('profile')}
+                onOpen={openViewer}
+                onToggleSave={toggleSave}
+                onClear={clearHistory}
+              />
+            )}
             {page === 'notifications' && (
               <NotificationsPage
                 items={notifications}
