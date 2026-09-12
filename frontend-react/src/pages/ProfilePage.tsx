@@ -2,7 +2,6 @@ import {
   ArrowUpRight,
   BarChart3,
   Bell,
-  Bookmark,
   ChevronLeft,
   Gift,
   History,
@@ -50,8 +49,8 @@ export default function ProfilePage({
   const displayName = hub?.displayName || 'کاربر کشف';
   const initials = hub?.initials || 'ک';
   const username = hub?.username || '@discoverer';
-  const savedCount = hub?.savedCount || 0;
   const followsCount = hub?.followsCount || 0;
+  const topicsCount = hub?.topicsCount || 0;
   const creatorCount = hub?.creators.length || 0;
 
   const menu = [
@@ -59,7 +58,7 @@ export default function ProfilePage({
     { icon: ArrowUpRight, title: 'Creator Center', text: creatorCount ? `${fa.format(creatorCount)} کانال مالکیتی` : 'مدیریت کانال‌ها و آمارها', onClick: onCreator, accent: 'blue' },
     { icon: Megaphone, title: 'تبلیغات و کمپین', text: 'ساخت کمپین Sponsored', onClick: onAds, accent: 'violet' },
     { icon: LifeBuoy, title: 'پشتیبانی و به‌روزرسانی', text: '@discovery_te', onClick: onSupport, accent: 'cyan' },
-    { icon: Heart, title: 'ذخیره‌ها', text: `${fa.format(savedCount)} محتوای ذخیره‌شده`, onClick: onSaved, accent: 'pink' },
+    { icon: Heart, title: 'ذخیره‌ها', text: 'محتواهایی که برای بعد نگه داشته‌ای', onClick: onSaved, accent: 'pink' },
     { icon: History, title: 'تاریخچه', text: 'محتواهایی که دیده‌ای', onClick: onHistory, accent: 'amber' },
     { icon: Bell, title: 'اعلان‌ها', text: `${fa.format(hub?.notificationsCount || 0)} اعلان`, onClick: onNotifications, accent: 'blue' },
   ];
@@ -81,8 +80,8 @@ export default function ProfilePage({
 
       <section className="referenceProfileStats surface">
         <article><strong>{fa.format(followsCount)}</strong><small>دنبال‌شده</small></article>
-        <article><strong>{fa.format(savedCount)}</strong><small>ذخیره‌ها</small></article>
-        <article className="referenceLevelStat"><ShieldCheck /><strong>{botStats ? 'فعال' : 'کاشف'}</strong><small>سطح فعلی</small></article>
+        <article><strong>{fa.format(topicsCount)}</strong><small>موضوع فعال</small></article>
+        <article className="referenceLevelStat"><ShieldCheck /><strong>{creatorCount ? 'سازنده' : 'کاشف'}</strong><small>سطح فعلی</small></article>
       </section>
 
       <section className="referenceProfileMenu surface">
