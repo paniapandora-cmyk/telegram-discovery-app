@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
 } from 'lucide-react';
 import type { BotOwnerStats, HubData } from '../data/account';
@@ -30,6 +31,7 @@ type Props = {
   onInvite: () => void;
   onSupport: () => void;
   onAds: () => void;
+  onPersonalization: () => void;
   onRefresh: () => void;
 };
 const fa = new Intl.NumberFormat('fa-IR');
@@ -46,6 +48,7 @@ export default function ProfilePage({
   onInvite,
   onSupport,
   onAds,
+  onPersonalization,
   onRefresh,
 }: Props) {
   const displayName = hub?.displayName || 'کاربر کشف';
@@ -58,6 +61,7 @@ export default function ProfilePage({
     notificationUnreadCount ?? hub?.notificationsCount ?? 0;
 
   const menu = [
+    { icon: SlidersHorizontal, title: 'شخصی‌سازی کشف', text: `${fa.format(topicsCount)} موضوع · ${fa.format(followsCount)} کانال دنبال‌شده`, onClick: onPersonalization, accent: 'cyan' },
     { icon: Gift, title: 'دعوت دوستان', text: 'لینک اختصاصی و نشان‌های رشد', onClick: onInvite, accent: 'mint' },
     { icon: ArrowUpRight, title: 'Creator Center', text: creatorCount ? `${fa.format(creatorCount)} کانال مالکیتی` : 'مدیریت کانال‌ها و آمارها', onClick: onCreator, accent: 'blue' },
     { icon: Megaphone, title: 'تبلیغات و کمپین', text: 'ساخت کمپین Sponsored', onClick: onAds, accent: 'violet' },
@@ -79,7 +83,7 @@ export default function ProfilePage({
           )}
         </button>
         <strong>پروفایل</strong>
-        <button type="button" onClick={onRefresh} aria-label="به‌روزرسانی"><Settings /></button>
+        <button type="button" onClick={onPersonalization} aria-label="شخصی‌سازی"><Settings /></button>
       </header>
 
       <section className="referenceProfileHero">
@@ -105,7 +109,7 @@ export default function ProfilePage({
         ))}
         <button type="button" onClick={onRefresh}>
           <span className="referenceMenuIcon slate"><RefreshCw /></span>
-          <span className="referenceMenuCopy"><b>تنظیمات و تازه‌سازی</b><small>به‌روزرسانی داده‌ها و وضعیت حساب</small></span>
+          <span className="referenceMenuCopy"><b>تازه‌سازی داده‌ها</b><small>به‌روزرسانی وضعیت حساب و آمارها</small></span>
           <ChevronLeft />
         </button>
         <button type="button" onClick={onSupport}>
