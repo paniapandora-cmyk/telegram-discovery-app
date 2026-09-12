@@ -1,19 +1,22 @@
 import {
   ArrowUpRight,
   BarChart3,
+  Bell,
+  Bookmark,
+  ChevronLeft,
+  Gift,
   History,
   Heart,
+  Info,
+  LifeBuoy,
+  Megaphone,
   RefreshCw,
-  Bell,
+  Settings,
   ShieldCheck,
-  MessageCircle,
+  Sparkles,
 } from 'lucide-react';
 import type { BotOwnerStats, HubData } from '../data/account';
-import GrowthCard from '../components/GrowthCard';
 import BroadcastCard from '../components/BroadcastCard';
-import CreatorPromoKit from '../components/CreatorPromoKit';
-import CreatorAdsLauncher from '../components/CreatorAdsLauncher';
-import OwnerAdsDashboard from '../components/OwnerAdsDashboard';
 
 type LoadState = 'idle' | 'loading' | 'live' | 'fallback';
 type Props = {
@@ -24,99 +27,98 @@ type Props = {
   onSaved: () => void;
   onHistory: () => void;
   onNotifications: () => void;
+  onInvite: () => void;
+  onSupport: () => void;
+  onAds: () => void;
   onRefresh: () => void;
 };
 const fa = new Intl.NumberFormat('fa-IR');
-const SUPPORT_CHANNEL_URL = 'https://t.me/discovery_te';
 
-function openSupportChannel() {
-  const telegram = (window as any)?.Telegram?.WebApp;
-  if (telegram?.openTelegramLink) {
-    telegram.openTelegramLink(SUPPORT_CHANNEL_URL);
-    return;
-  }
-  window.open(SUPPORT_CHANNEL_URL, '_blank', 'noopener,noreferrer');
-}
+export default function ProfilePage({
+  hub,
+  botStats,
+  state,
+  onCreator,
+  onSaved,
+  onHistory,
+  onNotifications,
+  onInvite,
+  onSupport,
+  onAds,
+  onRefresh,
+}: Props) {
+  const displayName = hub?.displayName || 'کاربر کشف';
+  const initials = hub?.initials || 'ک';
+  const username = hub?.username || '@discoverer';
+  const savedCount = hub?.savedCount || 0;
+  const followsCount = hub?.followsCount || 0;
+  const creatorCount = hub?.creators.length || 0;
 
-export default function ProfilePage({ hub, botStats, state, onCreator, onSaved, onHistory, onNotifications, onRefresh }: Props) {
-  const displayName = hub?.displayName || 'کاربر تلگرام';
-  const initials = hub?.initials || 'T';
+  const menu = [
+    { icon: Gift, title: 'دعوت دوستان', text: 'لینک اختصاصی و نشان‌های رشد', onClick: onInvite, accent: 'mint' },
+    { icon: ArrowUpRight, title: 'Creator Center', text: creatorCount ? `${fa.format(creatorCount)} کانال مالکیتی` : 'مدیریت کانال‌ها و آمارها', onClick: onCreator, accent: 'blue' },
+    { icon: Megaphone, title: 'تبلیغات و کمپین', text: 'ساخت کمپین Sponsored', onClick: onAds, accent: 'violet' },
+    { icon: LifeBuoy, title: 'پشتیبانی و به‌روزرسانی', text: '@discovery_te', onClick: onSupport, accent: 'cyan' },
+    { icon: Heart, title: 'ذخیره‌ها', text: `${fa.format(savedCount)} محتوای ذخیره‌شده`, onClick: onSaved, accent: 'pink' },
+    { icon: History, title: 'تاریخچه', text: 'محتواهایی که دیده‌ای', onClick: onHistory, accent: 'amber' },
+    { icon: Bell, title: 'اعلان‌ها', text: `${fa.format(hub?.notificationsCount || 0)} اعلان`, onClick: onNotifications, accent: 'blue' },
+  ];
 
   return (
-    <div className="page">
-      <header className="pageHeader">
-        <div>
-          <h1>فضای شخصی تو</h1>
-          <p>تنظیمات، سازندگان و آمار</p>
-          <span className={`liveBadge ${state}`}>{state === 'live' ? 'داده زنده' : state === 'loading' ? 'در حال دریافت…' : hub?.needsTelegram ? 'نیاز به اجرای تلگرام' : 'نسخه پشتیبان'}</span>
-        </div>
-        <Bell />
+    <div className="page referenceProfilePage">
+      <header className="referenceProfileTopbar">
+        <button type="button" onClick={onNotifications} aria-label="اعلان‌ها"><Bell /></button>
+        <strong>پروفایل</strong>
+        <button type="button" onClick={onRefresh} aria-label="به‌روزرسانی"><Settings /></button>
       </header>
 
-      <section className="profileHero surface">
-        <div className="profileAvatar">{initials}</div>
-        <div><h2>{displayName}</h2><p>{hub?.username || 'Telegram Mini App'}</p></div>
-        <strong>{fa.format(hub?.followsCount || 0)}<span>دنبال‌شده</span></strong>
+      <section className="referenceProfileHero">
+        <div className="referenceProfileAvatar">{initials}</div>
+        <h1>{displayName}</h1>
+        <p>{username}</p>
+        <span className={`liveBadge ${state}`}>{state === 'live' ? 'همگام' : state === 'loading' ? 'در حال دریافت…' : hub?.needsTelegram ? 'داخل تلگرام باز کن' : 'حالت پشتیبان'}</span>
       </section>
 
-      <GrowthCard />
-
-      <section className="creatorEntry surface">
-        <div>
-          <span className="entryIcon"><ArrowUpRight /></span>
-          <div><h3>Creator Center</h3><p>{hub?.creators.length ? `${fa.format(hub.creators.length)} کانال مالکیتی` : 'رشد، عضویت و عملکرد محتوا'}</p></div>
-        </div>
-        <button onClick={onCreator}>باز کردن</button>
+      <section className="referenceProfileStats surface">
+        <article><strong>{fa.format(followsCount)}</strong><small>دنبال‌شده</small></article>
+        <article><strong>{fa.format(savedCount)}</strong><small>ذخیره‌ها</small></article>
+        <article className="referenceLevelStat"><ShieldCheck /><strong>{botStats ? 'فعال' : 'کاشف'}</strong><small>سطح فعلی</small></article>
       </section>
 
-      {hub?.creators.length ? <CreatorPromoKit channels={hub.creators} needsTelegram={hub.needsTelegram} /> : null}
-      {hub?.creators.length ? <CreatorAdsLauncher channels={hub.creators} needsTelegram={hub.needsTelegram} /> : null}
-
-      <section className="analytics surface">
-        <div className="analyticsTitle"><div><BarChart3 /><h2>Bot Analytics</h2></div><span>{botStats ? 'Owner' : 'Protected'}</span></div>
-        {botStats ? (
-          <>
-            <div className="metricHero">
-              <article><small>کل دفعات استارت</small><strong>{fa.format(botStats.botStartsTotal)}</strong></article>
-              <article><small>استارت‌کنندگان یکتا</small><strong>{fa.format(botStats.botStartUsersTotal)}</strong></article>
-            </div>
-            <div className="metricRow">
-              <article><small>استارت امروز · تهران</small><strong>{fa.format(botStats.botStartsToday)}</strong></article>
-              <article><small>یکتا بدون مدیر</small><strong>{fa.format(botStats.botStartUsersNonOwner)}</strong></article>
-            </div>
-            <p>شمارش استارت از زمان فعال‌سازی؛ دفعات قبلی در این آمار نیست.</p>
-            <div className="metricHero">
-              <article><small>کل کاربران یکتا</small><strong>{fa.format(botStats.uniqueUsers)}</strong></article>
-              <article><small>فعال ۳۰ روز</small><strong>{fa.format(botStats.active30d)}</strong></article>
-            </div>
-            <div className="metricRow">
-              <article><small>جدید امروز</small><strong>{fa.format(botStats.newToday)}</strong></article>
-              <article><small>جدید ۷ روز</small><strong>{fa.format(botStats.new7d)}</strong></article>
-              <article><small>تعامل ۳۰ روز</small><strong>{fa.format(botStats.eventUsers30d)}</strong></article>
-            </div>
-          </>
-        ) : (
-          <div className="ownerLocked"><ShieldCheck /><div><b>آمار مالک محافظت‌شده است</b><span>{hub?.needsTelegram ? 'برای دیدن این آمار، همین نسخه را داخل Telegram Mini App باز کن.' : 'برای این حساب آمار مالک در دسترس نیست.'}</span></div></div>
-        )}
+      <section className="referenceProfileMenu surface">
+        {menu.map(({ icon: Icon, title, text, onClick, accent }) => (
+          <button type="button" key={title} onClick={onClick}>
+            <span className={`referenceMenuIcon ${accent}`}><Icon /></span>
+            <span className="referenceMenuCopy"><b>{title}</b><small>{text}</small></span>
+            <ChevronLeft />
+          </button>
+        ))}
+        <button type="button" onClick={onRefresh}>
+          <span className="referenceMenuIcon slate"><RefreshCw /></span>
+          <span className="referenceMenuCopy"><b>تنظیمات و تازه‌سازی</b><small>به‌روزرسانی داده‌ها و وضعیت حساب</small></span>
+          <ChevronLeft />
+        </button>
+        <button type="button" onClick={onSupport}>
+          <span className="referenceMenuIcon slate"><Info /></span>
+          <span className="referenceMenuCopy"><b>درباره کشف</b><small>راهنما، نسخه و اطلاعات پروژه</small></span>
+          <ChevronLeft />
+        </button>
       </section>
 
-      {botStats && <OwnerAdsDashboard />}
+      {botStats && (
+        <section className="referenceOwnerAnalytics surface">
+          <div className="referenceOwnerTitle"><div><BarChart3 /><span><b>Owner Analytics</b><small>آمار واقعی ربات</small></span></div><span>Owner</span></div>
+          <div className="referenceOwnerGrid">
+            <article><small>کل استارت</small><strong>{fa.format(botStats.botStartsTotal)}</strong></article>
+            <article><small>کاربر یکتا</small><strong>{fa.format(botStats.uniqueUsers)}</strong></article>
+            <article><small>فعال ۳۰ روز</small><strong>{fa.format(botStats.active30d)}</strong></article>
+            <article><small>جدید ۷ روز</small><strong>{fa.format(botStats.new7d)}</strong></article>
+          </div>
+          <p><Sparkles /> این بخش فقط برای مالک پروژه نمایش داده می‌شود.</p>
+        </section>
+      )}
+
       {botStats && <BroadcastCard />}
-
-      <section className="creatorEntry surface">
-        <div>
-          <span className="entryIcon"><MessageCircle /></span>
-          <div><h3>پشتیبانی و به‌روزرسانی</h3><p>@discovery_te · آموزش‌ها، تغییرات و اطلاعیه‌های رسمی کشف</p></div>
-        </div>
-        <button onClick={openSupportChannel}>مشاهده</button>
-      </section>
-
-      <div className="quickGrid">
-        <button onClick={onSaved}><Heart />ذخیره‌ها</button>
-        <button onClick={onHistory}><History />تاریخچه</button>
-        <button onClick={onNotifications}><Bell />اعلان‌ها <b>{fa.format(hub?.notificationsCount || 0)}</b></button>
-        <button onClick={onRefresh}><RefreshCw />به‌روزرسانی</button>
-      </div>
     </div>
   );
 }
