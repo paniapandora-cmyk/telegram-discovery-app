@@ -22,6 +22,7 @@ type Props = {
   hub: HubData | null;
   botStats: BotOwnerStats | null;
   state: LoadState;
+  notificationUnreadCount?: number;
   onCreator: () => void;
   onSaved: () => void;
   onHistory: () => void;
@@ -37,6 +38,7 @@ export default function ProfilePage({
   hub,
   botStats,
   state,
+  notificationUnreadCount,
   onCreator,
   onSaved,
   onHistory,
@@ -52,6 +54,8 @@ export default function ProfilePage({
   const followsCount = hub?.followsCount || 0;
   const topicsCount = hub?.topicsCount || 0;
   const creatorCount = hub?.creators.length || 0;
+  const unreadNotifications =
+    notificationUnreadCount ?? hub?.notificationsCount ?? 0;
 
   const menu = [
     { icon: Gift, title: 'دعوت دوستان', text: 'لینک اختصاصی و نشان‌های رشد', onClick: onInvite, accent: 'mint' },
@@ -60,13 +64,20 @@ export default function ProfilePage({
     { icon: LifeBuoy, title: 'پشتیبانی و به‌روزرسانی', text: '@discovery_te', onClick: onSupport, accent: 'cyan' },
     { icon: Heart, title: 'ذخیره‌ها', text: 'محتواهایی که برای بعد نگه داشته‌ای', onClick: onSaved, accent: 'pink' },
     { icon: History, title: 'تاریخچه', text: 'محتواهایی که دیده‌ای', onClick: onHistory, accent: 'amber' },
-    { icon: Bell, title: 'اعلان‌ها', text: `${fa.format(hub?.notificationsCount || 0)} اعلان`, onClick: onNotifications, accent: 'blue' },
+    { icon: Bell, title: 'اعلان‌ها', text: unreadNotifications ? `${fa.format(unreadNotifications)} اعلان خوانده‌نشده` : 'اعلان خوانده‌نشده نداری', onClick: onNotifications, accent: 'blue' },
   ];
 
   return (
     <div className="page referenceProfilePage">
       <header className="referenceProfileTopbar">
-        <button type="button" onClick={onNotifications} aria-label="اعلان‌ها"><Bell /></button>
+        <button type="button" onClick={onNotifications} aria-label="اعلان‌ها">
+          <Bell />
+          {unreadNotifications > 0 && (
+            <span className="referenceProfileUnreadBadge">
+              {fa.format(Math.min(unreadNotifications, 99))}
+            </span>
+          )}
+        </button>
         <strong>پروفایل</strong>
         <button type="button" onClick={onRefresh} aria-label="به‌روزرسانی"><Settings /></button>
       </header>
