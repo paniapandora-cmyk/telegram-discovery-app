@@ -129,6 +129,28 @@ jobs:
 
           echo "Interests, creator follows, recommendations, and follow-aware feed modules found."
 
+      - name: Verify channel profile stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s frontend-react/src/pages/ChannelPage.tsx
+          test -s frontend-react/src/data/channel-profile.ts
+          test -s frontend-react/src/styles/channel-profile-v14.css
+          test -s supabase/functions/channel-profile-v1/index.ts
+          test -s supabase/migrations/20260913030000_channel_profile_v1.sql
+
+          grep -q "page === 'channel'" frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'onOpenChannel' frontend-react/src/pages/HomePage.tsx
+          grep -q 'onOpenChannel' frontend-react/src/pages/SearchPage.tsx
+          grep -q 'onOpenChannel' frontend-react/src/components/Viewer.tsx
+          grep -q 'loadChannelProfile' frontend-react/src/pages/ChannelPage.tsx
+          grep -q 'setChannelFollow' frontend-react/src/pages/ChannelPage.tsx
+          grep -q 'get_channel_profile_v1' supabase/functions/channel-profile-v1/index.ts
+          grep -q 'get_channel_profile_v1' supabase/migrations/20260913030000_channel_profile_v1.sql
+
+          echo "In-app channel profile, follow, topics, posts, and similar-channel modules found."
+
       - name: Verify growth stack
         shell: bash
         run: |
