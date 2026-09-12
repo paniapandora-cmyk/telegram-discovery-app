@@ -403,7 +403,7 @@ export default function DiscoveryApp() {
                 onImpression={(post, position) => recordImpression(post, position, 'explore')}
               />
             )}
-            {page === 'search' && <SearchPage channels={liveChannels} onOpen={openViewer} />}
+            {page === 'search' && <SearchPage channels={liveChannels} onOpen={openViewer} onOpenChannel={openChannel} />}
             {page === 'saved' && <SavedPage posts={savedDisplay} state={savedState} onOpen={openViewer} onToggleSave={toggleSave} />}
             {page === 'profile' && (
               <ProfilePage
