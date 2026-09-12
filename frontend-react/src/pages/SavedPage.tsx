@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bookmark, FileText, Image as ImageIcon, PlayCircle, Search, X } from 'lucide-react';
+import { postMediaCandidates } from '../lib/postMedia';
 import type { Post, PostKind } from '../types';
 
 type LoadState = 'idle' | 'loading' | 'live' | 'fallback';
@@ -19,6 +20,47 @@ const filters: Array<{ id: Filter; label: string }> = [
   { id: 'video', label: 'ویدیوها' },
   { id: 'image', label: 'تصاویر' },
 ];
+
+function SavedThumb({ post }: { post: Post }) {
+  const KindIcon = post.kind === 'video' ? PlayCircle : post.kind === 'image' ? ImageIcon : FileText;
+  const candidates = useMemo(
+    () => postMediaCandidates(post),
+    [post.id, post.mediaUrl, post.telegramUrl],
+  );
+  const [index, setIndex] = useState(0);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setIndex(0);
+    setReady(false);
+  }, [post.id, post.mediaUrl, post.telegramUrl]);
+
+  const active = candidates[index];
+  const exhausted = index >= candidates.length;
+
+  return (
+    <div className={`referenceSavedThumb ${ready ? 'hasMedia' : 'noMedia'}`}>
+      {active && !exhausted ? (
+        <img
+          key={active}
+          src={active}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setReady(true)}
+          onError={() => {
+            setReady(false);
+            if (index + 1 < candidates.length) setIndex((value) => value + 1);
+            else setIndex(candidates.length);
+          }}
+        />
+      ) : (
+        <KindIcon />
+      )}
+      <span><KindIcon /> {post.kind === 'video' ? 'ویدیو' : post.kind === 'image' ? 'تصویر' : 'مقاله'}</span>
+    </div>
+  );
+}
 
 export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props) {
   const [query, setQuery] = useState('');
@@ -83,42 +125,36 @@ export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props)
         <div className="searchLoading" aria-label="در حال دریافت ذخیره‌ها"><span /><span /><span /></div>
       ) : filtered.length ? (
         <div className="referenceSavedList">
-          {filtered.map((post) => {
-            const KindIcon = post.kind === 'video' ? PlayCircle : post.kind === 'image' ? ImageIcon : FileText;
-            return (
-              <article
-                key={post.id}
-                className="referenceSavedCard"
-                onClick={() => onOpen(post)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    onOpen(post);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
+          {filtered.map((post) => (
+            <article
+              key={post.id}
+              className="referenceSavedCard"
+              onClick={() => onOpen(post)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onOpen(post);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <SavedThumb post={post} />
+              <div className="referenceSavedCopy">
+                <strong>{post.title}</strong>
+                <p>{post.excerpt}</p>
+                <small>{post.channel.title} · {post.date}</small>
+              </div>
+              <button
+                type="button"
+                className="referenceSavedRemove"
+                onClick={(event) => { event.stopPropagation(); onToggleSave(post.id); }}
+                aria-label={`حذف ${post.title} از ذخیره‌ها`}
               >
-                <div className="referenceSavedThumb">
-                  {post.mediaUrl ? <img src={post.mediaUrl} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} /> : <KindIcon />}
-                  <span><KindIcon /> {post.kind === 'video' ? 'ویدیو' : post.kind === 'image' ? 'تصویر' : 'مقاله'}</span>
-                </div>
-                <div className="referenceSavedCopy">
-                  <strong>{post.title}</strong>
-                  <p>{post.excerpt}</p>
-                  <small>{post.channel.title} · {post.date}</small>
-                </div>
-                <button
-                  type="button"
-                  className="referenceSavedRemove"
-                  onClick={(event) => { event.stopPropagation(); onToggleSave(post.id); }}
-                  aria-label={`حذف ${post.title} از ذخیره‌ها`}
-                >
-                  <Bookmark fill="currentColor" />
-                </button>
-              </article>
-            );
-          })}
+                <Bookmark fill="currentColor" />
+              </button>
+            </article>
+          ))}
         </div>
       ) : saved.length ? (
         <div className="emptyState referenceSavedEmpty">
