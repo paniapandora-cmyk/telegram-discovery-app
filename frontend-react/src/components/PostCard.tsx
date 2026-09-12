@@ -13,6 +13,11 @@ type Props = {
 const uniqueStrings = (values: Array<string | undefined>) =>
   Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 
+function saveHaptic(saved: boolean) {
+  const haptic = (window as any)?.Telegram?.WebApp?.HapticFeedback;
+  haptic?.impactOccurred?.(saved ? 'light' : 'soft');
+}
+
 export default function PostCard({
   post,
   onOpen,
@@ -187,6 +192,7 @@ export default function PostCard({
             className={post.saved ? 'saved' : ''}
             onClick={(event) => {
               event.stopPropagation();
+              saveHaptic(!post.saved);
               onToggleSave(post.id);
             }}
             aria-label={post.saved ? 'حذف از ذخیره‌ها' : 'ذخیره'}
