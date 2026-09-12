@@ -35,6 +35,23 @@ jobs:
 
           echo "React Telegram Mini App layout found."
 
+      - name: Verify reference UI stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s frontend-react/src/styles/reference-v6.css
+          test -s frontend-react/src/pages/InvitePage.tsx
+          test -s frontend-react/src/pages/SupportPage.tsx
+          test -s frontend-react/src/pages/AdsPage.tsx
+
+          grep -q 'reference-v6.css' frontend-react/src/main.tsx
+          grep -q "page === 'invite'" frontend-react/src/app/DiscoveryApp.tsx
+          grep -q "page === 'support'" frontend-react/src/app/DiscoveryApp.tsx
+          grep -q "page === 'ads'" frontend-react/src/app/DiscoveryApp.tsx
+
+          echo "Reference-driven multi-screen UI modules found."
+
       - name: Verify proxy configuration
         shell: bash
         run: |
@@ -78,13 +95,14 @@ jobs:
           test -s frontend-react/src/components/CreatorAdsLauncher.tsx
           test -s frontend-react/src/components/OwnerAdsDashboard.tsx
           test -s frontend-react/src/styles/ads-v1.css
+          test -s frontend-react/src/pages/AdsPage.tsx
 
           grep -q 'creator-ads-v1' frontend-react/src/data/ads.ts
           grep -q 'loadSponsoredPosts' frontend-react/src/pages/ExplorePage.tsx
           grep -q 'تبلیغ · Sponsored' frontend-react/src/components/ExploreTile.tsx
           grep -q 'sponsored:' frontend-react/src/data/tracking.ts
-          grep -q 'OwnerAdsDashboard' frontend-react/src/pages/ProfilePage.tsx
-          grep -q 'CreatorAdsLauncher' frontend-react/src/pages/ProfilePage.tsx
+          grep -q 'OwnerAdsDashboard' frontend-react/src/pages/AdsPage.tsx
+          grep -q 'CreatorAdsLauncher' frontend-react/src/pages/AdsPage.tsx
 
           echo "Sponsored campaigns, attribution and owner revenue modules found."
 
