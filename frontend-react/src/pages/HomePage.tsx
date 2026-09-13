@@ -5,7 +5,7 @@ import ChannelRail from '../components/ChannelRail';
 import PostCard from '../components/PostCard';
 import InviteNudge from '../components/InviteNudge';
 import { posts as seedPosts } from '../data/demo';
-import { loadLivePosts } from '../data/live';
+import { loadLivePosts, type LiveMode } from '../data/live';
 import { loadExplorePage } from '../data/explore';
 import type { Channel, Post } from '../types';
 
@@ -26,15 +26,29 @@ type Props = {
 };
 
 const seedIds = new Set(seedPosts.map((post) => post.id));
+const MIN_HEALTHY_HOME = 16;
+const PREFETCH_TARGET = 36;
 
-const mergeUnique = (base: Post[], extra: Post[]) => {
+const postKey = (post: Post) => post.contentId || post.id;
+
+const mergeUnique = (...groups: Post[][]) => {
   const seen = new Set<string>();
-  return [...base, ...extra].filter((post) => {
-    const key = post.contentId || post.id;
-    if (seen.has(key)) return false;
+  const result: Post[] = [];
+
+  for (const post of groups.flat()) {
+    const key = postKey(post);
+    if (!key || seen.has(key)) continue;
     seen.add(key);
-    return true;
-  });
+    result.push(post);
+  }
+
+  return result;
+};
+
+const recoveryModes = (tab: string): LiveMode[] => {
+  if (tab === 'hot') return ['fresh', 'for-you'];
+  if (tab === 'fresh') return ['hot', 'for-you'];
+  return ['fresh', 'hot'];
 };
 
 export default function HomePage({ channels, posts, tab, state, onTab, onSearch, onAdd, onOpen, onOpenChannel, onToggleSave, onImpression }: Props) {
@@ -44,48 +58,82 @@ export default function HomePage({ channels, posts, tab, state, onTab, onSearch,
   const [hasMore, setHasMore] = useState(true);
   const [loadError, setLoadError] = useState('');
   const pending = useRef<AbortController | null>(null);
+  const recoveryPending = useRef<AbortController | null>(null);
   const sentinel = useRef<HTMLDivElement | null>(null);
-  const hasPreloaded = useRef(false);
 
-  const hasLivePosts = useMemo(() => posts.some((post) => !seedIds.has(post.id)), [posts]);
-
-  useEffect(() => {
-    if (hasLivePosts) { setRecoveryPosts([]); return; }
-    if (state === 'loading') return;
-    const controller = new AbortController();
-    let active = true;
-    const recover = async () => {
-      const modes = tab === 'hot' ? (['fresh'] as const) : (['fresh', 'hot'] as const);
-      for (const mode of modes) {
-        try {
-          const next = await loadLivePosts(mode, controller.signal);
-          if (!active || controller.signal.aborted) return;
-          if (next.length) { setRecoveryPosts(next); return; }
-        } catch { if (controller.signal.aborted) return; }
-      }
-    };
-    void recover();
-    return () => { active = false; controller.abort(); };
-  }, [hasLivePosts, state, tab]);
-
-  const basePosts = useMemo(() => {
-    if (hasLivePosts) return posts;
-    if (recoveryPosts.length) return recoveryPosts;
-    if (posts.length) return posts;
-    return seedPosts;
-  }, [hasLivePosts, posts, recoveryPosts]);
+  const livePrimaryPosts = useMemo(
+    () => posts.filter((post) => !seedIds.has(post.id)),
+    [posts],
+  );
 
   useEffect(() => {
     pending.current?.abort();
+    recoveryPending.current?.abort();
     pending.current = null;
+    recoveryPending.current = null;
+    setRecoveryPosts([]);
     setExtraPosts([]);
     setHasMore(true);
     setLoadError('');
     setLoadingMore(false);
-    hasPreloaded.current = false;
   }, [tab]);
 
-  const displayPosts = useMemo(() => mergeUnique(basePosts, extraPosts), [basePosts, extraPosts]);
+  useEffect(() => {
+    if (state === 'loading' || livePrimaryPosts.length >= MIN_HEALTHY_HOME) {
+      if (livePrimaryPosts.length >= MIN_HEALTHY_HOME) setRecoveryPosts([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    recoveryPending.current?.abort();
+    recoveryPending.current = controller;
+    let active = true;
+
+    const recover = async () => {
+      let merged = [...livePrimaryPosts];
+      const recovered: Post[] = [];
+
+      for (const mode of recoveryModes(tab)) {
+        if (merged.length >= MIN_HEALTHY_HOME) break;
+
+        try {
+          const next = await loadLivePosts(mode, controller.signal);
+          if (!active || controller.signal.aborted) return;
+
+          const before = new Set(merged.map(postKey));
+          const additions = next.filter((post) => !before.has(postKey(post)));
+          recovered.push(...additions);
+          merged = mergeUnique(merged, additions);
+        } catch {
+          if (controller.signal.aborted) return;
+        }
+      }
+
+      if (active && !controller.signal.aborted) {
+        setRecoveryPosts(mergeUnique(recovered));
+      }
+    };
+
+    void recover();
+
+    return () => {
+      active = false;
+      controller.abort();
+      if (recoveryPending.current === controller) recoveryPending.current = null;
+    };
+  }, [livePrimaryPosts, state, tab]);
+
+  const basePosts = useMemo(() => {
+    const real = mergeUnique(livePrimaryPosts, recoveryPosts);
+    if (real.length) return real;
+    if (posts.length) return posts;
+    return seedPosts;
+  }, [livePrimaryPosts, posts, recoveryPosts]);
+
+  const displayPosts = useMemo(
+    () => mergeUnique(basePosts, extraPosts),
+    [basePosts, extraPosts],
+  );
 
   const loadMore = useCallback(async () => {
     if (pending.current || !hasMore || state === 'loading') return;
@@ -100,18 +148,45 @@ export default function HomePage({ channels, posts, tab, state, onTab, onSearch,
         .map((post) => post.contentId)
         .filter((id): id is string => Boolean(id));
 
-      const next = await loadExplorePage(ids, controller.signal);
-      if (controller.signal.aborted) return;
+      let nextPosts: Post[] = [];
+      let nextHasMore = true;
 
-      const seen = new Set(displayPosts.map((post) => post.contentId || post.id));
-      const added = next.posts.filter((post) => !seen.has(post.contentId || post.id));
+      try {
+        const page = await loadExplorePage(ids, controller.signal);
+        nextPosts = page.posts;
+        nextHasMore = page.hasMore;
+      } catch (primaryError) {
+        if (controller.signal.aborted) return;
 
-      if (!added.length && next.hasMore) {
+        // Home must never collapse to only a few cards because one paginated
+        // endpoint had a transient failure. Reuse the live feed sources as a
+        // second path and de-duplicate them locally.
+        for (const mode of recoveryModes(tab)) {
+          try {
+            const fallback = await loadLivePosts(mode, controller.signal);
+            nextPosts = mergeUnique(nextPosts, fallback);
+            if (nextPosts.length >= 12) break;
+          } catch {
+            if (controller.signal.aborted) return;
+          }
+        }
+
+        if (!nextPosts.length) throw primaryError;
+      }
+
+      const seen = new Set(displayPosts.map(postKey));
+      const added = nextPosts.filter((post) => !seen.has(postKey(post)));
+
+      if (!added.length) {
+        if (!nextHasMore) {
+          setHasMore(false);
+          return;
+        }
         throw new Error('پست تازه‌ای دریافت نشد. دوباره تلاش کن.');
       }
 
       setExtraPosts((current) => mergeUnique(current, added));
-      setHasMore(next.hasMore);
+      setHasMore(nextHasMore || added.length > 0);
     } catch (error) {
       if (!controller.signal.aborted) {
         setLoadError(error instanceof Error ? error.message : 'دریافت پست‌های بیشتر انجام نشد.');
@@ -122,35 +197,36 @@ export default function HomePage({ channels, posts, tab, state, onTab, onSearch,
         setLoadingMore(false);
       }
     }
-  }, [displayPosts, hasMore, state]);
+  }, [displayPosts, hasMore, state, tab]);
 
   useEffect(() => {
-    if (state === 'loading' || !basePosts.length || hasPreloaded.current) return;
-    hasPreloaded.current = true;
+    if (state === 'loading' || displayPosts.length >= PREFETCH_TARGET || loadingMore || loadError) return;
     void loadMore();
-  }, [state, basePosts.length, loadMore]);
+  }, [displayPosts.length, loadError, loadMore, loadingMore, state]);
 
   useEffect(() => {
-    if (!hasMore || loadingMore || loadError || !sentinel.current || !('IntersectionObserver' in window)) return;
+    if (!hasMore || loadingMore || !sentinel.current || !('IntersectionObserver' in window)) return;
+
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) void loadMore();
-    }, { rootMargin: '500px 0px' });
+    }, { rootMargin: '700px 0px' });
+
     observer.observe(sentinel.current);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, loadError, loadMore]);
+  }, [hasMore, loadingMore, loadMore]);
 
   useEffect(() => () => {
     pending.current?.abort();
+    recoveryPending.current?.abort();
     pending.current = null;
+    recoveryPending.current = null;
   }, []);
 
-  const effectiveState: FeedState = recoveryPosts.length || extraPosts.length
+  const effectiveState: FeedState = livePrimaryPosts.length || recoveryPosts.length || extraPosts.length
     ? 'live'
-    : hasLivePosts
-      ? state
-      : state === 'loading'
-        ? 'loading'
-        : 'fallback';
+    : state === 'loading'
+      ? 'loading'
+      : 'fallback';
 
   const [leadPost, ...morePosts] = displayPosts;
 
