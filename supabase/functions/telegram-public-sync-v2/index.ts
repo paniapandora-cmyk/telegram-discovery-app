@@ -6,6 +6,7 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const env=(name:string)=>{const v=Deno.env.get(name)?.trim();if(!v)throw new Error(`${name} is not configured`);return v;};
 const cleanUsername=(v:unknown)=>String(v??"").trim().replace(/^@/,"");
 const cleanUrl=(v:unknown)=>{const s=String(v??"").replace(/&amp;/g,"&").trim();return /^https?:\/\//i.test(s)?s:null;};
+const styleUrl=(v:unknown)=>{const m=String(v??"").match(/url\(['\"]?([^'\")]+)['\"]?\)/i);return m?.[1]?cleanUrl(m[1]):null;};
 
 type Post={id:number;text:string;publishedAt:string|null;contentType:"TEXT"|"IMAGE"|"VIDEO"|"AUDIO"|"DOCUMENT"|"MIXED";preview:string|null};
 type Page={posts:Post[];channelTitle:string|null;channelBio:string|null;avatar:string|null};
@@ -16,25 +17,21 @@ function media(node:any){
   const audio=node.querySelector(".tgme_widget_message_voice_player, audio");
   const document=node.querySelector(".tgme_widget_message_document");
   const media=node.querySelector(".tgme_widget_message_media_wrap");
-  let preview:string|null=null;
-  const style=photo?.getAttribute?.("style")||media?.getAttribute?.("style")||video?.getAttribute?.("style")||"";
-  const m=String(style).match(/url\(['\"]?([^'\")]+)['\"]?\)/i);
-  if(m?.[1])preview=cleanUrl(m[1]);
-  if(!preview){
-    preview=cleanUrl(video?.getAttribute?.("poster"))||cleanUrl(node.querySelector("img")?.getAttribute?.("src"));
-  }
+  let preview=styleUrl(photo?.getAttribute?.("style")||media?.getAttribute?.("style")||video?.getAttribute?.("style")||"");
+  if(!preview)preview=cleanUrl(video?.getAttribute?.("poster"))||cleanUrl(node.querySelector("img")?.getAttribute?.("src"));
   const contentType:Post["contentType"]=photo&&video?"MIXED":video?"VIDEO":audio?"AUDIO":document?"DOCUMENT":photo||media?"IMAGE":"TEXT";
   return {contentType,preview};
 }
 
 async function fetchPage(username:string,before=0):Promise<Page>{
   const url=new URL(`https://t.me/s/${encodeURIComponent(username)}`);if(before>0)url.searchParams.set("before",String(before));
-  const r=await fetch(url,{headers:{"user-agent":"Mozilla/5.0 (compatible; TelegramDiscovery/2.0; +https://t.me)","accept-language":"fa,en;q=0.8"},redirect:"follow"});
+  const r=await fetch(url,{headers:{"user-agent":"Mozilla/5.0 (compatible; TelegramDiscovery/2.1; +https://t.me)","accept-language":"fa,en;q=0.8"},redirect:"follow"});
   if(!r.ok)throw new Error(`Telegram public preview returned HTTP ${r.status}`);
   const root=parse(await r.text());
   const channelTitle=String(root.querySelector(".tgme_channel_info_header_title, .tgme_page_title")?.innerText||"").trim()||null;
   const channelBio=String(root.querySelector(".tgme_channel_info_description, .tgme_page_description")?.innerText||"").trim()||null;
-  const avatar=cleanUrl(root.querySelector(".tgme_channel_info_header img, .tgme_page_photo_image")?.getAttribute?.("src"));
+  const avatarNode=root.querySelector(".tgme_channel_info_header img, .tgme_page_photo_image");
+  const avatar=cleanUrl(avatarNode?.getAttribute?.("src"))||styleUrl(avatarNode?.getAttribute?.("style"));
   const unique=new Map<number,Post>();
   for(const node of root.querySelectorAll(".tgme_widget_message")){
     const key=String(node.getAttribute("data-post")||"");const mm=key.match(/\/(\d+)$/);if(!mm)continue;
@@ -77,8 +74,8 @@ Deno.serve(async(req)=>{
         const content={creator_id:creatorId,source_type:"TELEGRAM",source_id:sourceKey,source_url:`https://t.me/${username}/${p.id}`,content_type:p.contentType,title:p.text?p.text.slice(0,160):null,description:p.text||null,rights_status:"REFERENCE_ONLY",moderation_status:old?.moderation_status||"PENDING",published_at:p.publishedAt,text_content:p.text||null,thumbnail_url:thumb,media_url:p.contentType==="IMAGE"?(p.preview||old?.media_url||null):(old?.media_url||null),metadata:{...(old?.metadata||{}),telegram_source_id:sourceId,telegram_peer_id:String(source.telegram_peer_id??""),telegram_message_id:p.id,public_preview_sync:true,sync_provider:"telegram_public_preview",sync_version:2,media_preview_url:p.preview,deleted_on_telegram:false}};
         const saved=old?.id?await db.from("contents").update(content).eq("id",old.id).select("id").single():await db.from("contents").insert(content).select("id").single();if(saved.error)throw saved.error;
         old?.id?updated++:inserted++;
-        await db.rpc("refresh_discovery_content_feature",{p_content_id:saved.data.id}).catch(()=>{});
-        if(!old?.id&&p.text)await db.from("discovery_embedding_jobs").upsert({content_id:saved.data.id,status:"PENDING",requested_at:new Date().toISOString(),attempts:0},{onConflict:"content_id",ignoreDuplicates:true});
+        const feature=await db.rpc("refresh_discovery_content_feature",{p_content_id:saved.data.id});if(feature.error)console.error("feature refresh failed",saved.data.id,feature.error.message);
+        if(!old?.id&&p.text){const emb=await db.from("discovery_embedding_jobs").upsert({content_id:saved.data.id,status:"PENDING",requested_at:new Date().toISOString(),attempts:0},{onConflict:"content_id",ignoreDuplicates:true});if(emb.error)console.error("embedding enqueue failed",saved.data.id,emb.error.message);}
       }catch(e){errors++;console.error("public sync item failed",p.id,e);}
     }
     const now=new Date().toISOString(),historyComplete=source.history_complete===true||(historyBefore>0&&(history.posts||[]).length===0),status=errors?"partial":"success";
