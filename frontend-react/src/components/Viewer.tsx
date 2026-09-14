@@ -4,6 +4,7 @@ import {
   Bookmark,
   ExternalLink,
   EyeOff,
+  Flag,
   Heart,
   Layers3,
   MoreHorizontal,
@@ -104,6 +105,7 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
           <button type="button" onClick={() => void feedback('not_interested')} disabled={Boolean(feedbackBusy)}><EyeOff /><span><b>علاقه ندارم</b><small>پیشنهادهای مشابه کمتر شوند</small></span></button>
           <button type="button" onClick={() => void feedback('not_relevant')} disabled={Boolean(feedbackBusy)}><Layers3 /><span><b>مرتبط نیست</b><small>کیفیت پیشنهادها را بهتر می‌کند</small></span></button>
           <button type="button" onClick={() => void feedback('hide_creator')} disabled={Boolean(feedbackBusy)}><UserX /><span><b>این کانال را پنهان کن</b><small>محتوای این منبع دیگر پیشنهاد نشود</small></span></button>
+          <button type="button" onClick={() => void feedback('report')} disabled={Boolean(feedbackBusy)}><Flag /><span><b>گزارش محتوا</b><small>برای بررسی ایمنی و تخلف به صف مدیریت می‌رود</small></span></button>
         </div>
       )}
 
