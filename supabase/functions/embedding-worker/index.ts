@@ -3,18 +3,18 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const URL=Deno.env.get("DISCOVERY_SUPABASE_URL")??Deno.env.get("SUPABASE_URL")??"";
 const KEY=Deno.env.get("DISCOVERY_SUPABASE_SERVICE_ROLE_KEY")??Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
-const BATCH=12;
+const BATCH=8;
 const MAX_TEXT_CHARS=6000;
 const json=(x:unknown,s=200)=>new Response(JSON.stringify(x),{status:s,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*","Cache-Control":"no-store"}});
+const errorText=(e:unknown)=>{if(e instanceof Error)return e.message;if(e&&typeof e==='object'){try{return JSON.stringify(e);}catch{return String(e);}}return String(e??'internal error');};
 
 async function run(){
-  if(!URL||!KEY)return json({ok:false,error:"database secrets missing"},500);
+  if(!URL||!KEY)return {ok:false,error:"database secrets missing"};
   const started=Date.now();
   const db=createClient(URL,KEY);
   const q=await db.rpc("claim_embedding_jobs",{p_batch:BATCH});
   if(q.error)throw q.error;
   const jobs:any[]=q.data??[];
-  const model=new Supabase.ai.Session("gte-small");
   let completed=0,failed=0;
   const errors:Array<{content_id:string;error:string}>=[];
 
@@ -22,6 +22,7 @@ async function run(){
     try{
       const text=String(job.text_content??"").replace(/\s+/g," ").trim().slice(0,MAX_TEXT_CHARS);
       if(!text)throw new Error("empty text_content");
+      const model=new Supabase.ai.Session("gte-small");
       const emb=await model.run(text,{mean_pool:true,normalize:true});
       const vector=Array.from(emb as Iterable<number>);
       if(vector.length!==384)throw new Error(`unexpected embedding dimension: ${vector.length}`);
@@ -34,7 +35,7 @@ async function run(){
       completed++;
     }catch(e){
       failed++;
-      const message=e instanceof Error?e.message:"embedding failed";
+      const message=errorText(e);
       if(errors.length<5)errors.push({content_id:String(job.content_id),error:message.slice(0,500)});
       await db.rpc("mark_embedding_job_failed",{p_content_id:job.content_id,p_error:message});
     }
@@ -45,5 +46,8 @@ async function run(){
 Deno.serve(async req=>{
   if(req.method==="OPTIONS")return new Response("ok",{status:204});
   if(req.method!=="GET"&&req.method!=="POST")return json({ok:false,error:"GET or POST required"},405);
-  try{return json(await run())}catch(e){return json({ok:false,error:e instanceof Error?e.message:"internal error"},500)}
+  try{
+    const result=await run();
+    return json(result,(result as {ok?:boolean}).ok===false?500:200);
+  }catch(e){return json({ok:false,error:errorText(e)},500)}
 });
