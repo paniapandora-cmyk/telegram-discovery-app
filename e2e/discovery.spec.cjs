@@ -31,7 +31,7 @@ test('home, viewer, save and primary navigation stay functional without backend'
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'ناوبری اصلی' });
   await expect(nav).toBeVisible();
-  await expect(page.getByRole('button', { name: 'خانه' })).toHaveAttribute('aria-current', 'page');
+  await expect(nav.getByRole('button', { name: 'خانه', exact: true })).toHaveAttribute('aria-current', 'page');
 
   const firstCard = page.locator('.postCard').first();
   await expect(firstCard).toBeVisible();
@@ -45,17 +45,17 @@ test('home, viewer, save and primary navigation stay functional without backend'
   await save.click();
   await expect(save).toHaveAttribute('aria-pressed', 'true');
 
-  await page.getByRole('button', { name: 'بازگشت' }).click();
-  await page.getByRole('button', { name: 'ذخیره‌ها' }).click();
-  await expect(page.getByRole('button', { name: 'ذخیره‌ها' })).toHaveAttribute('aria-current', 'page');
+  await page.getByRole('button', { name: 'بازگشت', exact: true }).click();
+  await nav.getByRole('button', { name: 'ذخیره‌ها', exact: true }).click();
+  await expect(nav.getByRole('button', { name: 'ذخیره‌ها', exact: true })).toHaveAttribute('aria-current', 'page');
   if (title) await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
 
-  await page.getByRole('button', { name: 'اکسپلور' }).click();
-  await expect(page.getByRole('button', { name: 'اکسپلور' })).toHaveAttribute('aria-current', 'page');
-  await page.getByRole('button', { name: 'جستجو' }).click();
-  await expect(page.getByRole('button', { name: 'جستجو' })).toHaveAttribute('aria-current', 'page');
-  await page.getByRole('button', { name: 'پروفایل' }).click();
-  await expect(page.getByRole('button', { name: 'پروفایل' })).toHaveAttribute('aria-current', 'page');
+  await nav.getByRole('button', { name: 'اکسپلور', exact: true }).click();
+  await expect(nav.getByRole('button', { name: 'اکسپلور', exact: true })).toHaveAttribute('aria-current', 'page');
+  await nav.getByRole('button', { name: 'جستجو', exact: true }).click();
+  await expect(nav.getByRole('button', { name: 'جستجو', exact: true })).toHaveAttribute('aria-current', 'page');
+  await nav.getByRole('button', { name: 'پروفایل', exact: true }).click();
+  await expect(nav.getByRole('button', { name: 'پروفایل', exact: true })).toHaveAttribute('aria-current', 'page');
 });
 
 test('personalization follow flow updates the UI end to end', async ({ page }) => {
@@ -106,7 +106,8 @@ test('personalization follow flow updates the UI end to end', async ({ page }) =
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'پروفایل' }).click();
+  const nav = page.getByRole('navigation', { name: 'ناوبری اصلی' });
+  await nav.getByRole('button', { name: 'پروفایل', exact: true }).click();
   const personalizationEntry = page.getByText('شخصی‌سازی کشف', { exact: true }).first();
   await expect(personalizationEntry).toBeVisible();
   await personalizationEntry.click();
