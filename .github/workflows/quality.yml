@@ -1,0 +1,49 @@
+name: Quality Gates
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Worker dependencies
+        run: npm ci
+
+      - name: Type-check Worker
+        run: npm run check
+
+      - name: Install frontend dependencies
+        working-directory: frontend-react
+        run: npm ci
+
+      - name: Type-check frontend
+        working-directory: frontend-react
+        run: npm run typecheck
+
+      - name: Build frontend
+        working-directory: frontend-react
+        run: npm run build
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/dist/index.html
+          test -d frontend-react/dist/assets
+          grep -qi 'Telegram Discovery React UI' frontend-react/dist/index.html
