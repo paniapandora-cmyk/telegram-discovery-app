@@ -3,7 +3,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const URL=Deno.env.get("DISCOVERY_SUPABASE_URL")??Deno.env.get("SUPABASE_URL")??"";
 const KEY=Deno.env.get("DISCOVERY_SUPABASE_SERVICE_ROLE_KEY")??Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
-const BATCH=4;
+const BATCH=3;
 const MAX_TEXT_CHARS=6000;
 const json=(x:unknown,s=200)=>new Response(JSON.stringify(x),{status:s,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*","Cache-Control":"no-store"}});
 const errorText=(e:unknown)=>{if(e instanceof Error)return e.message;if(e&&typeof e==='object'){try{return JSON.stringify(e);}catch{return String(e);}}return String(e??'internal error');};
