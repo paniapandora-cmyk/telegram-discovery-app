@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Verify production hardening sources
@@ -32,15 +32,20 @@ jobs:
           test -s supabase/migrations/20260914194000_content_safety_gate_v1.sql
           test -s supabase/migrations/20260914194500_moderation_quarantine_guard_v1.sql
           test -s supabase/migrations/20260914195000_content_safety_gate_v2.sql
+          test -s supabase/migrations/20260914200000_database_index_retention_cleanup_v1.sql
           test -s supabase/functions/telegram-public-sync-v2/index.ts
           test -s supabase/functions/embedding-worker/index.ts
+          test -s e2e/playwright.config.cjs
+          test -s e2e/discovery.spec.cjs
           grep -q 'claim_telegram_sync_request_v1' supabase/functions/telegram-public-sync-v2/index.ts
           grep -q 'const BATCH=3' supabase/functions/embedding-worker/index.ts
           grep -q 'for update skip locked' supabase/migrations/20260914191500_embedding_claim_fastpath_v4.sql
           grep -q 'GAMBLING_PROMO' supabase/migrations/20260914195000_content_safety_gate_v2.sql
-          grep -q "safety-v2" supabase/migrations/20260914195000_content_safety_gate_v2.sql
+          grep -q 'safety-v2' supabase/migrations/20260914195000_content_safety_gate_v2.sql
           grep -q 'guard_content_quarantine_v1' supabase/migrations/20260914194500_moderation_quarantine_guard_v1.sql
+          grep -q 'cleanup_discovery_operational_history_v1' supabase/migrations/20260914200000_database_index_retention_cleanup_v1.sql
           grep -q "feedback('report')" frontend-react/src/components/Viewer.tsx
+          grep -q 'personalization follow flow' e2e/discovery.spec.cjs
 
       - name: Install Worker dependencies
         run: npm ci
