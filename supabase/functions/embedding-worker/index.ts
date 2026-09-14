@@ -3,7 +3,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const URL=Deno.env.get("DISCOVERY_SUPABASE_URL")??Deno.env.get("SUPABASE_URL")??"";
 const KEY=Deno.env.get("DISCOVERY_SUPABASE_SERVICE_ROLE_KEY")??Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
-const BATCH=8;
+const BATCH=4;
 const MAX_TEXT_CHARS=6000;
 const json=(x:unknown,s=200)=>new Response(JSON.stringify(x),{status:s,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*","Cache-Control":"no-store"}});
 const errorText=(e:unknown)=>{if(e instanceof Error)return e.message;if(e&&typeof e==='object'){try{return JSON.stringify(e);}catch{return String(e);}}return String(e??'internal error');};
@@ -15,6 +15,7 @@ async function run(){
   const q=await db.rpc("claim_embedding_jobs",{p_batch:BATCH});
   if(q.error)throw q.error;
   const jobs:any[]=q.data??[];
+  const model=new Supabase.ai.Session("gte-small");
   let completed=0,failed=0;
   const errors:Array<{content_id:string;error:string}>=[];
 
@@ -22,7 +23,6 @@ async function run(){
     try{
       const text=String(job.text_content??"").replace(/\s+/g," ").trim().slice(0,MAX_TEXT_CHARS);
       if(!text)throw new Error("empty text_content");
-      const model=new Supabase.ai.Session("gte-small");
       const emb=await model.run(text,{mean_pool:true,normalize:true});
       const vector=Array.from(emb as Iterable<number>);
       if(vector.length!==384)throw new Error(`unexpected embedding dimension: ${vector.length}`);
