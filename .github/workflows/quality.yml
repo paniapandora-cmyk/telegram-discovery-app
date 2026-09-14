@@ -22,6 +22,24 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Verify production hardening sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s supabase/migrations/20260914191500_embedding_claim_fastpath_v4.sql
+          test -s supabase/migrations/20260914192500_content_report_quarantine_v1.sql
+          test -s supabase/migrations/20260914193500_telegram_text_normalization_v1.sql
+          test -s supabase/migrations/20260914194000_content_safety_gate_v1.sql
+          test -s supabase/migrations/20260914194500_moderation_quarantine_guard_v1.sql
+          test -s supabase/functions/telegram-public-sync-v2/index.ts
+          test -s supabase/functions/embedding-worker/index.ts
+          grep -q 'claim_telegram_sync_request_v1' supabase/functions/telegram-public-sync-v2/index.ts
+          grep -q 'const BATCH=4' supabase/functions/embedding-worker/index.ts
+          grep -q 'for update skip locked' supabase/migrations/20260914191500_embedding_claim_fastpath_v4.sql
+          grep -q 'GAMBLING_PROMO' supabase/migrations/20260914194000_content_safety_gate_v1.sql
+          grep -q 'guard_content_quarantine_v1' supabase/migrations/20260914194500_moderation_quarantine_guard_v1.sql
+          grep -q "feedback('report')" frontend-react/src/components/Viewer.tsx
+
       - name: Install Worker dependencies
         run: npm ci
 
