@@ -7,6 +7,7 @@ const env=(name:string)=>{const v=Deno.env.get(name)?.trim();if(!v)throw new Err
 const cleanUsername=(v:unknown)=>String(v??"").trim().replace(/^@/,"");
 const cleanUrl=(v:unknown)=>{const s=String(v??"").replace(/&amp;/g,"&").trim();return /^https?:\/\//i.test(s)?s:null;};
 const styleUrl=(v:unknown)=>{const m=String(v??"").match(/url\(['\"]?([^'\")]+)['\"]?\)/i);return m?.[1]?cleanUrl(m[1]):null;};
+const isUuid=(v:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 const errorText=(error:unknown)=>{
   if(error instanceof Error)return error.message;
   if(error&&typeof error==='object'){
@@ -56,16 +57,21 @@ Deno.serve(async(req)=>{
   let db:ReturnType<typeof createClient>|null=null;let runId:string|null=null;let leaseSource="";const leaseToken=crypto.randomUUID();
   try{
     if(req.method==="OPTIONS")return json({ok:true});
-    const u=new URL(req.url),body=req.method==="POST"?await req.json().catch(()=>({})):{};
-    const sourceId=String(u.searchParams.get("source_id")||body?.source_id||"").trim();if(!sourceId)return json({ok:false,error:"source_id required"},400);
+    if(req.method!=="POST")return json({ok:false,error:"POST required"},405);
+    const u=new URL(req.url),body=await req.json().catch(()=>({}));
+    const sourceId=String(u.searchParams.get("source_id")||body?.source_id||"").trim();if(!isUuid(sourceId))return json({ok:false,error:"valid source_id required"},400);
+    const requestToken=String(u.searchParams.get("request_token")||body?.request_token||"").trim();if(!isUuid(requestToken))return json({ok:false,error:"valid request_token required"},403);
     db=createClient(env("SUPABASE_URL"),env("SUPABASE_SERVICE_ROLE_KEY"));
+    const requestClaim=await db.rpc("claim_telegram_sync_request_v1",{p_source_id:sourceId,p_token:requestToken});
+    if(requestClaim.error)throw requestClaim.error;
+    if(!requestClaim.data)return json({ok:false,error:"sync request is invalid, expired, or already used"},403);
     const lease=await db.rpc("acquire_telegram_sync_lease",{p_source_id:sourceId,p_token:leaseToken});if(lease.error)throw lease.error;if(!lease.data)return json({ok:true,status:"busy",source_id:sourceId});leaseSource=sourceId;
     const sq=await db.from("telegram_sources").select("*").eq("id",sourceId).single();if(sq.error)throw sq.error;const source=sq.data;if(!source||source.enabled===false)throw new Error("Telegram source is disabled or missing");
     const username=cleanUsername(source.username);if(!username)throw new Error("Public Telegram sync requires a channel username");
     let creatorId:string|null=null;
     const cq=await db.from("creators").select("id").ilike("username",username.replaceAll("_","\\_")).limit(1);if(cq.error)throw cq.error;creatorId=cq.data?.[0]?.id??null;
     if(!creatorId){const ins=await db.from("creators").insert({name:source.title||username,username,source_url:`https://t.me/${username}`,is_active:true}).select("id").single();if(ins.error)throw ins.error;creatorId=ins.data.id;}
-    const run=await db.from("telegram_sync_runs").insert({source_id:sourceId,mode:Number(source.sync_cursor||0)>0?"incremental":"backfill",status:"running",metadata:{sync_provider:"telegram_public_preview",sync_version:3}}).select("id").single();if(!run.error)runId=run.data.id;
+    const run=await db.from("telegram_sync_runs").insert({source_id:sourceId,mode:Number(source.sync_cursor||0)>0?"incremental":"backfill",status:"running",metadata:{sync_provider:"telegram_public_preview",sync_version:4,request_auth:"one_time_token"}}).select("id").single();if(!run.error)runId=run.data.id;
 
     const latest=await fetchPage(username,0);
     const historyBefore=Number(source.history_before_id||0);
@@ -83,7 +89,7 @@ Deno.serve(async(req)=>{
         newest=Math.max(newest,p.id);oldest=oldest>0?Math.min(oldest,p.id):p.id;const sourceKey=`${peerKey}:${p.id}`;
         const ex=await db.from("contents").select("id,metadata,moderation_status,thumbnail_url,media_url").eq("source_type","TELEGRAM").eq("source_id",sourceKey).limit(1);if(ex.error)throw ex.error;
         const old=ex.data?.[0];const thumb=p.preview||old?.thumbnail_url||old?.metadata?.media_preview_url||null;
-        const content={creator_id:creatorId,source_type:"TELEGRAM",source_id:sourceKey,source_url:`https://t.me/${username}/${p.id}`,content_type:p.contentType,title:p.text?p.text.slice(0,160):null,description:p.text||null,rights_status:"REFERENCE_ONLY",moderation_status:old?.moderation_status||"PENDING",published_at:p.publishedAt,text_content:p.text||null,thumbnail_url:thumb,media_url:p.contentType==="IMAGE"?(p.preview||old?.media_url||null):(old?.media_url||null),metadata:{...(old?.metadata||{}),telegram_source_id:sourceId,telegram_peer_id:String(source.telegram_peer_id??""),telegram_message_id:p.id,public_preview_sync:true,sync_provider:"telegram_public_preview",sync_version:3,media_preview_url:p.preview,deleted_on_telegram:false}};
+        const content={creator_id:creatorId,source_type:"TELEGRAM",source_id:sourceKey,source_url:`https://t.me/${username}/${p.id}`,content_type:p.contentType,title:p.text?p.text.slice(0,160):null,description:p.text||null,rights_status:"REFERENCE_ONLY",moderation_status:old?.moderation_status||"PENDING",published_at:p.publishedAt,text_content:p.text||null,thumbnail_url:thumb,media_url:p.contentType==="IMAGE"?(p.preview||old?.media_url||null):(old?.media_url||null),metadata:{...(old?.metadata||{}),telegram_source_id:sourceId,telegram_peer_id:String(source.telegram_peer_id??""),telegram_message_id:p.id,public_preview_sync:true,sync_provider:"telegram_public_preview",sync_version:4,media_preview_url:p.preview,deleted_on_telegram:false}};
         const saved=await db.from("contents").upsert(content,{onConflict:"source_type,source_id"}).select("id").single();if(saved.error)throw saved.error;
         old?.id?updated++:inserted++;
         const feature=await db.rpc("refresh_discovery_content_feature",{p_content_id:saved.data.id});if(feature.error)console.error("feature refresh failed",saved.data.id,feature.error.message);
@@ -98,8 +104,8 @@ Deno.serve(async(req)=>{
 
     const now=new Date().toISOString(),historyComplete=source.history_complete===true||(historyBefore>0&&(history.posts||[]).length===0),status=errors?"partial":"success";
     const checkpoint=await db.from("telegram_sources").update({sync_cursor:newest,history_before_id:oldest,history_complete:historyComplete,last_synced_at:now,last_success_at:now,last_error:errors?`${errors} public-preview item(s) failed`:null,updated_at:now}).eq("id",sourceId).eq("sync_lease_token",leaseToken).select("id");if(checkpoint.error)throw checkpoint.error;if(!checkpoint.data?.length)throw new Error("Sync lease expired; checkpoints not saved");
-    if(runId)await db.from("telegram_sync_runs").update({status,completed_at:now,fetched_count:posts.length,inserted_count:inserted,updated_count:updated,error_count:errors,last_message_id:newest||null,error_message:errors?`${errors} public-preview item(s) failed`:null,metadata:{sync_provider:"telegram_public_preview",sync_version:3,latest_count:latest.posts.length,history_count:(history.posts||[]).length,history_before_id:oldest,history_complete:historyComplete,channel_metadata_enriched:true,item_errors:itemErrors}}).eq("id",runId);
-    return json({ok:true,provider:"telegram_public_preview",sync_version:3,source_id:sourceId,username,status,fetched:posts.length,inserted,updated,errors,item_errors:itemErrors,sync_cursor:newest,history_before_id:oldest,history_complete:historyComplete,channel_metadata_enriched:true,run_id:runId});
+    if(runId)await db.from("telegram_sync_runs").update({status,completed_at:now,fetched_count:posts.length,inserted_count:inserted,updated_count:updated,error_count:errors,last_message_id:newest||null,error_message:errors?`${errors} public-preview item(s) failed`:null,metadata:{sync_provider:"telegram_public_preview",sync_version:4,request_auth:"one_time_token",latest_count:latest.posts.length,history_count:(history.posts||[]).length,history_before_id:oldest,history_complete:historyComplete,channel_metadata_enriched:true,item_errors:itemErrors}}).eq("id",runId);
+    return json({ok:true,provider:"telegram_public_preview",sync_version:4,source_id:sourceId,username,status,fetched:posts.length,inserted,updated,errors,item_errors:itemErrors,sync_cursor:newest,history_before_id:oldest,history_complete:historyComplete,channel_metadata_enriched:true,run_id:runId});
   }catch(e){
     const message=errorText(e);
     console.error("telegram-public-sync-v2 fatal",message);
