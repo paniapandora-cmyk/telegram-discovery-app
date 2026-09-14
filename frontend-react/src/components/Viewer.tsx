@@ -4,13 +4,13 @@ import {
   Bookmark,
   ExternalLink,
   EyeOff,
-  Flag,
   Heart,
   Layers3,
   MoreHorizontal,
   Play,
   RefreshCw,
   Share2,
+  ShieldAlert,
   Sparkles,
   UserX,
 } from 'lucide-react';
@@ -76,6 +76,10 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
   };
   const kindLabel = post.kind === 'video' ? 'ویدیو' : post.kind === 'text' ? 'متنی' : 'تصویری';
   const hasTelegram = Boolean(post.telegramUrl);
+  const channelCreatorId = post.creatorId || post.channel.creatorId;
+  const channelForProfile: Channel = channelCreatorId
+    ? { ...post.channel, id: channelCreatorId, creatorId: channelCreatorId, trackingAvailable: true }
+    : post.channel;
 
   const feedback = async (type: string) => {
     if (feedbackBusy) return;
@@ -105,7 +109,7 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
           <button type="button" onClick={() => void feedback('not_interested')} disabled={Boolean(feedbackBusy)}><EyeOff /><span><b>علاقه ندارم</b><small>پیشنهادهای مشابه کمتر شوند</small></span></button>
           <button type="button" onClick={() => void feedback('not_relevant')} disabled={Boolean(feedbackBusy)}><Layers3 /><span><b>مرتبط نیست</b><small>کیفیت پیشنهادها را بهتر می‌کند</small></span></button>
           <button type="button" onClick={() => void feedback('hide_creator')} disabled={Boolean(feedbackBusy)}><UserX /><span><b>این کانال را پنهان کن</b><small>محتوای این منبع دیگر پیشنهاد نشود</small></span></button>
-          <button type="button" onClick={() => void feedback('report')} disabled={Boolean(feedbackBusy)}><Flag /><span><b>گزارش محتوا</b><small>برای بررسی ایمنی و تخلف به صف مدیریت می‌رود</small></span></button>
+          <button type="button" onClick={() => void feedback('report')} disabled={Boolean(feedbackBusy)}><ShieldAlert /><span><b>گزارش محتوا</b><small>برای بررسی ایمنی و سوءاستفاده ارسال می‌شود</small></span></button>
         </div>
       )}
 
@@ -131,8 +135,8 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
         </div>
         <div><strong>{post.channel.title}</strong><small>{post.channel.username}</small></div>
         <div className="viewerChannelActionsV14">
-          <button type="button" onClick={() => onOpenChannel(post.channel)} disabled={!post.channel.creatorId}>صفحه کانال</button>
-          <button type="button" className="telegramMiniV14" onClick={() => void openTrackedChannel(post.channel, post.contentId, post.creatorId, post.promotionId)} disabled={!post.channel.username} aria-label="باز کردن کانال در تلگرام"><ExternalLink /></button>
+          <button type="button" onClick={() => onOpenChannel(channelForProfile)} disabled={!channelCreatorId}>صفحه کانال</button>
+          <button type="button" className="telegramMiniV14" onClick={() => void openTrackedChannel(channelForProfile, post.contentId, channelCreatorId, post.promotionId)} disabled={!post.channel.username} aria-label="باز کردن کانال در تلگرام"><ExternalLink /></button>
         </div>
       </div>
 
