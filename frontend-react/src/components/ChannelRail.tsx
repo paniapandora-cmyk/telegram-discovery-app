@@ -9,15 +9,43 @@ type Props = {
   onOpenChannel?: (channel: Channel) => void;
 };
 
+const CHANNEL_REFRESH_MS = 90_000;
+
 export default function ChannelRail({ channels, onOpenChannel }: Props) {
   const [liveChannels, setLiveChannels] = useState<Channel[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
-    loadRecommendedChannels(controller.signal)
-      .then((next) => { if (next.length) setLiveChannels(next); })
-      .catch(() => {});
-    return () => controller.abort();
+    let active = true;
+    let inFlight = false;
+
+    const refresh = async () => {
+      if (!active || inFlight) return;
+      inFlight = true;
+
+      try {
+        const next = await loadRecommendedChannels(controller.signal);
+        if (active && next.length) setLiveChannels(next);
+      } catch {
+        // Keep the last known healthy rail instead of flashing demo channels.
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), CHANNEL_REFRESH_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      active = false;
+      controller.abort();
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   const visibleChannels = useMemo(
