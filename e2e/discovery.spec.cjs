@@ -40,7 +40,7 @@ test('home, viewer, save and primary navigation stay functional without backend'
 
   await firstCard.click();
   await expect(page.getByText('جزئیات پست')).toBeVisible();
-  const save = page.getByRole('button', { name: 'ذخیره' }).first();
+  const save = page.locator('.viewerActionsV12 button[aria-pressed]').first();
   await expect(save).toHaveAttribute('aria-pressed', 'false');
   await save.click();
   await expect(save).toHaveAttribute('aria-pressed', 'true');
