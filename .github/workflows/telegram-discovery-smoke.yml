@@ -189,9 +189,31 @@ jobs:
 
           echo "Sponsored campaigns, attribution and owner revenue modules found."
 
+      - name: Verify production hardening and moderation stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s supabase/functions/telegram-public-sync-v2/index.ts
+          test -s supabase/functions/embedding-worker/index.ts
+          test -s supabase/migrations/20260914191500_embedding_claim_fastpath_v4.sql
+          test -s supabase/migrations/20260914192500_content_report_quarantine_v1.sql
+
+          grep -q 'claim_telegram_sync_request_v1' supabase/functions/telegram-public-sync-v2/index.ts
+          grep -q 'const BATCH=4' supabase/functions/embedding-worker/index.ts
+          grep -q 'for update skip locked' supabase/migrations/20260914191500_embedding_claim_fastpath_v4.sql
+          grep -q 'quarantine_content_after_reports_v1' supabase/migrations/20260914192500_content_report_quarantine_v1.sql
+          grep -q 'reporter_count >= 3' supabase/migrations/20260914192500_content_report_quarantine_v1.sql
+
+          echo "Sync auth, embedding recovery, and report-driven quarantine modules found."
+
       - name: Install frontend dependencies
         working-directory: frontend-react
-        run: npm install
+        run: npm ci
+
+      - name: Type-check React frontend
+        working-directory: frontend-react
+        run: npm run typecheck
 
       - name: Build React frontend
         working-directory: frontend-react
