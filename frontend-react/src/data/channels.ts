@@ -24,6 +24,20 @@ const pick = (source: Row, keys: string[]) => {
   return '';
 };
 
+const boolValue = (source: Row, keys: string[]) => {
+  for (const ctx of contexts(source)) {
+    for (const key of keys) {
+      const value = ctx[key];
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'number') return value !== 0;
+      if (typeof value === 'string' && value.trim()) {
+        return /^(1|true|yes|healthy|partial)$/i.test(value.trim());
+      }
+    }
+  }
+  return false;
+};
+
 const rowsFrom = (value: unknown, depth = 0): Row[] => {
   if (Array.isArray(value)) return value.filter(isRow);
   if (!isRow(value) || depth > 4) return [];
@@ -83,6 +97,7 @@ const toChannel = (source: Row): Channel | null => {
   const title =
     pick(source, [
       'title',
+      'creator_name',
       'channel_title',
       'source_title',
       'name',
@@ -94,9 +109,9 @@ const toChannel = (source: Row): Channel | null => {
 
   const id =
     pick(source, [
+      'source_id',
       'id',
       'channel_id',
-      'source_id',
       'telegram_source_id',
       'creator_channel_id',
     ]) ||
@@ -112,6 +127,8 @@ const toChannel = (source: Row): Channel | null => {
   ]);
 
   const directAvatar = pick(source, [
+    'channel_avatar_url',
+    'creator_avatar_url',
     'avatar_url',
     'photo_url',
     'image_url',
@@ -132,7 +149,7 @@ const toChannel = (source: Row): Channel | null => {
     accent: accentFor(username || title),
     avatarUrl,
     creatorId: creatorId || undefined,
-    trackingAvailable: Boolean(creatorId),
+    trackingAvailable: boolValue(source, ['tracking_available']),
   };
 };
 
