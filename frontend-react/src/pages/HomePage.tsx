@@ -28,6 +28,7 @@ type Props = {
 const seedIds = new Set(seedPosts.map((post) => post.id));
 const MIN_HEALTHY_HOME = 16;
 const PREFETCH_TARGET = 36;
+const HOME_REFRESH_MS = 90_000;
 
 const postKey = (post: Post) => post.contentId || post.id;
 
@@ -51,14 +52,19 @@ const recoveryModes = (tab: string): LiveMode[] => {
   return ['fresh', 'hot'];
 };
 
+const modeForTab = (tab: string): LiveMode =>
+  tab === 'hot' ? 'hot' : tab === 'fresh' ? 'fresh' : 'for-you';
+
 export default function HomePage({ channels, posts, tab, state, onTab, onSearch, onAdd, onOpen, onOpenChannel, onToggleSave, onImpression }: Props) {
   const [recoveryPosts, setRecoveryPosts] = useState<Post[]>([]);
+  const [refreshPosts, setRefreshPosts] = useState<Post[]>([]);
   const [extraPosts, setExtraPosts] = useState<Post[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loadError, setLoadError] = useState('');
   const pending = useRef<AbortController | null>(null);
   const recoveryPending = useRef<AbortController | null>(null);
+  const refreshPending = useRef<AbortController | null>(null);
   const sentinel = useRef<HTMLDivElement | null>(null);
 
   const livePrimaryPosts = useMemo(
@@ -69,9 +75,12 @@ export default function HomePage({ channels, posts, tab, state, onTab, onSearch,
   useEffect(() => {
     pending.current?.abort();
     recoveryPending.current?.abort();
+    refreshPending.current?.abort();
     pending.current = null;
     recoveryPending.current = null;
+    refreshPending.current = null;
     setRecoveryPosts([]);
+    setRefreshPosts([]);
     setExtraPosts([]);
     setHasMore(true);
     setLoadError('');
@@ -123,12 +132,52 @@ export default function HomePage({ channels, posts, tab, state, onTab, onSearch,
     };
   }, [livePrimaryPosts, state, tab]);
 
+  useEffect(() => {
+    if (state === 'loading') return;
+    let active = true;
+
+    const refresh = async () => {
+      if (!active || refreshPending.current) return;
+      const controller = new AbortController();
+      refreshPending.current = controller;
+
+      try {
+        const next = await loadLivePosts(modeForTab(tab), controller.signal);
+        if (!active || controller.signal.aborted) return;
+
+        const primaryIds = new Set(livePrimaryPosts.map(postKey));
+        const freshAdditions = next.filter((post) => !primaryIds.has(postKey(post)));
+        setRefreshPosts((current) => mergeUnique(freshAdditions, current).slice(0, 18));
+      } catch {
+        // Keep the last good feed visible. A transient sync/API failure should
+        // never collapse Home back to demo data.
+      } finally {
+        if (refreshPending.current === controller) refreshPending.current = null;
+      }
+    };
+
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), HOME_REFRESH_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      active = false;
+      refreshPending.current?.abort();
+      refreshPending.current = null;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [livePrimaryPosts, state, tab]);
+
   const basePosts = useMemo(() => {
-    const real = mergeUnique(livePrimaryPosts, recoveryPosts);
+    const real = mergeUnique(refreshPosts, livePrimaryPosts, recoveryPosts);
     if (real.length) return real;
     if (posts.length) return posts;
     return seedPosts;
-  }, [livePrimaryPosts, posts, recoveryPosts]);
+  }, [livePrimaryPosts, posts, recoveryPosts, refreshPosts]);
 
   const displayPosts = useMemo(
     () => mergeUnique(basePosts, extraPosts),
@@ -218,11 +267,13 @@ export default function HomePage({ channels, posts, tab, state, onTab, onSearch,
   useEffect(() => () => {
     pending.current?.abort();
     recoveryPending.current?.abort();
+    refreshPending.current?.abort();
     pending.current = null;
     recoveryPending.current = null;
+    refreshPending.current = null;
   }, []);
 
-  const effectiveState: FeedState = livePrimaryPosts.length || recoveryPosts.length || extraPosts.length
+  const effectiveState: FeedState = livePrimaryPosts.length || recoveryPosts.length || refreshPosts.length || extraPosts.length
     ? 'live'
     : state === 'loading'
       ? 'loading'
