@@ -144,7 +144,7 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
         <p>{post.excerpt}</p>
         <div className="viewerActions viewerActionsV12">
           <span className="viewerStat"><Heart /><span>{post.likes}</span></span>
-          <button type="button" className={post.saved ? 'saved' : ''} onClick={toggleSave} aria-pressed={post.saved}><Bookmark fill={post.saved ? 'currentColor' : 'none'} /><span>{post.saved ? 'ذخیره شد' : 'ذخیره'}</span></button>
+          <button type="button" className={post.saved ? 'saved' : ''} onClick={toggleSave} aria-pressed={Boolean(post.saved)}><Bookmark fill={post.saved ? 'currentColor' : 'none'} /><span>{post.saved ? 'ذخیره شد' : 'ذخیره'}</span></button>
           <button type="button" onClick={() => void share()} disabled={shareBusy}><Share2 /><span>{shareBusy ? 'آماده‌سازی…' : 'اشتراک'}</span></button>
         </div>
       </article>
