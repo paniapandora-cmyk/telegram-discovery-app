@@ -9,23 +9,20 @@ test.beforeEach(async ({page}) => {
   await page.route(onboardingUrl, route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({onboarding_done:true,topics:[]}) }));
 });
 
-function telegramStub(initData = '') {
-  return {
-    initData,
-    initDataUnsafe: initData ? { user: { id: 123456789, first_name: 'E2E', username: 'e2e_user' } } : {},
-    ready() {},
-    expand() {},
-    openLink() {},
-    openTelegramLink() {},
-    HapticFeedback: { selectionChanged() {}, impactOccurred() {} },
-    BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} },
-  };
-}
-
 async function stubTelegram(page, initData = '') {
-  await page.addInitScript((data) => {
-    window.Telegram = { WebApp: data };
-  }, telegramStub(initData));
+  // Keep the live SDK from replacing the test session with empty browser initData.
+  await page.route('https://telegram.org/js/telegram-web-app.js', route =>
+    route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+  // Construct methods in the browser: functions cannot be serialized as script arguments.
+  await page.addInitScript((initData) => {
+    window.Telegram = { WebApp: {
+      initData,
+      initDataUnsafe: initData ? { user: { id: 123456789, first_name: 'E2E', username: 'e2e_user' } } : {},
+      ready() {}, expand() {}, openLink() {}, openTelegramLink() {},
+      HapticFeedback: { selectionChanged() {}, impactOccurred() {} },
+      BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} },
+    } };
+  }, initData);
 }
 
 test('membership blocks entry until server confirms joining', async ({page}) => {
@@ -36,6 +33,10 @@ test('membership blocks entry until server confirms joining', async ({page}) => 
   await expect(page.getByRole('heading',{name:'به جمع هویت خوش آمدی'})).toBeVisible();
   await expect(page.getByRole('navigation',{name:'ناوبری اصلی'})).toHaveCount(0);
   await expect(page.getByRole('button',{name:'عضو شدم؛ بررسی و ورود'})).toBeEnabled();
+  // A retry while still a nonmember must remain blocked.
+  await page.getByRole('button',{name:'عضو شدم؛ بررسی و ورود'}).click();
+  await expect(page.getByRole('alert')).toContainText('هنوز عضویتت تأیید نشده');
+  await expect(page.getByRole('navigation',{name:'ناوبری اصلی'})).toHaveCount(0);
   member = true;
   await page.getByRole('button',{name:'عضو شدم؛ بررسی و ورود'}).click();
   await expect(page.getByRole('navigation',{name:'ناوبری اصلی'})).toBeVisible();
