@@ -91,18 +91,20 @@ params.set('hash',createHmac('sha256',secret).update(checkString).digest('hex'))
 const request = () => new Request('https://gateway.test', {method:'POST',headers:{'x-telegram-init-data':params.toString()},body:JSON.stringify({message:'سلام'})});
 let providerCalls=0, member=false, allowed=false;
 let providerStatus=200;
+let temporaryFailure=false, quotaCalls=0;
 let providerPayload={ candidates: [{ content: { parts: [{thought:true,text:'private thinking'}, {text:'سلام'}] } }], modelVersion:'test-gemini' };
 globalThis.fetch = async (url, init) => {
   if (String(url).includes('api.telegram.org')) return Response.json({ok:true,result:{status:member?'member':'left'}});
-  if (String(url).includes('db.test')) return Response.json({allowed});
+  if (String(url).includes('db.test')) { quotaCalls++; return Response.json({allowed}); }
   providerCalls++;
-  assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent');
+  assert.match(String(url), /^https:\/\/generativelanguage.googleapis.com\/v1beta\/models\/gemini-3\.[78]-flash:generateContent$/);
   assert.equal(new Headers(init.headers).get('x-goog-api-key'), 'test-key');
   assert.equal(new Headers(init.headers).has('Authorization'), false);
   const body=JSON.parse(init.body);
   assert.equal(body.contents[0].parts[0].text,'سلام');
   assert.equal(body.store,false);
   assert.ok(init.signal);
+  if (temporaryFailure && String(url).includes('gemini-3.8-flash')) return Response.json({error:{status:'UNAVAILABLE'}},{status:503});
   return Response.json(providerPayload, {status:providerStatus});
 };
 assert.equal((await gateway(request())).status,403);
@@ -114,10 +116,18 @@ const success=await gateway(request());
 assert.equal(success.status,200);
 assert.equal((await success.json()).reply,'سلام','Only visible answer text may reach the user');
 assert.equal(providerCalls,1);
-for (const [status,code] of [[401,'gemini_key_invalid'],[403,'gemini_access_denied'],[404,'gemini_model_unavailable'],[429,'gemini_rate_limit'],[500,'gemini_provider_error']]) {
+temporaryFailure=true;
+const beforeCalls=providerCalls, beforeQuota=quotaCalls;
+assert.equal((await (await gateway(request())).json()).reply,'سلام');
+assert.equal(providerCalls-beforeCalls,2,'A busy primary must fall back once');
+assert.equal(quotaCalls-beforeQuota,1,'Fallback must not consume another user quota');
+temporaryFailure=false;
+for (const [status,code] of [[401,'gemini_key_invalid'],[403,'gemini_access_denied'],[404,'gemini_model_unavailable'],[429,'gemini_rate_limit'],[500,'gemini_provider_error'],[503,'gemini_busy']]) {
   providerStatus=status;
   providerPayload={error:{message:'sensitive upstream detail'}};
+  const before=providerCalls;
   const failure=await gateway(request());
+  assert.equal(providerCalls-before,status>=500?2:1,'Do not retry permanent errors or quota limits');
   const data=await failure.json();
   assert.equal(data.error,code);
   assert.ok(data.provider_message);
