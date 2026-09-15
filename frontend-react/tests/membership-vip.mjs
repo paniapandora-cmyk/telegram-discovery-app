@@ -97,14 +97,14 @@ globalThis.fetch = async (url, init) => {
   if (String(url).includes('api.telegram.org')) return Response.json({ok:true,result:{status:member?'member':'left'}});
   if (String(url).includes('db.test')) { quotaCalls++; return Response.json({allowed}); }
   providerCalls++;
-  assert.match(String(url), /^https:\/\/generativelanguage.googleapis.com\/v1beta\/models\/gemini-3\.[78]-flash:generateContent$/);
+  assert.match(String(url), /^https:\/\/generativelanguage.googleapis.com\/v1beta\/models\/gemini-3\.(8-flash|1-flash-lite):generateContent$/);
   assert.equal(new Headers(init.headers).get('x-goog-api-key'), 'test-key');
   assert.equal(new Headers(init.headers).has('Authorization'), false);
   const body=JSON.parse(init.body);
   assert.equal(body.contents[0].parts[0].text,'سلام');
   assert.equal(body.store,false);
   assert.ok(init.signal);
-  if (temporaryFailure && String(url).includes('gemini-3.8-flash')) return Response.json({error:{status:'UNAVAILABLE'}},{status:503});
+  if (temporaryFailure && String(url).includes('gemini-3.1-flash-lite')) return Response.json({error:{status:'UNAVAILABLE'}},{status:503});
   return Response.json(providerPayload, {status:providerStatus});
 };
 assert.equal((await gateway(request())).status,403);
