@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { checkHoviatMembership } from '../_shared/hoviat.ts';
 
 declare const Deno: any;
 
@@ -125,6 +126,19 @@ Deno.serve(async (req: Request) => {
     if (!message) return json({ ok: false, error: "message is required" }, 400);
     if (message.length > 8000) return json({ ok: false, error: "message too long" }, 413);
 
+    const userId = Number((auth.user as any)?.id);
+    if (!Number.isSafeInteger(userId) || userId <= 0) return json({ ok: false, error: 'telegram_auth_invalid' }, 401);
+    if (!await checkHoviatMembership(BOT_TOKEN, userId)) return json({ ok: false, error: 'membership_required' }, 403);
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('DISCOVERY_SUPABASE_SERVICE_ROLE_KEY') || '';
+    const quotaResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/rpc/discovery_access_v1`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+      body: JSON.stringify({ p_user_id: userId, p_verify: true, p_consume_ai: true }),
+    });
+    if (!quotaResponse.ok) return json({ ok: false, error: 'quota_check_unavailable' }, 503);
+    const access = await quotaResponse.json();
+    if (!access.allowed) return json({ ok: false, error: 'ai_daily_limit', access }, 429);
+
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -162,6 +176,7 @@ Deno.serve(async (req: Request) => {
       user: (auth as any).user || null,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'membership_check_unavailable') return json({ ok: false, error: 'membership_check_unavailable' }, 503);
     console.error("ai-gateway-v1", error);
     return json({
       ok: false,

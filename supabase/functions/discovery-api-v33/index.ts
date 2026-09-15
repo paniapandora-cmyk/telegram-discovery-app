@@ -1,4 +1,5 @@
 declare const Deno: any;
+import { checkHoviatMembership } from '../_shared/hoviat.ts';
 declare const Supabase: any;
 
 const CORS: Record<string,string> = {
@@ -684,6 +685,9 @@ Deno.serve(async (request: Request) => {
       return json({ ok:false, error:"Not found", path, request_id:id }, 404, id);
     }
 
+    const memberUser = await telegramUser(request.headers.get('x-telegram-init-data') || '');
+    const memberBot = Deno.env.get('TELEGRAM_BOT_TOKEN') || Deno.env.get('DISCOVERY_TELEGRAM_BOT_TOKEN') || '';
+    if (!await checkHoviatMembership(memberBot, Number(memberUser.id))) return json({ ok: false, error: 'membership_required' }, 403, id);
     return await handler({ request, url, id });
   } catch (error) {
     console.error("discovery-api-v33", id, error);

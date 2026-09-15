@@ -953,6 +953,22 @@ export default {
       });
     }
 
+    // Server-side membership gate. Media remains public for image loading.
+    if (url.pathname.startsWith('/api/') && ![
+      '/api/telegram/health', '/api/telegram/preview-image', '/api/telegram/channel-avatar', '/api/ai/chat',
+    ].includes(url.pathname)) {
+      const initData = request.headers.get('x-telegram-init-data');
+      if (!initData) return json({ ok: false, error: 'telegram_auth_missing' }, 401, request);
+      try {
+        const access = await fetch('https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/growth-referral-v1', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-telegram-init-data': initData },
+          body: JSON.stringify({ action: 'access' }), signal: AbortSignal.timeout(12000),
+        });
+        const result: any = await access.json();
+        if (!access.ok || result?.member !== true) return json({ ok: false, error: result?.error || 'membership_check_unavailable' }, access.ok ? 503 : access.status, request);
+      } catch { return json({ ok: false, error: 'membership_check_unavailable' }, 503, request); }
+    }
+
     if (url.pathname === "/api/ai/chat") {
       if (request.method !== "POST") return json({ ok: false, error: "POST required" }, 405, request);
       return proxyJsonApi(request,

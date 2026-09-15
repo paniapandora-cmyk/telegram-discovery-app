@@ -11,6 +11,10 @@ type TelegramWebApp = { initData?: string };
 const AI_ENDPOINT = '/api/ai/chat';
 
 const errorMessages: Record<string, string> = {
+  membership_required: 'برای ادامه، عضو کانال @hoviateman شو و مینی‌اپ را دوباره باز کن.',
+  membership_check_unavailable: 'بررسی عضویت موقتاً ممکن نیست؛ کمی بعد دوباره تلاش کن.',
+  quota_check_unavailable: 'بررسی سهمیه موقتاً ممکن نیست؛ دوباره تلاش کن.',
+  ai_daily_limit: 'سهمیه امروز تمام شد. با دعوت دوستان سهمیه بیشتری بگیر یا فردا دوباره امتحان کن. VIP با ۳ دعوت معتبر باز می‌شود.',
   telegram_auth_missing: 'اطلاعات ورود تلگرام دریافت نشد. مینی‌اپ را از داخل تلگرام باز کن.',
   telegram_auth_invalid: 'اعتبار ورود تلگرام تأیید نشد. مینی‌اپ را ببند و دوباره باز کن.',
   telegram_auth_expired: 'نشست تلگرام منقضی شده است. مینی‌اپ را دوباره باز کن.',
