@@ -953,6 +953,12 @@ export default {
       });
     }
 
+    if (url.pathname === "/api/ai/chat") {
+      if (request.method !== "POST") return json({ ok: false, error: "POST required" }, 405, request);
+      return proxyJsonApi(request,
+        "https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/ai-gateway-v1", "");
+    }
+
     if (
       url.pathname ===
       "/api/telegram/search"

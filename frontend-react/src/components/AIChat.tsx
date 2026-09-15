@@ -6,8 +6,8 @@ type ChatMessage = { id: string; role: 'user' | 'assistant' | 'error'; text: str
 type TelegramWindow = Window & { Telegram?: { WebApp?: { initData?: string; HapticFeedback?: { impactOccurred?: (style: 'light' | 'medium' | 'heavy') => void } } } };
 
 const STORAGE_KEY = 'telegram-discovery-ai-chat-v2';
-const starters = ['پست‌های داغ امروز را خلاصه کن', 'برای جست‌وجوی بهتر چه بنویسم؟', 'چند موضوع تازه پیشنهاد بده'];
-const welcome: ChatMessage = { id: 'welcome', role: 'assistant', text: 'سلام! من دستیار کشف هستم. بگو دنبال چه موضوع یا محتوایی می‌گردی.' };
+const starters = ['برای جست‌وجوی بهتر چه بنویسم؟', 'چطور یک متن را خلاصه کنم؟'];
+const welcome: ChatMessage = { id: 'welcome', role: 'assistant', text: 'سلام! می‌توانی سؤال بپرسی یا متنی برای خلاصه‌کردن بفرستی. فعلاً به پست‌های برنامه دسترسی ندارم و هر پیام مستقل پاسخ داده می‌شود.' };
 
 const nextId = () => {
   try { return crypto.randomUUID(); } catch { return `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
@@ -16,7 +16,8 @@ const nextId = () => {
 const loadMessages = (): ChatMessage[] => {
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    return Array.isArray(value) && value.length ? value.slice(-30) : [welcome];
+    const valid = Array.isArray(value) ? value.filter((item) => item && typeof item.id === 'string' && typeof item.text === 'string' && ['user', 'assistant', 'error'].includes(item.role)).slice(-30) : [];
+    return valid.length ? valid : [welcome];
   } catch { return [welcome]; }
 };
 
@@ -29,9 +30,9 @@ export default function AIChat() {
   const tg = useMemo(() => (window as TelegramWindow).Telegram?.WebApp, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-30)));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-30))); } catch { /* Chat remains usable when browser storage is unavailable. */ }
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, open]);
 
   const append = (role: ChatMessage['role'], text: string) =>
     setMessages((current) => [...current, { id: nextId(), role, text }].slice(-30));
@@ -58,7 +59,7 @@ export default function AIChat() {
 
   const send = (event: FormEvent) => { event.preventDefault(); void submitMessage(input); };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitMessage(input); }
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void submitMessage(input); }
   };
 
   return (
@@ -74,7 +75,7 @@ export default function AIChat() {
       `}</style>
       {!open && <button className="tdai-launch" type="button" onClick={() => setOpen(true)}><Sparkles /> دستیار کشف</button>}
       {open && <section className="tdai-panel" role="dialog" aria-modal="true" aria-label="دستیار کشف">
-        <header className="tdai-head"><div className="tdai-brand"><div className="tdai-avatar"><Bot /></div><div className="tdai-title"><b>دستیار کشف</b><span>● متصل به هوش مصنوعی</span></div></div><div className="tdai-actions"><button className="tdai-icon" type="button" aria-label="پاک کردن گفتگو" title="پاک کردن گفتگو" onClick={() => setMessages([welcome])}><RotateCcw /></button><button className="tdai-icon" type="button" aria-label="بستن" onClick={() => setOpen(false)}><X /></button></div></header>
+<header className="tdai-head"><div className="tdai-brand"><div className="tdai-avatar"><Bot /></div><div className="tdai-title"><b>دستیار کشف</b><span>پاسخ‌گویی آزمایشی · بدون دسترسی به پست‌ها</span></div></div><div className="tdai-actions"><button className="tdai-icon" type="button" aria-label="پاک کردن گفتگو" title="پاک کردن گفتگو" disabled={sending} onClick={() => setMessages([welcome])}><RotateCcw /></button><button className="tdai-icon" type="button" aria-label="بستن" onClick={() => setOpen(false)}><X /></button></div></header>
         <div className="tdai-log" ref={logRef} aria-live="polite">{messages.map((message) => <div key={message.id} className={`tdai-msg ${message.role}`}>{message.text}</div>)}{messages.length === 1 && <div className="tdai-starters">{starters.map((item) => <button key={item} className="tdai-starter" type="button" onClick={() => void submitMessage(item)}>{item}</button>)}</div>}{sending && <div className="tdai-thinking">در حال فکر کردن…</div>}</div>
         <form className="tdai-form" onSubmit={send}><textarea className="tdai-input" rows={1} maxLength={8000} placeholder="پیامت را بنویس…" value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={onKeyDown} disabled={sending} aria-label="پیام به دستیار"/><button className="tdai-send" type="submit" aria-label="ارسال" disabled={sending || !input.trim()}><Send /></button></form>
       </section>}

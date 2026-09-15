@@ -36,6 +36,6 @@ export async function sendAIMessage(message: string, telegram: TelegramWebApp | 
     const code = data.error || '';
     throw new Error(errorMessages[code] || data.provider_message || code || `خطای ${response.status}`);
   }
-  if (!data.reply?.trim()) throw new Error(errorMessages.empty_ai_response);
+  if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error(errorMessages.empty_ai_response);
   return data;
 }

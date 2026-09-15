@@ -61,6 +61,10 @@ jobs:
         working-directory: frontend-react
         run: npm run typecheck
 
+      - name: Verify AI client and production route
+        working-directory: frontend-react
+        run: node tests/ai-contract.mjs
+
       - name: Build frontend
         working-directory: frontend-react
         run: npm run build
