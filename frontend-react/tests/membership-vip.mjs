@@ -76,7 +76,7 @@ console.log('Membership, unique referral, VIP, quota and API gate checks passed'
 
 // Exercise the AI gateway with valid signed test-only Telegram data.
 let gateway;
-globalThis.Deno = { env: { get: key => ({ TELEGRAM_BOT_TOKEN:'test-token',OPENAI_API_KEY:'test-key',SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'test-service' }[key]) }, serve: fn => { gateway = fn; } };
+globalThis.Deno = { env: { get: key => ({ TELEGRAM_BOT_TOKEN:'test-token',GEMINI_API_KEY:'test-key',SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'test-service' }[key]) }, serve: fn => { gateway = fn; } };
 const bundled = await build({entryPoints:['../supabase/functions/ai-gateway-v1/index.ts'],bundle:true,write:false,platform:'node',format:'esm',plugins:[{
   name:'edge-types', setup(build) {
     build.onResolve({filter:/^jsr:/}, args => ({path:args.path,namespace:'empty'}));
@@ -90,17 +90,47 @@ const secret = createHmac('sha256','WebAppData').update('test-token').digest();
 params.set('hash',createHmac('sha256',secret).update(checkString).digest('hex'));
 const request = () => new Request('https://gateway.test', {method:'POST',headers:{'x-telegram-init-data':params.toString()},body:JSON.stringify({message:'سلام'})});
 let providerCalls=0, member=false, allowed=false;
-globalThis.fetch = async url => {
+let providerStatus=200;
+let providerPayload={ candidates: [{ content: { parts: [{thought:true,text:'private thinking'}, {text:'سلام'}] } }], modelVersion:'test-gemini' };
+globalThis.fetch = async (url, init) => {
   if (String(url).includes('api.telegram.org')) return Response.json({ok:true,result:{status:member?'member':'left'}});
   if (String(url).includes('db.test')) return Response.json({allowed});
   providerCalls++;
-  return Response.json({output_text:'سلام'});
+  assert.equal(String(url), 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent');
+  assert.equal(new Headers(init.headers).get('x-goog-api-key'), 'test-key');
+  assert.equal(new Headers(init.headers).has('Authorization'), false);
+  const body=JSON.parse(init.body);
+  assert.equal(body.contents[0].parts[0].text,'سلام');
+  assert.equal(body.store,false);
+  assert.ok(init.signal);
+  return Response.json(providerPayload, {status:providerStatus});
 };
 assert.equal((await gateway(request())).status,403);
 member=true;
 assert.equal((await gateway(request())).status,429);
-assert.equal(providerCalls,0,'No paid provider call before membership and quota checks');
+assert.equal(providerCalls,0,'No provider call before membership and quota checks');
 allowed=true;
-assert.equal((await gateway(request())).status,200);
+const success=await gateway(request());
+assert.equal(success.status,200);
+assert.equal((await success.json()).reply,'سلام','Only visible answer text may reach the user');
 assert.equal(providerCalls,1);
-console.log('AI gateway membership and quota enforcement checks passed');
+for (const [status,code] of [[401,'gemini_key_invalid'],[403,'gemini_access_denied'],[404,'gemini_model_unavailable'],[429,'gemini_rate_limit'],[500,'gemini_provider_error']]) {
+  providerStatus=status;
+  providerPayload={error:{message:'sensitive upstream detail'}};
+  const failure=await gateway(request());
+  const data=await failure.json();
+  assert.equal(data.error,code);
+  assert.ok(data.provider_message);
+  assert.ok(!JSON.stringify(data).includes('sensitive upstream detail'));
+}
+providerStatus=400;
+providerPayload={error:{details:[{reason:'API_KEY_INVALID'}]}};
+assert.equal((await (await gateway(request())).json()).error,'gemini_key_invalid');
+providerStatus=200;
+providerPayload={candidates:[]};
+assert.equal((await (await gateway(request())).json()).error,'gemini_empty_response');
+const health=await (await gateway(new Request('https://gateway.test'))).json();
+assert.equal(health.provider,'gemini');
+assert.equal(health.gemini_configured,true);
+assert.ok(!JSON.stringify(health).includes('test-key'));
+console.log('Gemini response, error, membership and quota enforcement checks passed');
