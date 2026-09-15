@@ -2,28 +2,55 @@ const { test, expect } = require('@playwright/test');
 
 const personalizationUrl = /\/functions\/v1\/personalization-v1/;
 const onboardingUrl = /\/functions\/v1\/onboarding-v1/;
+const growthUrl = /\/functions\/v1\/growth-referral-v1/;
 
-function telegramStub(initData = '') {
-  return {
-    initData,
-    initDataUnsafe: initData ? { user: { id: 123456789, first_name: 'E2E', username: 'e2e_user' } } : {},
-    ready() {},
-    expand() {},
-    openLink() {},
-    openTelegramLink() {},
-    HapticFeedback: { selectionChanged() {}, impactOccurred() {} },
-    BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} },
-  };
-}
+test.beforeEach(async ({page}) => {
+  await page.route(growthUrl, route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ok:true,member:true}) }));
+  await page.route(onboardingUrl, route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({onboarding_done:true,topics:[]}) }));
+});
 
 async function stubTelegram(page, initData = '') {
-  await page.addInitScript((data) => {
-    window.Telegram = { WebApp: data };
-  }, telegramStub(initData));
+  // Keep the live SDK from replacing the test session with empty browser initData.
+  await page.route('https://telegram.org/js/telegram-web-app.js', route =>
+    route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+  // Construct methods in the browser: functions cannot be serialized as script arguments.
+  await page.addInitScript((initData) => {
+    window.Telegram = { WebApp: {
+      initData,
+      initDataUnsafe: initData ? { user: { id: 123456789, first_name: 'E2E', username: 'e2e_user' } } : {},
+      ready() {}, expand() {}, openLink() {}, openTelegramLink() {},
+      HapticFeedback: { selectionChanged() {}, impactOccurred() {} },
+      BackButton: { show() {}, hide() {}, onClick() {}, offClick() {} },
+    } };
+  }, initData);
 }
 
-test('home, viewer, save and primary navigation stay functional without backend', async ({ page }) => {
+test('membership blocks entry until server confirms joining', async ({page}) => {
+  await stubTelegram(page, 'e2e-init-data');
+  let member = false;
+  await page.route(growthUrl, route => route.fulfill({status:member ? 200 : 403,contentType:'application/json',body:JSON.stringify(member ? {ok:true,member:true} : {ok:false,error:'membership_required'})}));
+  await page.goto('/');
+  await expect(page.getByRole('heading',{name:'به جمع هویت خوش آمدی'})).toBeVisible();
+  await expect(page.getByRole('navigation',{name:'ناوبری اصلی'})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'عضو شدم؛ بررسی و ورود'})).toBeEnabled();
+  // A retry while still a nonmember must remain blocked.
+  await page.getByRole('button',{name:'عضو شدم؛ بررسی و ورود'}).click();
+  await expect(page.getByRole('alert')).toContainText('هنوز عضویتت تأیید نشده');
+  await expect(page.getByRole('navigation',{name:'ناوبری اصلی'})).toHaveCount(0);
+  member = true;
+  await page.getByRole('button',{name:'عضو شدم؛ بررسی و ورود'}).click();
+  await expect(page.getByRole('navigation',{name:'ناوبری اصلی'})).toBeVisible();
+});
+
+test('browser without Telegram authentication cannot enter', async ({page}) => {
   await stubTelegram(page, '');
+  await page.goto('/');
+  await expect(page.getByText('برای تأیید عضویت، برنامه را از داخل ربات تلگرام باز کن.')).toBeVisible();
+  await expect(page.getByRole('navigation',{name:'ناوبری اصلی'})).toHaveCount(0);
+});
+
+test('home, viewer, save and primary navigation stay functional without backend', async ({ page }) => {
+  await stubTelegram(page, 'e2e-verified-member');
   await page.route('https://telegram-discovery-app.paniapandora.workers.dev/**', async (route) => {
     await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'e2e offline backend' }) });
   });

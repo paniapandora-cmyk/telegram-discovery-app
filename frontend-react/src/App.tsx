@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import DiscoveryApp from './app/DiscoveryApp';
 import AIChat from './components/AIChat';
 import OnboardingGate from './components/OnboardingGate';
+import MembershipGate from './components/MembershipGate';
 import { recordIncomingReferralFromLocation } from './data/growth';
 
 function App() {
@@ -14,11 +15,11 @@ function App() {
     };
 
     return (
-        <>
+        <MembershipGate>
             <DiscoveryApp />
             <AIChat />
             <OnboardingGate onComplete={refreshPersonalizedFeed} />
-        </>
+        </MembershipGate>
     );
 }
 
