@@ -3,8 +3,8 @@ import { checkHoviatMembership } from '../_shared/hoviat.ts';
 
 declare const Deno: any;
 
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
-const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") || "gpt-5";
+const GEMINI_API_KEY = (Deno.env.get("GEMINI_API_KEY") || "").trim();
+const GEMINI_MODEL = (Deno.env.get("GEMINI_MODEL") || "gemini-3.8-flash").trim();
 const BOT_TOKEN =
   Deno.env.get("TELEGRAM_BOT_TOKEN") ||
   Deno.env.get("DISCOVERY_TELEGRAM_BOT_TOKEN") ||
@@ -83,18 +83,25 @@ async function validateTelegramInitData(initData: string) {
 }
 
 function extractOutputText(payload: any) {
-  if (typeof payload?.output_text === "string" && payload.output_text.trim()) {
-    return payload.output_text.trim();
-  }
-  const parts: string[] = [];
-  for (const item of payload?.output || []) {
-    for (const content of item?.content || []) {
-      if (content?.type === "output_text" && typeof content?.text === "string") {
-        parts.push(content.text);
-      }
-    }
-  }
-  return parts.join("\n").trim();
+  const parts = payload?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return "";
+  return parts.filter((part: any) => !part.thought && typeof part.text === "string")
+    .map((part: any) => part.text).join("").trim();
+}
+
+function providerError(status: number, payload: any) {
+  const invalidKey = payload?.error?.details?.some?.((detail: any) => detail?.reason === "API_KEY_INVALID");
+  const [error, message] = invalidKey || status === 401
+    ? ["gemini_key_invalid", "کلید جمینای معتبر نیست؛ مدیر برنامه باید کلید را بررسی کند."]
+    : status === 403
+    ? ["gemini_access_denied", "دسترسی سرویس به جمینای تأیید نشد؛ مدیر برنامه باید مجوز کلید و دسترسی منطقه را بررسی کند."]
+    : status === 429
+    ? ["gemini_rate_limit", "سهمیه یا ظرفیت درخواست‌های جمینای به حد مجاز رسیده است؛ بعداً دوباره امتحان کن."]
+    : status === 404
+    ? ["gemini_model_unavailable", "مدل جمینای در دسترس نیست؛ مدیر برنامه باید تنظیم مدل را بررسی کند."]
+    : ["gemini_provider_error", "جمینای نتوانست پاسخ بدهد؛ کمی بعد دوباره امتحان کن."];
+  // Return only controlled messages; upstream errors can contain sensitive details.
+  return json({ ok: false, error, provider_status: status, provider_message: message }, status === 429 ? 429 : 502);
 }
 
 Deno.serve(async (req: Request) => {
@@ -105,16 +112,17 @@ Deno.serve(async (req: Request) => {
       return json({
         ok: true,
         service: "ai-gateway-v1",
-        openai_configured: Boolean(OPENAI_API_KEY),
+        provider: "gemini",
+        gemini_configured: Boolean(GEMINI_API_KEY),
         telegram_auth_configured: Boolean(BOT_TOKEN),
-        model: OPENAI_MODEL,
+        model: GEMINI_MODEL,
       });
     }
 
     if (req.method !== "POST") return json({ ok: false, error: "POST required" }, 405);
 
-    if (!OPENAI_API_KEY) {
-      return json({ ok: false, error: "OPENAI_API_KEY is not configured" }, 503);
+    if (!GEMINI_API_KEY) {
+      return json({ ok: false, error: "gemini_not_configured", provider_message: "کلید جمینای در تنظیمات سرور ثبت نشده است." }, 503);
     }
 
     const initData = req.headers.get("x-telegram-init-data") || "";
@@ -139,48 +147,47 @@ Deno.serve(async (req: Request) => {
     const access = await quotaResponse.json();
     if (!access.allowed) return json({ ok: false, error: 'ai_daily_limit', access }, 429);
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "x-goog-api-key": GEMINI_API_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
         store: false,
-        instructions:
-          "You are the AI assistant inside Telegram Discovery. For now, answer the user's message directly in the user's language. Do not claim access to project data or tools unless they are explicitly provided later.",
-        input: message,
+        systemInstruction: { parts: [{ text:
+          "You are the AI assistant inside Telegram Discovery. Answer the user's message directly and concisely in the user's language. Do not claim access to project posts or tools. Each request is independent; ask for any missing text needed to summarize."
+        }] },
+        contents: [{ role: "user", parts: [{ text: message }] }],
+        generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingLevel: "LOW" } },
       }),
+      signal: AbortSignal.timeout(45000),
     });
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      console.error("OpenAI error", response.status, payload?.error?.type || "unknown");
-      return json({
-        ok: false,
-        error: "ai_provider_error",
-        provider_status: response.status,
-        provider_message: payload?.error?.message || null,
-      }, 502);
+      console.error("Gemini error", response.status);
+      return providerError(response.status, payload);
     }
 
     const text = extractOutputText(payload);
-    if (!text) return json({ ok: false, error: "empty_ai_response" }, 502);
+    if (!text) return json({ ok: false, error: "gemini_empty_response", provider_message: "جمینای پاسخی برای این پیام تولید نکرد؛ سؤال را با بیان دیگری بفرست." }, 502);
 
     return json({
       ok: true,
       reply: text,
-      model: payload?.model || OPENAI_MODEL,
-      response_id: payload?.id || null,
+      model: payload?.modelVersion || GEMINI_MODEL,
+      response_id: payload?.responseId || null,
       user: (auth as any).user || null,
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'membership_check_unavailable') return json({ ok: false, error: 'membership_check_unavailable' }, 503);
-    console.error("ai-gateway-v1", error);
+    const timedOut = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+    console.error("ai-gateway-v1", timedOut ? "timeout" : "request_failed");
     return json({
       ok: false,
-      error: error instanceof Error ? error.message : String(error),
-    }, 500);
+      error: timedOut ? "gemini_timeout" : "ai_request_failed",
+      provider_message: timedOut ? "پاسخ‌گویی جمینای طول کشید؛ دوباره امتحان کن." : "ارتباط با سرویس دستیار برقرار نشد؛ دوباره تلاش کن.",
+    }, timedOut ? 504 : 500);
   }
 });
