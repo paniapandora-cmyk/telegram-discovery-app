@@ -99,9 +99,41 @@ function providerError(status: number, payload: any) {
     ? ["gemini_rate_limit", "سهمیه یا ظرفیت درخواست‌های جمینای به حد مجاز رسیده است؛ بعداً دوباره امتحان کن."]
     : status === 404
     ? ["gemini_model_unavailable", "مدل جمینای در دسترس نیست؛ مدیر برنامه باید تنظیم مدل را بررسی کند."]
+    : status === 503
+    ? ["gemini_busy", "مدل‌های جمینای فعلاً شلوغ‌اند؛ کمی بعد دوباره امتحان کن."]
     : ["gemini_provider_error", "جمینای نتوانست پاسخ بدهد؛ کمی بعد دوباره امتحان کن."];
   // Return only controlled messages; upstream errors can contain sensitive details.
   return json({ ok: false, error, provider_status: status, provider_message: message }, status === 429 ? 429 : 502);
+}
+
+// Both defaults have a free tier. Retry only temporary server failures, never
+// authentication/quota failures. The two attempts fit inside the UI's 45s timeout.
+async function requestGemini(message: string) {
+  const models = [GEMINI_MODEL, GEMINI_MODEL === "gemini-3.7-flash" ? "gemini-3.8-flash" : "gemini-3.7-flash"];
+  const body = JSON.stringify({
+    store: false,
+    systemInstruction: { parts: [{ text:
+      "You are the AI assistant inside Telegram Discovery. Answer the user's message directly and concisely in the user's language. Do not claim access to project posts or tools. Each request is independent; ask for any missing text needed to summarize."
+    }] },
+    contents: [{ role: "user", parts: [{ text: message }] }],
+    generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingLevel: "LOW" } },
+  });
+  for (let attempt = 0; attempt < models.length; attempt++) {
+    const model = models[attempt];
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      headers: { "x-goog-api-key": GEMINI_API_KEY, "Content-Type": "application/json" },
+      body,
+      signal: AbortSignal.timeout(attempt === 0 ? 12000 : 16000),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (attempt === 0 && [500, 502, 503, 504].includes(response.status)) {
+      console.warn("Gemini retry", response.status);
+      continue;
+    }
+    return { response, payload, model };
+  }
+  throw new Error("gemini_unavailable");
 }
 
 Deno.serve(async (req: Request) => {
@@ -142,29 +174,13 @@ Deno.serve(async (req: Request) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
       body: JSON.stringify({ p_user_id: userId, p_verify: true, p_consume_ai: true }),
+      signal: AbortSignal.timeout(5000),
     });
     if (!quotaResponse.ok) return json({ ok: false, error: 'quota_check_unavailable' }, 503);
     const access = await quotaResponse.json();
     if (!access.allowed) return json({ ok: false, error: 'ai_daily_limit', access }, 429);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
-      method: "POST",
-      headers: {
-        "x-goog-api-key": GEMINI_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        store: false,
-        systemInstruction: { parts: [{ text:
-          "You are the AI assistant inside Telegram Discovery. Answer the user's message directly and concisely in the user's language. Do not claim access to project posts or tools. Each request is independent; ask for any missing text needed to summarize."
-        }] },
-        contents: [{ role: "user", parts: [{ text: message }] }],
-        generationConfig: { maxOutputTokens: 2048, thinkingConfig: { thinkingLevel: "LOW" } },
-      }),
-      signal: AbortSignal.timeout(45000),
-    });
-
-    const payload = await response.json().catch(() => ({}));
+    const { response, payload, model } = await requestGemini(message);
     if (!response.ok) {
       console.error("Gemini error", response.status);
       return providerError(response.status, payload);
@@ -176,7 +192,7 @@ Deno.serve(async (req: Request) => {
     return json({
       ok: true,
       reply: text,
-      model: payload?.modelVersion || GEMINI_MODEL,
+      model: payload?.modelVersion || model,
       response_id: payload?.responseId || null,
       user: (auth as any).user || null,
     });
