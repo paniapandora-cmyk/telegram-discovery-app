@@ -4,7 +4,7 @@ import { checkHoviatMembership } from '../_shared/hoviat.ts';
 declare const Deno: any;
 
 const GEMINI_API_KEY = (Deno.env.get("GEMINI_API_KEY") || "").trim();
-const GEMINI_MODEL = (Deno.env.get("GEMINI_MODEL") || "gemini-3.8-flash").trim();
+const GEMINI_MODEL = (Deno.env.get("GEMINI_MODEL") || "gemini-3.1-flash-lite").trim();
 const BOT_TOKEN =
   Deno.env.get("TELEGRAM_BOT_TOKEN") ||
   Deno.env.get("DISCOVERY_TELEGRAM_BOT_TOKEN") ||
@@ -35,7 +35,7 @@ function constantTimeEqual(a: string, b: string) {
 async function hmacSha256(key: Uint8Array, data: string) {
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
-    key,
+    new Uint8Array(key),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -109,7 +109,7 @@ function providerError(status: number, payload: any) {
 // Both defaults have a free tier. Retry only temporary server failures, never
 // authentication/quota failures. The two attempts fit inside the UI's 45s timeout.
 async function requestGemini(message: string) {
-  const models = [GEMINI_MODEL, GEMINI_MODEL === "gemini-3.7-flash" ? "gemini-3.8-flash" : "gemini-3.7-flash"];
+  const models = [GEMINI_MODEL, GEMINI_MODEL === "gemini-3.1-flash-lite" ? "gemini-3.8-flash" : "gemini-3.1-flash-lite"];
   const body = JSON.stringify({
     store: false,
     systemInstruction: { parts: [{ text:
@@ -120,18 +120,23 @@ async function requestGemini(message: string) {
   });
   for (let attempt = 0; attempt < models.length; attempt++) {
     const model = models[attempt];
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: "POST",
-      headers: { "x-goog-api-key": GEMINI_API_KEY, "Content-Type": "application/json" },
-      body,
-      signal: AbortSignal.timeout(attempt === 0 ? 12000 : 16000),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (attempt === 0 && [500, 502, 503, 504].includes(response.status)) {
-      console.warn("Gemini retry", response.status);
-      continue;
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST",
+        headers: { "x-goog-api-key": GEMINI_API_KEY, "Content-Type": "application/json" },
+        body,
+        signal: AbortSignal.timeout(attempt === 0 ? 12000 : 16000),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (attempt === 0 && [500, 502, 503, 504].includes(response.status)) {
+        console.warn("Gemini retry", response.status);
+        continue;
+      }
+      return { response, payload, model };
+    } catch (error) {
+      if (attempt === 0 && error instanceof Error && ["TimeoutError", "AbortError", "TypeError"].includes(error.name)) continue;
+      throw error;
     }
-    return { response, payload, model };
   }
   throw new Error("gemini_unavailable");
 }
