@@ -73,6 +73,10 @@ jobs:
         working-directory: frontend-react
         run: node tests/membership-vip.mjs
 
+      - name: Verify social permissions and comments
+        working-directory: frontend-react
+        run: node tests/social.mjs
+
       - name: Build frontend
         working-directory: frontend-react
         run: npm run build

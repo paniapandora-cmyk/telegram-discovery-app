@@ -1,4 +1,5 @@
 declare const Deno: any;
+import { socialRoute } from '../_shared/social.ts';
 import { checkHoviatMembership } from '../_shared/hoviat.ts';
 declare const Supabase: any;
 
@@ -106,6 +107,8 @@ async function decorateItems(items: any[], userId: string) {
   const ids = [...new Set(items.map(x => String(x?.content_id ?? x?.id ?? "")).filter(isUuid))];
   if (!ids.length) return items.map(x => ({ ...x, is_saved: false, ui_meta: { quality_tier: "LIVE", substance_score: null } }));
   const inIds = ids.join(",");
+  const socialRows = await rpc("discovery_social_stats_v1", {p_user_id:userId,p_ids:ids});
+  const socialMap = new Map(socialRows.map((row:any)=>[row.content_id,row]));
   const [saveRows, contentRows, featureRows] = await Promise.all([
     rest(`saves?select=content_id&user_id=eq.${encodeURIComponent(userId)}&content_id=in.(${inIds})`),
     rest(`contents?select=id,creator_id,content_type,text_content,thumbnail_url,media_url&source_type=eq.TELEGRAM&id=in.(${inIds})`),
@@ -130,6 +133,7 @@ async function decorateItems(items: any[], userId: string) {
     return {
       ...x,
       is_saved: saved.has(id),
+      social: socialMap.get(id),
       content_type: c.content_type ?? x.content_type ?? null,
       text_content: c.text_content ?? x.text_content ?? null,
       thumbnail_url: c.thumbnail_url ?? x.thumbnail_url ?? null,
@@ -637,7 +641,19 @@ async function feedbackRoute({ request, id }: RouteContext) {
   return json({ ok:true, recorded:true, feedback_type:feedback.db, request_id:id }, 200, id);
 }
 
+async function socialHandler({request,url,id}: RouteContext) {
+  const user=await userFrom(request);
+  const path=url.pathname.slice(url.pathname.indexOf('/discovery-api-v33')+'/discovery-api-v33'.length);
+  const result=await socialRoute(request,url,path,user.id,rest,rpc);
+  return json(result.data,result.status,id);
+}
 const ROUTES: Record<string, RouteHandler> = {
+  "GET /social": socialHandler,
+  "POST /like": socialHandler,
+  "GET /comments": socialHandler,
+  "POST /comments": socialHandler,
+  "DELETE /comments": socialHandler,
+  "POST /comments/report": socialHandler,
   "GET /": healthRoute,
   "GET /health": healthRoute,
   "POST /auth/telegram": authRoute,

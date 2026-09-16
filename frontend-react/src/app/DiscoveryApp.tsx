@@ -56,6 +56,9 @@ const mergeSaved = (next: Post[], current: Post[]) => {
 };
 
 export default function DiscoveryApp() {
+  const savePending = useRef(new Set<string>());
+  const [saveNotice,setSaveNotice] = useState('');
+  useEffect(()=>{if(!saveNotice)return;const timer=setTimeout(()=>setSaveNotice(''),4500);return()=>clearTimeout(timer);},[saveNotice]);
   const [page, setPage] = useState<Page>('home');
   const [tab, setTab] = useState('for-you');
   const [posts, setPosts] = useState<Post[]>(seedPosts);
@@ -321,10 +324,13 @@ export default function DiscoveryApp() {
   };
 
   const toggleSavePost = (target: Post) => {
+    if(savePending.current.has(target.id))return;
+    if(!target.contentId){setSaveNotice('این پیش‌نمایش هنوز قابل ذخیره نیست.');return;}
+    savePending.current.add(target.id);
     const before = Boolean(target.saved);
     const next = !before;
     applySaved(target.id, next, target);
-    void persistSaved(target, next).catch(() => applySaved(target.id, before, target));
+    void persistSaved(target, next).then(()=>setSaveNotice(next?'پست ذخیره شد.':'پست از ذخیره‌ها حذف شد.')).catch(() => {applySaved(target.id, before, target);setSaveNotice('ذخیره‌سازی انجام نشد؛ دوباره امتحان کن.');}).finally(()=>savePending.current.delete(target.id));
   };
 
   const toggleSave = (id: string) => {
@@ -380,6 +386,7 @@ export default function DiscoveryApp() {
 
   return (
     <main className="appShell">
+      {saveNotice&&<div className="socialToast" role="status">{saveNotice}</div>}
       {resolvedViewer ? (
         <Viewer
           post={resolvedViewer}

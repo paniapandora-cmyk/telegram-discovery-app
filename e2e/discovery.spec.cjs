@@ -67,15 +67,16 @@ test('home, viewer, save and primary navigation stay functional without backend'
 
   await firstCard.click();
   await expect(page.getByText('جزئیات پست')).toBeVisible();
-  const save = page.locator('.viewerActionsV12 button[aria-pressed]').first();
+  const save = page.getByRole('button', { name: 'ذخیره', exact: true });
   await expect(save).toHaveAttribute('aria-pressed', 'false');
   await save.click();
-  await expect(save).toHaveAttribute('aria-pressed', 'true');
+  await expect(save).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('status')).toContainText('این پیش‌نمایش هنوز قابل ذخیره نیست');
 
   await page.getByRole('button', { name: 'بازگشت', exact: true }).click();
   await nav.getByRole('button', { name: 'ذخیره‌ها', exact: true }).click();
   await expect(nav.getByRole('button', { name: 'ذخیره‌ها', exact: true })).toHaveAttribute('aria-current', 'page');
-  if (title) await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
+
 
   await nav.getByRole('button', { name: 'اکسپلور', exact: true }).click();
   await expect(nav.getByRole('button', { name: 'اکسپلور', exact: true })).toHaveAttribute('aria-current', 'page');
