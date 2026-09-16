@@ -1,0 +1,26 @@
+.homeFeedLoadMore{
+  display:grid;
+  place-items:center;
+  gap:10px;
+  padding:22px 12px calc(104px + env(safe-area-inset-bottom));
+  text-align:center;
+}
+
+.homeFeedLoadMore .sheetPrimary{
+  width:min(100%,320px);
+  min-height:48px;
+}
+
+.homeFeedLoadError{
+  margin:0;
+  max-width:34rem;
+  font-size:13px;
+  line-height:1.7;
+  color:var(--text-muted,#9aa8c7);
+}
+
+.homeFeedEnd{
+  margin:0;
+  font-size:13px;
+  color:var(--text-muted,#9aa8c7);
+}

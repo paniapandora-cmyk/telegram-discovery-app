@@ -1,0 +1,196 @@
+/* Telegram Discovery — live media binding polish v2 */
+
+.postCard .postMedia {
+  height: 150px;
+  isolation: isolate;
+}
+
+.postCard.has-live-media .postMedia {
+  height: 178px;
+  background: #06111a;
+}
+
+.postCard.no-live-media .postMedia {
+  height: 134px;
+}
+
+.postCard .postMedia img {
+  opacity: 0;
+  transform: scale(1.018);
+  transition:
+    opacity .22s ease,
+    transform .35s ease;
+}
+
+.postCard.has-live-media .postMedia img {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.postCard.has-live-media .postMedia:before {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2, 8, 14, .04) 27%,
+      rgba(1, 7, 12, .28) 55%,
+      rgba(1, 7, 12, .88) 100%
+    );
+}
+
+.postCard.no-live-media .postMedia:before {
+  background:
+    radial-gradient(
+      120px 80px at 78% 24%,
+      rgba(103, 205, 255, .08),
+      transparent 74%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(2, 8, 14, .08),
+      rgba(1, 7, 12, .55)
+    );
+}
+
+.postCard.has-live-media .postMedia:after {
+  opacity: .28;
+}
+
+.postCard.no-live-media .postMedia:after {
+  opacity: .62;
+}
+
+.postCard .postMedia h3 {
+  right: 12px;
+  left: 12px;
+  bottom: 12px;
+  max-width: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  letter-spacing: -.1px;
+}
+
+.postCard.has-live-media .postMedia h3 {
+  -webkit-line-clamp: 2;
+  font-size: 12.6px;
+  line-height: 1.65;
+  text-shadow:
+    0 2px 14px rgba(0, 0, 0, .9),
+    0 1px 2px rgba(0, 0, 0, .85);
+}
+
+.postCard.no-live-media .postMedia h3 {
+  -webkit-line-clamp: 3;
+  bottom: 15px;
+  max-width: 88%;
+  margin-right: auto;
+  font-size: 12.3px;
+  line-height: 1.75;
+}
+
+.postCard .categoryChip {
+  top: 9px;
+  left: 9px;
+  max-width: calc(100% - 18px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.postCard .textQuoteMark {
+  position: absolute;
+  z-index: 1;
+  top: 11px;
+  right: 13px;
+  color: rgba(91, 202, 255, .16);
+  font-size: 44px;
+  line-height: 1;
+  font-family: Georgia, serif;
+}
+
+.postCard.has-live-media .textQuoteMark {
+  display: none;
+}
+
+.mediaLoadingShimmer {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background:
+    linear-gradient(
+      100deg,
+      transparent 18%,
+      rgba(255, 255, 255, .045) 38%,
+      transparent 58%
+    );
+  background-size: 220% 100%;
+  animation: tdMediaShimmer 1.1s linear infinite;
+  pointer-events: none;
+}
+
+.postCard .postBody {
+  padding: 9px 10px 8px;
+}
+
+.postCard .postBody p {
+  min-height: 52px;
+  margin: 8px 0;
+  font-size: 8.5px;
+  line-height: 1.82;
+  -webkit-line-clamp: 3;
+}
+
+.postCard .channelLine {
+  grid-template-columns: 30px minmax(0, 1fr);
+}
+
+.postCard .miniAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.postCard .channelLine strong {
+  font-size: 8.5px;
+}
+
+.postCard .channelLine small {
+  font-size: 6.2px;
+}
+
+.postCard footer {
+  min-height: 34px;
+}
+
+.postCard.is-media-loading .postMedia h3 {
+  opacity: .9;
+}
+
+@keyframes tdMediaShimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@media (max-width: 370px) {
+  .postCard.has-live-media .postMedia {
+    height: 160px;
+  }
+
+  .postCard.no-live-media .postMedia {
+    height: 124px;
+  }
+
+  .postCard.has-live-media .postMedia h3,
+  .postCard.no-live-media .postMedia h3 {
+    font-size: 11.4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .postCard .postMedia img,
+  .mediaLoadingShimmer {
+    transition: none !important;
+    animation: none !important;
+  }
+}

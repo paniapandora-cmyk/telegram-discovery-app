@@ -1,0 +1,54 @@
+/* Telegram Discovery — Explore + Search live UI v4 */
+
+.exploreHeaderV4,
+.searchHeaderV4 { margin-bottom: 9px; }
+.exploreCategoryRail { direction: rtl; display:flex; gap:7px; overflow-x:auto; padding:2px 1px 10px; scrollbar-width:none; }
+.exploreCategoryRail::-webkit-scrollbar { display:none; }
+.exploreCategoryRail button { flex:0 0 auto; min-height:33px; padding:0 11px; border:1px solid rgba(132,181,215,.16); border-radius:999px; background:linear-gradient(145deg,#081722,#051019); color:#8799a8; font-size:7.4px; }
+.exploreCategoryRail button.active { border-color:rgba(68,199,250,.43); background:linear-gradient(145deg,#0a2d48,#0b2134); color:#65d1ff; box-shadow:0 8px 20px rgba(29,145,211,.12); }
+.exploreGridV4 { direction:ltr; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-flow:dense; gap:8px; }
+.exploreGridV4.isRefreshing { opacity:.82; }
+.exploreTileV4 { position:relative; direction:rtl; height:178px; border:1px solid rgba(130,174,205,.18); border-radius:17px; overflow:hidden; isolation:isolate; cursor:pointer; background-size:cover; background-position:center; box-shadow:0 12px 26px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.025); }
+.exploreTileV4.tall { height:236px; grid-row:span 2; }
+.exploreTileV4.compact { height:164px; }
+.exploreTileV4.compact.tall { height:212px; }
+.exploreTileV4:active { transform:scale(.988); }
+.exploreTileV4>img { position:absolute; z-index:0; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transform:scale(1.02); transition:opacity .22s ease,transform .35s ease; }
+.exploreTileV4.hasMedia>img { opacity:1; transform:scale(1); }
+.exploreTileOverlay { position:absolute; z-index:1; inset:0; background:linear-gradient(180deg,rgba(2,7,12,.04) 25%,rgba(1,6,10,.20) 52%,rgba(1,6,10,.93) 100%); }
+.exploreTileV4.noMedia .exploreTileOverlay { background:radial-gradient(120px 80px at 75% 25%,rgba(80,197,247,.09),transparent 74%),linear-gradient(180deg,rgba(2,8,14,.08),rgba(1,7,12,.68)); }
+.exploreMediaShimmer { position:absolute; z-index:1; inset:0; background:linear-gradient(100deg,transparent 18%,rgba(255,255,255,.045) 38%,transparent 58%); background-size:220% 100%; animation:exploreShimmerV4 1.1s linear infinite; }
+.exploreCategory { position:absolute; z-index:4; top:9px; left:9px; max-width:calc(100% - 18px); padding:4px 7px; border:1px solid rgba(137,204,238,.16); border-radius:999px; background:rgba(2,9,15,.66); backdrop-filter:blur(8px); color:#8bdcff; font-size:6.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.explorePlay { position:absolute; z-index:4; top:10px; right:10px; width:29px; height:29px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.14); border-radius:50%; background:rgba(3,12,19,.64); color:#fff; }
+.exploreTileCopy { position:absolute; z-index:4; right:10px; left:10px; bottom:10px; }
+.exploreTileCopy strong,.exploreTileCopy small { display:block; }
+.exploreTileCopy strong { color:#fff; font-size:10.4px; line-height:1.7; text-shadow:0 2px 12px rgba(0,0,0,.86); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+.exploreTileV4.tall .exploreTileCopy strong { font-size:11.5px; }
+.exploreTileCopy small { margin-top:5px; color:#9db0bd; font-size:6.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.exploreSkeletonV4 { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.exploreSkeletonV4 span { height:180px; border:1px solid rgba(126,164,194,.13); border-radius:17px; background:linear-gradient(100deg,#081620 18%,#0e2637 38%,#081620 58%); background-size:220% 100%; animation:exploreShimmerV4 1.1s linear infinite; }
+.searchPanelV4 { margin-bottom:11px; padding:10px; border-radius:18px; }
+.searchInputV4 { border-radius:14px; }
+.searchInputV4 input { min-width:0; }
+.searchFiltersV4 { margin-top:9px; }
+.searchFiltersV4 button { display:inline-flex; align-items:center; justify-content:center; gap:5px; }
+.searchFiltersV4 button svg { width:13px; height:13px; }
+.searchDiscoveryV4,.searchPostsSectionV4 { margin-top:11px; }
+.searchSectionHeadV4 { display:flex; align-items:center; justify-content:space-between; margin:0 2px 8px; }
+.searchSectionHeadV4 h2 { margin:0; font-size:12px; }
+.searchSectionHeadV4 p { margin:4px 0 0; color:#748798; font-size:6.6px; }
+.searchSectionHeadV4>svg { width:18px; height:18px; color:#5bcaff; }
+.searchChannelGridV4 { display:grid; grid-template-columns:1fr; gap:7px; }
+.searchChannelCardV4 { display:grid; grid-template-columns:46px minmax(0,1fr) auto; gap:9px; align-items:center; padding:9px; border:1px solid rgba(132,181,215,.14); border-radius:15px; background:radial-gradient(90px 50px at 100% 0,rgba(44,181,237,.05),transparent 72%),linear-gradient(145deg,#081722,#051019); cursor:pointer; }
+.searchChannelCardV4 .channelAvatar { width:46px; height:46px; margin:0; }
+.searchChannelCardV4 strong,.searchChannelCardV4 small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.searchChannelCardV4 strong { font-size:9.2px; }
+.searchChannelCardV4 small { direction:ltr; margin-top:4px; color:#748798; font-size:6.7px; text-align:right; }
+.searchChannelCardV4>button { min-width:56px; height:31px; padding:0 9px; border:1px solid rgba(70,197,247,.26); border-radius:10px; background:rgba(33,158,220,.09); color:#60d0ff; font-size:6.8px; }
+.searchPostGridV4 { direction:ltr; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.searchFallbackV4 { margin-top:10px; }
+.searchLoadingV4 { margin-top:12px; }
+.compactEmptyV4 { margin-top:0; }
+@keyframes exploreShimmerV4 { to { background-position:-220% 0; } }
+@media(max-width:370px){ .exploreTileV4{height:160px}.exploreTileV4.tall{height:216px}.exploreTileCopy strong{font-size:9.5px}.searchChannelCardV4{grid-template-columns:42px minmax(0,1fr) auto}.searchChannelCardV4 .channelAvatar{width:42px;height:42px}.searchChannelCardV4>button{min-width:50px} }
+@media(prefers-reduced-motion:reduce){ .exploreTileV4>img,.exploreMediaShimmer,.exploreSkeletonV4 span{transition:none!important;animation:none!important} }

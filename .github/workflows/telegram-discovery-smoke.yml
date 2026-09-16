@@ -1,0 +1,238 @@
+name: Telegram Discovery Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify current app layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/index.html
+          test -s frontend-react/src/App.tsx
+          test -s frontend-react/src/data/live.ts
+          test -s worker.ts
+          grep -q 'telegram.org/js/telegram-web-app.js' frontend-react/index.html
+          grep -q 'x-telegram-init-data' frontend-react/src/data/live.ts
+          grep -q '/api/discovery' frontend-react/src/data/live.ts
+          echo "React Telegram Mini App layout found."
+
+      - name: Verify reference UI stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/src/styles/reference-v6.css
+          test -s frontend-react/src/pages/InvitePage.tsx
+          test -s frontend-react/src/pages/SupportPage.tsx
+          test -s frontend-react/src/pages/AdsPage.tsx
+          grep -q 'reference-v6.css' frontend-react/src/main.tsx
+          grep -q "page === 'invite'" frontend-react/src/app/DiscoveryApp.tsx
+          grep -q "page === 'support'" frontend-react/src/app/DiscoveryApp.tsx
+          grep -q "page === 'ads'" frontend-react/src/app/DiscoveryApp.tsx
+          echo "Reference-driven multi-screen UI modules found."
+
+      - name: Verify proxy configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'discovery-api-v33' worker.ts
+          grep -q 'discovery-search-v7' worker.ts
+          grep -q 'discovery-search-v6' worker.ts
+          grep -q 'creator-dashboard-v2' worker.ts
+          grep -q '"/api/discovery"' worker.ts
+          grep -q '"/api/telegram/search"' worker.ts
+          grep -q '"/api/creator"' worker.ts
+          echo "Current Cloudflare-to-Supabase routes found."
+
+      - name: Verify ranked search and explore stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/src/pages/SearchPage.tsx
+          test -s frontend-react/src/data/search.ts
+          test -s frontend-react/src/styles/search-discovery-v11.css
+          test -s frontend-react/src/styles/explore-ranking-v11.css
+          test -s supabase/migrations/20260913003500_search_discovery_ranking_v2.sql
+          test -s supabase/migrations/20260913003600_explore_discovery_ranking_v4.sql
+          grep -q 'loadSearchHistory' frontend-react/src/pages/SearchPage.tsx
+          grep -q 'recordSearchHistory' frontend-react/src/pages/SearchPage.tsx
+          grep -q 'رتبه‌بندی هوشمند' frontend-react/src/pages/ExplorePage.tsx
+          grep -q "'post'::text as result_type" supabase/migrations/20260913003500_search_discovery_ranking_v2.sql
+          grep -q 'creator_fatigue' supabase/migrations/20260913003600_explore_discovery_ranking_v4.sql
+          echo "Ranked search, recent search, and explore diversity modules found."
+
+      - name: Verify library and related content stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/src/data/library.ts
+          test -s frontend-react/src/components/LibraryThumb.tsx
+          test -s frontend-react/src/styles/library-viewer-v12.css
+          test -s supabase/functions/related-content-v1/index.ts
+          test -s supabase/migrations/20260913010000_related_content_v1.sql
+          grep -q 'loadLibrarySaved' frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'loadLibraryHistory' frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'recordViewerExit' frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'loadRelatedPosts' frontend-react/src/components/Viewer.tsx
+          grep -q 'get_related_content_v1' supabase/functions/related-content-v1/index.ts
+          grep -q 'operator(extensions.<=>)' supabase/migrations/20260913010000_related_content_v1.sql
+          grep -q 'library-viewer-v12.css' frontend-react/src/main.tsx
+          echo "Saved library, viewing history, dwell time, and related-content modules found."
+
+      - name: Verify personalization center stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/src/pages/PersonalizationPage.tsx
+          test -s frontend-react/src/data/personalization.ts
+          test -s frontend-react/src/styles/personalization-v13.css
+          test -s supabase/functions/personalization-v1/index.ts
+          test -s supabase/migrations/20260913014200_personalization_center_v1.sql
+          grep -q "page === 'personalization'" frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'onPersonalization' frontend-react/src/pages/ProfilePage.tsx
+          grep -q 'saveInterests' frontend-react/src/pages/PersonalizationPage.tsx
+          grep -q 'setCreatorFollow' frontend-react/src/pages/PersonalizationPage.tsx
+          grep -q 'get_personalization_creators_v1' supabase/functions/personalization-v1/index.ts
+          grep -q 'followed_creator' supabase/migrations/20260913014200_personalization_center_v1.sql
+          echo "Interests, creator follows, recommendations, and follow-aware feed modules found."
+
+      - name: Verify channel profile stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/src/pages/ChannelPage.tsx
+          test -s frontend-react/src/data/channel-profile.ts
+          test -s frontend-react/src/styles/channel-profile-v14.css
+          test -s supabase/functions/channel-profile-v1/index.ts
+          test -s supabase/migrations/20260913030000_channel_profile_v1.sql
+          grep -q "page === 'channel'" frontend-react/src/app/DiscoveryApp.tsx
+          grep -q 'onOpenChannel' frontend-react/src/pages/HomePage.tsx
+          grep -q 'onOpenChannel' frontend-react/src/pages/SearchPage.tsx
+          grep -q 'onOpenChannel' frontend-react/src/components/Viewer.tsx
+          grep -q 'loadChannelProfile' frontend-react/src/pages/ChannelPage.tsx
+          grep -q 'setChannelFollow' frontend-react/src/pages/ChannelPage.tsx
+          grep -q 'get_channel_profile_v1' supabase/functions/channel-profile-v1/index.ts
+          grep -q 'get_channel_profile_v1' supabase/migrations/20260913030000_channel_profile_v1.sql
+          echo "In-app channel profile, follow, topics, posts, and similar-channel modules found."
+
+      - name: Verify growth stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/src/components/GrowthCard.tsx
+          test -s frontend-react/src/components/OnboardingGate.tsx
+          test -s frontend-react/src/components/CreatorPromoKit.tsx
+          test -s supabase/functions/growth-referral-v1/index.ts
+          test -s supabase/functions/onboarding-v1/index.ts
+          grep -q 'OnboardingGate' frontend-react/src/App.tsx
+          grep -q 'successful_invites' frontend-react/src/components/GrowthCard.tsx
+          grep -q 'tracking-link' frontend-react/src/data/creator-promo.ts
+          echo "Onboarding, referral and creator growth modules found."
+
+      - name: Verify sponsored ads stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/src/data/ads.ts
+          test -s frontend-react/src/components/CreatorAdsCard.tsx
+          test -s frontend-react/src/components/CreatorAdsLauncher.tsx
+          test -s frontend-react/src/components/OwnerAdsDashboard.tsx
+          test -s frontend-react/src/styles/ads-v1.css
+          test -s frontend-react/src/pages/AdsPage.tsx
+          grep -q 'creator-ads-v1' frontend-react/src/data/ads.ts
+          grep -q 'loadSponsoredPosts' frontend-react/src/pages/ExplorePage.tsx
+          grep -q 'تبلیغ · Sponsored' frontend-react/src/components/ExploreTile.tsx
+          grep -q 'sponsored:' frontend-react/src/data/tracking.ts
+          grep -q 'OwnerAdsDashboard' frontend-react/src/pages/AdsPage.tsx
+          grep -q 'CreatorAdsLauncher' frontend-react/src/pages/AdsPage.tsx
+          echo "Sponsored campaigns, attribution and owner revenue modules found."
+
+      - name: Verify production hardening and moderation stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s supabase/functions/telegram-public-sync-v2/index.ts
+          test -s supabase/functions/embedding-worker/index.ts
+          test -s supabase/migrations/20260914191500_embedding_claim_fastpath_v4.sql
+          test -s supabase/migrations/20260914192500_content_report_quarantine_v1.sql
+          test -s supabase/migrations/20260914193500_telegram_text_normalization_v1.sql
+          test -s supabase/migrations/20260914194000_content_safety_gate_v1.sql
+          test -s supabase/migrations/20260914194500_moderation_quarantine_guard_v1.sql
+          test -s supabase/migrations/20260914195000_content_safety_gate_v2.sql
+          test -s supabase/migrations/20260914200000_database_index_retention_cleanup_v1.sql
+          test -s e2e/discovery.spec.cjs
+          grep -q 'claim_telegram_sync_request_v1' supabase/functions/telegram-public-sync-v2/index.ts
+          grep -q 'const BATCH=3' supabase/functions/embedding-worker/index.ts
+          grep -q 'for update skip locked' supabase/migrations/20260914191500_embedding_claim_fastpath_v4.sql
+          grep -q 'quarantine_content_after_reports_v1' supabase/migrations/20260914192500_content_report_quarantine_v1.sql
+          grep -q 'reporter_count >= 3' supabase/migrations/20260914192500_content_report_quarantine_v1.sql
+          grep -q 'normalize_telegram_text_v1' supabase/migrations/20260914193500_telegram_text_normalization_v1.sql
+          grep -q 'GAMBLING_PROMO' supabase/migrations/20260914195000_content_safety_gate_v2.sql
+          grep -q 'guard_content_quarantine_v1' supabase/migrations/20260914194500_moderation_quarantine_guard_v1.sql
+          grep -q 'cleanup_discovery_operational_history_v1' supabase/migrations/20260914200000_database_index_retention_cleanup_v1.sql
+          grep -q "feedback('report')" frontend-react/src/components/Viewer.tsx
+          echo "Sync auth, embedding recovery, text normalization, reporting, safety and retention gates found."
+
+      - name: Install frontend dependencies
+        working-directory: frontend-react
+        run: npm ci
+
+      - name: Type-check React frontend
+        working-directory: frontend-react
+        run: npm run typecheck
+
+      - name: Build React frontend
+        working-directory: frontend-react
+        run: npm run build
+
+      - name: Verify build output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend-react/dist/index.html
+          test -d frontend-react/dist/assets
+          grep -qi 'Telegram Discovery React UI' frontend-react/dist/index.html
+          echo "React build output is valid."
+
+      - name: Start built frontend locally
+        run: |
+          python3 -m http.server 8080 \
+            --directory frontend-react/dist \
+            --bind 127.0.0.1 \
+            >/tmp/telegram-discovery-http.log 2>&1 &
+          echo $! > /tmp/server.pid
+
+      - name: Verify built Mini App is reachable
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/ >/tmp/react-index.html; then
+              grep -qi 'Telegram Discovery React UI' /tmp/react-index.html
+              echo "Built Telegram Mini App is reachable."
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/telegram-discovery-http.log
+          exit 1
+
+      - name: Final result
+        run: |
+          echo "======================================"
+          echo "Telegram Discovery smoke test PASSED"

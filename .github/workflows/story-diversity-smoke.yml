@@ -1,0 +1,31 @@
+name: Story Diversity Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**story_dedup**'
+      - '.github/workflows/story-diversity-smoke.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify story diversity migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='supabase/migrations/20260913162500_story_dedup_source_diversity_v2.sql'
+          test -s "$file"
+          grep -q 'discovery_story_key_v1' "$file"
+          grep -q 'get_personalized_feed_v9' "$file"
+          grep -q 'get_explore_discovery_v5' "$file"
+          grep -q 'get_trending_discovery_v3' "$file"
+          grep -q 'story_rank=1' "$file"
+          grep -q 'creator_rank<=2' "$file"
+          echo 'Story dedup and source-diversity migration verified.'

@@ -1,0 +1,285 @@
+/* Premium V5 — finishing pass for brand, onboarding, viewer, sheets and compact states. */
+
+/* Refined vector brand mark */
+.brandMark svg{
+  width:29px;
+  height:29px;
+  stroke-width:1.9;
+  color:#fff;
+  filter:drop-shadow(0 0 10px rgba(255,255,255,.24));
+}
+.heroAside{direction:rtl!important}
+.heroAside .plane{
+  width:24px!important;
+  height:24px!important;
+  transform:rotate(-13deg)!important;
+  stroke-width:1.8!important;
+}
+.heroAside>div{display:grid;gap:4px;text-align:right}
+.heroLiveDot{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  width:max-content;
+  color:#7fdcff;
+  font-size:7.3px;
+  font-weight:800;
+}
+.heroLiveDot:before{
+  content:'';
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#4cd5ff;
+  box-shadow:0 0 9px rgba(76,213,255,.9);
+}
+
+/* Consistent tiny badges */
+.liveBadge,
+.pageCountChip,
+.creatorCountV5,
+.viewerMeta>span,
+.viewerSponsoredBadge{
+  border-radius:999px!important;
+  border:1px solid rgba(125,188,230,.12)!important;
+  background:rgba(7,20,32,.70)!important;
+  color:#9fb1c0!important;
+  backdrop-filter:blur(10px);
+}
+.liveBadge.live{color:#76e4bc!important;border-color:rgba(83,220,171,.17)!important;background:rgba(20,75,58,.20)!important}
+.liveBadge.loading{color:#8fdcff!important;border-color:rgba(67,200,255,.15)!important}
+
+/* Onboarding should feel like a premium first-run product moment */
+.onboardingBackdrop{
+  background:
+    radial-gradient(360px 280px at 12% 4%,rgba(40,179,255,.18),transparent 70%),
+    radial-gradient(330px 260px at 92% 12%,rgba(112,104,255,.16),transparent 72%),
+    rgba(1,7,13,.92)!important;
+  backdrop-filter:blur(18px) saturate(1.1)!important;
+  padding:18px 14px calc(18px + env(safe-area-inset-bottom))!important;
+}
+.onboardingCard{
+  width:min(100%,446px)!important;
+  border-radius:30px!important;
+  padding:20px 18px 17px!important;
+  border:1px solid rgba(132,195,235,.18)!important;
+  background:
+    radial-gradient(190px 120px at 100% 0,rgba(67,200,255,.12),transparent 74%),
+    linear-gradient(160deg,rgba(10,29,45,.98),rgba(4,14,24,.99))!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.52),inset 0 1px rgba(255,255,255,.03)!important;
+}
+.onboardingBrand{
+  padding:10px 11px!important;
+  border-radius:19px!important;
+  border:1px solid rgba(125,188,230,.11)!important;
+  background:rgba(5,17,29,.58)!important;
+}
+.onboardingBrand>span{
+  width:47px!important;
+  height:47px!important;
+  border-radius:16px!important;
+  background:linear-gradient(145deg,#2bc8ff,#158fe9 58%,#6962ff)!important;
+  box-shadow:0 10px 24px rgba(25,139,224,.24)!important;
+}
+.onboardingBrand>svg{color:#6dd7ff!important;filter:drop-shadow(0 0 9px rgba(67,200,255,.28))}
+.onboardingCopy{padding:22px 5px 13px!important;text-align:center!important}
+.onboardingCopy h1{font-size:26px!important;letter-spacing:-.8px!important;line-height:1.55!important}
+.onboardingCopy p{max-width:370px;margin:8px auto 0!important;color:#8fa1b1!important;line-height:2!important;font-size:10.5px!important}
+.onboardingTopics{
+  gap:9px!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+.onboardingTopics button{
+  min-height:102px!important;
+  border-radius:20px!important;
+  border-color:rgba(125,188,230,.11)!important;
+  background:linear-gradient(160deg,rgba(10,28,43,.92),rgba(4,15,25,.95))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.02),0 9px 20px rgba(0,0,0,.12)!important;
+  transition:transform .15s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease!important;
+}
+.onboardingTopics button>span{font-size:26px!important}
+.onboardingTopics button b{font-size:9.5px!important}
+.onboardingTopics button.active{
+  border-color:rgba(67,200,255,.52)!important;
+  background:
+    radial-gradient(100px 75px at 50% 0,rgba(67,200,255,.13),transparent 72%),
+    linear-gradient(155deg,rgba(15,54,80,.95),rgba(24,34,76,.95))!important;
+  box-shadow:0 0 0 1px rgba(67,200,255,.08),0 12px 25px rgba(16,92,154,.18)!important;
+}
+.onboardingTopics button.active>svg{
+  width:19px!important;
+  height:19px!important;
+  padding:3px;
+  border-radius:50%;
+  background:#51cfff;
+  color:#06111c;
+}
+.onboardingStatus{
+  margin-top:12px!important;
+  padding:10px 12px!important;
+  border-radius:16px!important;
+  background:rgba(5,16,27,.62)!important;
+  border:1px solid rgba(125,188,230,.08)!important;
+}
+.onboardingPrimary{
+  min-height:54px!important;
+  border-radius:17px!important;
+  background:linear-gradient(135deg,#2bc8ff,#168fe9 52%,#665eff)!important;
+  box-shadow:0 13px 28px rgba(30,135,226,.24),inset 0 1px rgba(255,255,255,.28)!important;
+}
+.onboardingPrimary:disabled{filter:saturate(.45);opacity:.48!important;box-shadow:none!important}
+.onboardingSkip{color:#7e92a5!important;min-height:44px!important}
+
+/* Viewer: transforms a post detail into a focused reading surface */
+.viewer{
+  width:min(100%,480px)!important;
+  margin:auto!important;
+  min-height:100vh!important;
+  padding:calc(10px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom))!important;
+  background:
+    radial-gradient(300px 220px at 10% -2%,rgba(67,200,255,.10),transparent 70%),
+    radial-gradient(280px 220px at 94% 4%,rgba(112,104,255,.09),transparent 72%),
+    linear-gradient(180deg,#061421,#020812 43%,#020812 100%)!important;
+}
+.viewerTop{
+  min-height:60px!important;
+  padding:7px 7px!important;
+  margin-bottom:10px!important;
+  border:1px solid rgba(125,188,230,.10)!important;
+  border-radius:20px!important;
+  background:rgba(4,15,25,.68)!important;
+  backdrop-filter:blur(15px)!important;
+}
+.viewerTop button{
+  width:44px!important;
+  height:44px!important;
+  border-radius:14px!important;
+  background:rgba(125,188,230,.055)!important;
+  border:1px solid rgba(125,188,230,.08)!important;
+}
+.viewerMedia{
+  min-height:330px!important;
+  border-radius:28px!important;
+  border:1px solid rgba(125,188,230,.14)!important;
+  box-shadow:0 24px 56px rgba(0,0,0,.34)!important;
+}
+.viewerMedia:before{
+  background:linear-gradient(180deg,rgba(0,0,0,.03) 22%,rgba(0,0,0,.10) 48%,rgba(1,7,12,.94) 100%)!important;
+}
+.viewerMedia h2{
+  right:20px!important;
+  bottom:20px!important;
+  max-width:84%!important;
+  font-size:24px!important;
+  line-height:1.55!important;
+  letter-spacing:-.5px!important;
+  text-wrap:balance;
+}
+.viewerMeta{
+  display:flex!important;
+  gap:6px!important;
+  flex-wrap:wrap!important;
+  padding:10px 1px!important;
+}
+.viewerMeta>span{padding:6px 9px!important;font-size:7.5px!important}
+.viewerChannel{
+  border-radius:21px!important;
+  padding:11px!important;
+  border:1px solid rgba(125,188,230,.11)!important;
+  background:linear-gradient(145deg,rgba(9,27,42,.93),rgba(4,15,25,.96))!important;
+  box-shadow:0 11px 25px rgba(0,0,0,.18)!important;
+}
+.viewerAvatar{width:46px!important;height:46px!important;border-radius:15px!important}
+.viewerChannel button{
+  min-height:39px!important;
+  border-radius:13px!important;
+  background:linear-gradient(135deg,#178fda,#5065e2)!important;
+}
+.viewerText{
+  margin-top:10px!important;
+  border-radius:22px!important;
+  padding:16px 14px!important;
+  border:1px solid rgba(125,188,230,.10)!important;
+  background:rgba(6,18,29,.90)!important;
+}
+.viewerText>p{font-size:12px!important;line-height:2.15!important;color:#d3dde6!important}
+.viewerActions{
+  padding-top:13px!important;
+  gap:7px!important;
+}
+.viewerActions button,.viewerStat{
+  min-height:43px!important;
+  border-radius:14px!important;
+  background:rgba(125,188,230,.055)!important;
+  border:1px solid rgba(125,188,230,.08)!important;
+}
+.viewerActions button.saved{
+  color:#64d7ff!important;
+  background:rgba(67,200,255,.09)!important;
+  border-color:rgba(67,200,255,.18)!important;
+}
+.telegramCta{
+  min-height:56px!important;
+  margin-top:11px!important;
+  border-radius:17px!important;
+  background:linear-gradient(135deg,#25bff4,#148de4 55%,#5263df)!important;
+  box-shadow:0 13px 28px rgba(27,123,209,.23)!important;
+}
+.viewerFeedback{
+  border-radius:16px!important;
+  background:rgba(38,18,25,.55)!important;
+  border:1px solid rgba(229,116,139,.11)!important;
+}
+
+/* Sheets and modal controls */
+.sheetBackdrop{backdrop-filter:blur(14px)!important;background:rgba(1,7,13,.74)!important}
+.sheet{
+  border-radius:28px 28px 0 0!important;
+  border-color:rgba(125,188,230,.15)!important;
+  background:linear-gradient(165deg,#0a1c2b,#050f19 52%,#030a12)!important;
+  box-shadow:0 -24px 64px rgba(0,0,0,.48)!important;
+}
+.sheet input,.sheet textarea,.sheet select{
+  min-height:49px!important;
+  border-radius:15px!important;
+  background:rgba(4,15,25,.78)!important;
+  border-color:rgba(125,188,230,.13)!important;
+}
+.sheetPrimary{
+  min-height:49px!important;
+  border-radius:15px!important;
+  background:linear-gradient(135deg,#21baf1,#168fe6 52%,#5862e6)!important;
+  box-shadow:0 10px 22px rgba(30,125,211,.18)!important;
+}
+
+/* Search / list states become easier to scan */
+.searchResultCard,.savedCard,.historyCard,.notificationCard{
+  padding:13px!important;
+  box-shadow:0 11px 26px rgba(0,0,0,.17)!important;
+  transition:transform .16s ease,border-color .16s ease!important;
+}
+@media(hover:hover) and (pointer:fine){
+  .searchResultCard:hover,.savedCard:hover,.historyCard:hover,.notificationCard:hover{
+    transform:translateY(-1px);
+    border-color:rgba(67,200,255,.22)!important;
+  }
+}
+
+/* Cleaner loading placeholders */
+.mediaLoadingShimmer,.viewerMediaShimmer,.exploreSkeletonV4 span,.creatorSkeleton span{
+  background:linear-gradient(100deg,rgba(7,20,32,.88) 18%,rgba(20,48,68,.88) 46%,rgba(7,20,32,.88) 72%)!important;
+  background-size:220% 100%!important;
+}
+
+@media(max-width:360px){
+  .onboardingCard{padding-inline:13px!important}
+  .onboardingTopics{gap:7px!important}
+  .onboardingTopics button{min-height:92px!important}
+  .onboardingCopy h1{font-size:22px!important}
+  .viewerMedia{min-height:280px!important}
+  .viewerMedia h2{font-size:20px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .onboardingTopics button,.searchResultCard,.savedCard,.historyCard,.notificationCard{transition:none!important}
+}

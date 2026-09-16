@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html{background:#02070d}body{margin:0;min-width:320px;min-height:100vh;background:#02070d;color:#f7fbff;font-family:Tahoma,Arial,sans-serif}button,input{font:inherit}button{cursor:pointer}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}

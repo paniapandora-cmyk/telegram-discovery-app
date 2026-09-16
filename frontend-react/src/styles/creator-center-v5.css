@@ -1,0 +1,446 @@
+/* Telegram Discovery — Creator Center v5 */
+
+.creatorHeaderStatusV5 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.creatorHeaderStatusV5 .liveBadge {
+  margin-top: 0 !important;
+}
+
+.creatorCountV5 {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(132,181,215,.14);
+  border-radius: 999px;
+  background: rgba(7,19,29,.72);
+  color: #8195a6;
+  font-size: 6.8px;
+}
+
+.creatorClaimV13 {
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 19px;
+}
+
+.creatorClaimHeadV13 {
+  display: grid;
+  grid-template-columns: 39px minmax(0,1fr);
+  gap: 9px;
+  align-items: center;
+}
+
+.creatorClaimIconV13 {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(79,202,255,.20);
+  border-radius: 12px;
+  background: rgba(55,190,246,.07);
+  color: #63cefb;
+}
+
+.creatorClaimIconV13 svg {
+  width: 19px;
+  height: 19px;
+}
+
+.creatorClaimHeadV13 h2 {
+  margin: 0;
+  font-size: 11px;
+}
+
+.creatorClaimHeadV13 p {
+  margin: 4px 0 0;
+  color: #7d91a1;
+  font-size: 6.8px;
+  line-height: 1.75;
+}
+
+.creatorClaimFormV13 {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.creatorClaimFormV13 label {
+  min-width: 0;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid rgba(132,181,215,.18);
+  border-radius: 12px;
+  background: #06121c;
+  color: #6bcdfa;
+}
+
+.creatorClaimFormV13 label:focus-within {
+  border-color: rgba(77,201,255,.50);
+  box-shadow: 0 0 0 3px rgba(45,179,239,.07);
+}
+
+.creatorClaimFormV13 label svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.creatorClaimFormV13 input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #eef6fa;
+  font-size: 8px;
+}
+
+.creatorClaimFormV13 input::placeholder {
+  color: #62798a;
+}
+
+.creatorClaimFormV13 > button {
+  min-width: 102px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid rgba(115,220,255,.24);
+  border-radius: 12px;
+  background: linear-gradient(145deg,#25aeea,#117fc5);
+  color: #fff;
+  font-size: 7.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.creatorClaimFormV13 > button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.creatorClaimFormV13 > button:disabled,
+.creatorClaimFormV13 input:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+.creatorClaimFormV13 .spin {
+  animation: creatorClaimSpinV13 .85s linear infinite;
+}
+
+.creatorClaimHintV13,
+.creatorClaimNoticeV13 {
+  margin: 8px 1px 0;
+  font-size: 6.5px;
+  line-height: 1.7;
+}
+
+.creatorClaimHintV13 {
+  color: #6f8495;
+}
+
+.creatorClaimNoticeV13 {
+  min-height: 31px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(132,181,215,.14);
+  border-radius: 10px;
+  background: rgba(113,153,183,.05);
+  color: #a5b5c1;
+}
+
+.creatorClaimNoticeV13 svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.creatorClaimNoticeV13.success {
+  border-color: rgba(64,211,151,.19);
+  background: rgba(52,199,139,.06);
+  color: #6ee0ad;
+}
+
+.creatorClaimNoticeV13.pending {
+  border-color: rgba(246,184,80,.17);
+  background: rgba(223,160,55,.05);
+  color: #e5b969;
+}
+
+.creatorClaimNoticeV13.error {
+  border-color: rgba(255,111,122,.18);
+  background: rgba(255,83,98,.05);
+  color: #ff8c94;
+}
+
+@keyframes creatorClaimSpinV13 {
+  to { transform: rotate(360deg); }
+}
+
+.creatorChannelPickerV5 {
+  padding: 12px;
+  border-radius: 19px;
+}
+
+.creatorPickerTitleV5 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.creatorPickerTitleV5 h2 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.creatorPickerTitleV5 p {
+  margin: 4px 0 0;
+  color: #748899;
+  font-size: 6.7px;
+}
+
+.creatorPickerTitleV5 > svg {
+  width: 18px;
+  height: 18px;
+  color: #5ccaff;
+}
+
+.creatorChannelRailV5 {
+  direction: rtl;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.creatorChannelRailV5::-webkit-scrollbar {
+  display: none;
+}
+
+.creatorChannelRailV5 > button {
+  position: relative;
+  flex: 0 0 176px;
+  min-height: 67px;
+  display: grid;
+  grid-template-columns: 40px minmax(0,1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 9px;
+  border: 1px solid rgba(132,181,215,.14);
+  border-radius: 15px;
+  background: linear-gradient(145deg,#081722,#051019);
+  color: #e8f0f5;
+  text-align: right;
+}
+
+.creatorChannelRailV5 > button.active {
+  border-color: rgba(67,198,255,.46);
+  background:
+    radial-gradient(100px 60px at 100% 0,rgba(50,190,248,.10),transparent 72%),
+    linear-gradient(145deg,#0a2438,#06131e);
+  box-shadow: 0 9px 22px rgba(24,142,209,.12);
+}
+
+.creatorChannelInitialV5 {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: linear-gradient(145deg,#12324a,#081824);
+  color: #70d4ff;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.creatorChannelCopyV5 {
+  min-width: 0;
+}
+
+.creatorChannelCopyV5 strong,
+.creatorChannelCopyV5 small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.creatorChannelCopyV5 strong {
+  font-size: 8.8px;
+}
+
+.creatorChannelCopyV5 small {
+  direction: ltr;
+  margin-top: 4px;
+  color: #748899;
+  font-size: 6.2px;
+  text-align: right;
+}
+
+.creatorChannelBadgesV5 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #62d4a6;
+}
+
+.creatorChannelBadgesV5 svg {
+  width: 13px;
+  height: 13px;
+}
+
+.creatorToolbarBottomV5 {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(130,163,188,.08);
+}
+
+.neutralFlagV5 {
+  color: #7f94a6 !important;
+  border-color: rgba(132,181,215,.11) !important;
+  background: rgba(126,164,194,.04) !important;
+}
+
+.creatorSummaryV5 {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.creatorSummaryV5 article {
+  min-height: 116px;
+  padding: 11px 9px;
+  border: 1px solid rgba(132,181,215,.15);
+  border-radius: 17px;
+  background: linear-gradient(145deg,#091925,#051019);
+  box-shadow: 0 12px 26px rgba(0,0,0,.18);
+}
+
+.creatorSummaryV5 article > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #6acfff;
+}
+
+.creatorSummaryV5 article svg {
+  width: 15px;
+  height: 15px;
+}
+
+.creatorSummaryV5 small {
+  color: #8598a8;
+  font-size: 6.4px;
+}
+
+.creatorSummaryV5 strong {
+  display: block;
+  margin-top: 15px;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.creatorSummaryV5 article > span {
+  display: block;
+  margin-top: 7px;
+  color: #718596;
+  font-size: 6.2px;
+}
+
+.creatorSummaryAccentV5 {
+  border-color: rgba(69,199,250,.30) !important;
+  background:
+    radial-gradient(100px 70px at 100% 0,rgba(54,192,247,.10),transparent 72%),
+    linear-gradient(145deg,#0a253a,#06121c) !important;
+}
+
+.creatorMetricSectionLabelV5 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 3px 7px;
+  color: #8799a8;
+  font-size: 7.2px;
+}
+
+.creatorMetricSectionLabelV5 svg {
+  width: 15px;
+  height: 15px;
+  color: #54c9fa;
+}
+
+.creatorMetricsV5 {
+  margin-top: 0;
+}
+
+.creatorMetricsV5 article {
+  min-height: 90px;
+}
+
+.creatorContentV5 {
+  margin-top: 11px;
+}
+
+.creatorContentV5 .creatorContentHead > svg {
+  width: 17px;
+  height: 17px;
+  color: #5bcaff;
+}
+
+.creatorContentListV5 > article {
+  display: grid;
+  grid-template-columns: 26px minmax(0,1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.creatorContentRankV5 {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(69,199,250,.15);
+  border-radius: 8px;
+  background: rgba(57,192,245,.05);
+  color: #65cff9;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.creatorContentMainV5 {
+  min-width: 0;
+}
+
+@media (max-width:370px) {
+  .creatorChannelRailV5 > button {
+    flex-basis: 160px;
+  }
+
+  .creatorSummaryV5 {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+
+  .creatorSummaryV5 .creatorSummaryAccentV5 {
+    grid-column: 1/-1;
+    min-height: 92px;
+  }
+}
