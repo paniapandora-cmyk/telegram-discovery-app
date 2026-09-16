@@ -1,5 +1,6 @@
+import PostActions from './PostActions';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bookmark, Heart, MessageCircle, Play } from 'lucide-react';
+import { Bookmark, Play } from 'lucide-react';
 import { postMediaCandidates } from '../lib/postMedia';
 import type { Post } from '../types';
 
@@ -98,7 +99,7 @@ export default function PostCard({
         .join(' ')}
       onClick={open}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
           event.preventDefault();
           open();
         }
@@ -161,15 +162,7 @@ export default function PostCard({
         <p>{post.excerpt}</p>
 
         <footer>
-          <span className="statPill" aria-label={`${post.likes} پسند`}>
-            <Heart aria-hidden="true" />
-            <span>{post.likes}</span>
-          </span>
-
-          <span className="statPill" aria-label={`${post.comments} نظر`}>
-            <MessageCircle aria-hidden="true" />
-            <span>{post.comments}</span>
-          </span>
+          <PostActions post={post}/>
 
           <button
             type="button"
