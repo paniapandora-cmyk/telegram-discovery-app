@@ -6,7 +6,7 @@ test('comments, reply, report, own delete, likes and failed saves work on mobile
  await page.route(/\/functions\/v1\/onboarding-v1/,r=>r.fulfill({json:{onboarding_done:true,topics:[]}}));
  const id='33333333-3333-4333-8333-333333333333';let liked=false,items=[],failComment=true,failSave=true,saveCalls=0,replyParent;
  const stats=()=>({likes:liked?1:0,liked,comments:items.length});
- await page.route('https://telegram-discovery-app.paniapandora.workers.dev/**',async r=>{
+ await page.route('**/api/**',async r=>{
   const u=new URL(r.request().url()),path=u.pathname,method=r.request().method();
   const ok=json=>r.fulfill({json});const body=method==='GET'?{}:r.request().postDataJSON();
   if(path.endsWith('/feed'))return ok({items:[{content_id:id,title:'پست آزمون گفتگو',text_content:'متن پست برای آزمون تعامل کاربران',channel_username:'testchannel',source_url:'https://t.me/testchannel/12',social:stats()}]});
