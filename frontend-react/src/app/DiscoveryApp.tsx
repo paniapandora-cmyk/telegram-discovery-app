@@ -29,7 +29,7 @@ import {
 import type { Channel, Page, Post } from '../types';
 import BottomNav from '../components/BottomNav';
 import AddChannelSheet from '../components/AddChannelSheet';
-import Viewer from '../components/Viewer';
+import ViewerStream from '../components/ViewerStream';
 import HomePage from '../pages/HomePage';
 import ExplorePage from '../pages/ExplorePage';
 import SearchPage from '../pages/SearchPage';
@@ -65,6 +65,7 @@ export default function DiscoveryApp() {
   const [explorePosts, setExplorePosts] = useState<Post[]>(seedPosts);
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [historyPosts, setHistoryPosts] = useState<Post[]>([]);
+  const [viewerQueue,setViewerQueue] = useState<Post[]>([]);
   const [viewer, setViewer] = useState<Post | null>(null);
   const viewerStarted = useRef(0);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
@@ -92,7 +93,7 @@ export default function DiscoveryApp() {
 
   const findPost = (id: string) =>
     (viewer?.id === id ? viewer : undefined)
-    || [...posts, ...explorePosts, ...savedPosts, ...historyPosts].find((post) => post.id === id);
+    || [...posts, ...explorePosts, ...savedPosts, ...historyPosts, ...viewerQueue].find((post) => post.id === id);
 
   const finalizeViewer = () => {
     if (!viewer) return;
@@ -310,6 +311,7 @@ export default function DiscoveryApp() {
 
   const applySaved = (id: string, value: boolean, target?: Post) => {
     const update = (current: Post[]) => current.map((post) => post.id === id ? { ...post, saved: value } : post);
+    setViewerQueue(update);
     setPosts(update);
     setExplorePosts(update);
     setHistoryPosts(update);
@@ -339,7 +341,8 @@ export default function DiscoveryApp() {
     toggleSavePost(target);
   };
 
-  const openViewer = (post: Post) => {
+  const activateViewer = (post: Post) => {
+    if(viewer?.id===post.id)return;
     if (viewer && viewer.id !== post.id) finalizeViewer();
     const openedAt = new Date().toISOString();
     setViewer(post);
@@ -349,7 +352,14 @@ export default function DiscoveryApp() {
       return [{ ...post, viewedAt: openedAt, historyEvent: 'open' }, ...without].slice(0, 100);
     });
     void trackPostOpen(post).catch(() => {});
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const openViewer = (post:Post, source?:Post[]) => {
+    const list=source || (page==='saved'?savedPosts:page==='explore'?explorePosts:page==='history'?historyPosts:posts);
+    const index=list.findIndex(item=>item.id===post.id);
+    const after=index>=0?list.slice(index+1):list;
+    setViewerQueue([post,...after.filter(item=>item.id!==post.id)].slice(0,100));
+    activateViewer(post);
+    window.scrollTo({top:0,behavior:'instant'});
   };
 
   const clearHistory = async () => {
@@ -388,8 +398,11 @@ export default function DiscoveryApp() {
     <main className="appShell">
       {saveNotice&&<div className="socialToast" role="status">{saveNotice}</div>}
       {resolvedViewer ? (
-        <Viewer
-          post={resolvedViewer}
+        <ViewerStream
+          key={viewerQueue[0]?.id}
+          posts={viewerQueue.map(item=> item.id===resolvedViewer.id?resolvedViewer:item)}
+          activeId={resolvedViewer.id}
+          onActive={activateViewer}
           onClose={closeViewer}
           onToggleSave={toggleSave}
           onFeedback={feedbackPost}

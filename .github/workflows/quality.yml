@@ -77,6 +77,10 @@ jobs:
         working-directory: frontend-react
         run: node tests/social.mjs
 
+      - name: Verify public video URL boundaries
+        working-directory: frontend-react
+        run: node tests/public-video.mjs
+
       - name: Build frontend
         working-directory: frontend-react
         run: npm run build

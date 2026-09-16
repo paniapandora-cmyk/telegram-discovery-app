@@ -1,3 +1,4 @@
+import PostVideo from './PostVideo';
 import PostActions from './PostActions';
 import { openDiscoveryAssistant } from '../data/ai';
 import { useEffect, useMemo, useState } from 'react';
@@ -26,6 +27,7 @@ import type { Channel, Post } from '../types';
 
 type Props = {
   post: Post;
+  active?: boolean;
   onClose: () => void;
   onToggleSave: (id: string) => void;
   onFeedback: (post: Post, type: string) => Promise<void>;
@@ -33,7 +35,7 @@ type Props = {
   onOpenChannel: (channel: Channel) => void;
 };
 
-export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpenRelated, onOpenChannel }: Props) {
+export default function Viewer({ active = true, post, onClose, onToggleSave, onFeedback, onOpenRelated, onOpenChannel }: Props) {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackBusy, setFeedbackBusy] = useState('');
   const [mediaIndex, setMediaIndex] = useState(0);
@@ -62,11 +64,15 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
   };
 
   useEffect(() => {
-    setMediaIndex(0); setMediaReady(false); setShowFeedback(false); setShareBusy(false); setFeedbackBusy(''); setRelated([]);
+    setMediaIndex(0); setMediaReady(false); setShowFeedback(false); setShareBusy(false); setFeedbackBusy('');
+  }, [post.id, post.mediaUrl, post.telegramUrl]);
+
+  useEffect(()=>{
+    setRelated([]);
     const controller = new AbortController();
-    void loadRelated(controller.signal);
+    if(active)void loadRelated(controller.signal);
     return () => controller.abort();
-  }, [post.id, post.mediaUrl, post.telegramUrl, post.contentId]);
+  }, [post.id, post.mediaUrl, post.telegramUrl, post.contentId, active]);
 
   const activeMedia = mediaCandidates[mediaIndex];
   const mediaExhausted = mediaIndex >= mediaCandidates.length;
@@ -98,10 +104,10 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
   };
 
   return (
-    <section className={`viewer viewer-${post.kind} viewerV12`}>
+    <section aria-hidden={!active} inert={!active} className={`viewer viewer-${post.kind} viewerV12`}>
       <header className="viewerTop viewerTopV12">
         <button type="button" onClick={onClose} aria-label="بازگشت"><ArrowRight /></button>
-        <div><strong>جزئیات پست</strong><small>{post.channel.title}</small></div>
+        <div><strong>{active?'جزئیات پست':'ادامهٔ پست‌ها'}</strong><small>{post.channel.title}</small></div>
         <button type="button" onClick={() => setShowFeedback((value) => !value)} aria-label="گزینه‌های بازخورد"><MoreHorizontal /></button>
       </header>
 
@@ -123,6 +129,7 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
         <h2>{post.title}</h2>
       </div>
 
+      {post.kind === 'video' && <PostVideo key={post.id} post={post} active={active}/>}
       <div className="viewerMeta viewerMetaV12">
         {post.sponsored && <span className="viewerSponsoredBadge">Sponsored · حمایت‌شده</span>}
         <span>{kindLabel}</span><span>{post.date}</span><span>{post.category}</span>
@@ -148,7 +155,7 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
       <article className="viewerText viewerTextV12">
         <p>{post.excerpt}</p>
         <div className="viewerActions viewerActionsV12">
-          <PostActions post={post}/>
+          {active&&<PostActions post={post}/>}
           <button type="button" className={post.saved ? 'saved' : ''} onClick={toggleSave} aria-pressed={Boolean(post.saved)}><Bookmark fill={post.saved ? 'currentColor' : 'none'} /><span>{post.saved ? 'ذخیره شد' : 'ذخیره'}</span></button>
           <button type="button" onClick={() => void share()} disabled={shareBusy}><Share2 /><span>{shareBusy ? 'آماده‌سازی…' : 'اشتراک'}</span></button>
         </div>
@@ -156,7 +163,7 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
 
       <button className="telegramCta" type="button" onClick={() => openTelegramPost(post)} disabled={!hasTelegram}><ExternalLink />{hasTelegram ? 'دیدن پست در تلگرام' : 'لینک تلگرام در دسترس نیست'}</button>
 
-      <section className="relatedSectionV12" aria-label="پست‌های مرتبط">
+      {active&&<section className="relatedSectionV12" aria-label="پست‌های مرتبط">
         <div className="relatedHeadV12">
           <div><span><Sparkles /></span><div><h3>ادامه کشف</h3><p>پست‌های نزدیک به این محتوا، با توجه به موضوع و علایق تو</p></div></div>
           {!relatedLoading && post.contentId && <button type="button" onClick={() => void loadRelated()} aria-label="به‌روزرسانی پست‌های مرتبط"><RefreshCw /></button>}
@@ -175,7 +182,7 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
         ) : relatedError ? (
           <div className="relatedEmptyV12"><p>فعلاً پیشنهاد مرتبط دریافت نشد.</p><button type="button" onClick={() => void loadRelated()}>تلاش دوباره</button></div>
         ) : post.contentId ? <div className="relatedEmptyV12"><p>برای این پست هنوز محتوای مرتبط کافی نداریم.</p></div> : null}
-      </section>
+      </section>}
     </section>
   );
 }

@@ -25,7 +25,7 @@ import '../styles/search-discovery-v11.css';
 
 type Props = {
   channels: Channel[];
-  onOpen: (post: Post) => void;
+  onOpen: (post: Post, source?:Post[]) => void;
   onOpenChannel?: (channel: Channel) => void;
 };
 
@@ -193,7 +193,7 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
 
   const openPost = (post: Post) => {
     if (q.trim().length >= 2) pushRecent(q);
-    onOpen(post);
+    onOpen(post,postsToShow);
   };
 
   const filterItems: Array<{
