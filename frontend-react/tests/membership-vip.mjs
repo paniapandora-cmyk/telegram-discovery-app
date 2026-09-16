@@ -101,7 +101,7 @@ globalThis.fetch = async (url, init) => {
   assert.equal(new Headers(init.headers).get('x-goog-api-key'), 'test-key');
   assert.equal(new Headers(init.headers).has('Authorization'), false);
   const body=JSON.parse(init.body);
-  assert.equal(body.contents[0].parts[0].text,'سلام');
+  assert.equal(body.contents.at(-1).parts.at(-1).text,'سلام');
   assert.equal(body.store,false);
   assert.ok(init.signal);
   if (temporaryFailure && String(url).includes('gemini-3.1-flash-lite')) return Response.json({error:{status:'UNAVAILABLE'}},{status:503});

@@ -1,3 +1,4 @@
+import { openDiscoveryAssistant } from '../data/ai';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
@@ -140,6 +141,10 @@ export default function Viewer({ post, onClose, onToggleSave, onFeedback, onOpen
         </div>
       </div>
 
+      <div className="viewerActions viewerActionsV12">
+        <button type="button" onClick={() => openDiscoveryAssistant({mode:'summarize',selected:{title:post.title,text:post.excerpt,url:post.telegramUrl},prompt:'این متن را در سه نکته خلاصه کن و نکتهٔ کاربردی‌اش را بگو.'})}><Sparkles/><span>خلاصه با دستیار</span></button>
+        <button type="button" onClick={() => openDiscoveryAssistant({mode:'translate',selected:{title:post.title,text:post.excerpt,url:post.telegramUrl},prompt:'این متن را به فارسی روان ترجمه کن؛ اگر فارسی است به انگلیسی ترجمه کن.'})}><Sparkles/><span>ترجمه</span></button>
+      </div>
       <article className="viewerText viewerTextV12">
         <p>{post.excerpt}</p>
         <div className="viewerActions viewerActionsV12">

@@ -65,6 +65,10 @@ jobs:
         working-directory: frontend-react
         run: node tests/ai-contract.mjs
 
+      - name: Verify assistant data boundaries
+        working-directory: frontend-react
+        run: node tests/assistant-context.mjs
+
       - name: Verify membership and VIP policy
         working-directory: frontend-react
         run: node tests/membership-vip.mjs

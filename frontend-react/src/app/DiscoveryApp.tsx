@@ -70,6 +70,7 @@ export default function DiscoveryApp() {
   const [feedState, setFeedState] = useState<FeedState>('loading');
   const [exploreState, setExploreState] = useState<FeedState>('loading');
   const [savedState, setSavedState] = useState<LoadState>('idle');
+  const [savedNonce, setSavedNonce] = useState(0);
   const [historyState, setHistoryState] = useState<LoadState>('idle');
   const [hub, setHub] = useState<HubData | null>(null);
   const [hubState, setHubState] = useState<LoadState>('idle');
@@ -115,6 +116,17 @@ export default function DiscoveryApp() {
     setPage(next);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    const navigate = (event: Event) => {
+      const next = (event as CustomEvent<{page:Page}>).detail?.page;
+      if (['search','explore','saved','creator','invite','personalization'].includes(next)) changePage(next);
+    };
+    const saved = () => { setSavedNonce(value => value + 1); setFeedNonce(value => value + 1); };
+    window.addEventListener('td-ai-navigate', navigate);
+    window.addEventListener('td-ai-saved', saved);
+    return () => { window.removeEventListener('td-ai-navigate', navigate); window.removeEventListener('td-ai-saved', saved); };
+  }, [viewer]);
 
   const openChannel = (channel: Channel) => {
     if (!channel.creatorId && !/^[0-9a-f-]{36}$/i.test(channel.id)) return;
@@ -212,7 +224,7 @@ export default function DiscoveryApp() {
         if (!controller.signal.aborted) setSavedState('fallback');
       });
     return () => controller.abort();
-  }, [page]);
+  }, [page, savedNonce]);
 
   useEffect(() => {
     if (page !== 'history') return;
