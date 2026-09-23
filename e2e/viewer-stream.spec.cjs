@@ -1,0 +1,25 @@
+const {test,expect}=require('@playwright/test');
+test('viewer scrolls through source posts and resolves video only after a click',async({page})=>{
+ await page.route('https://telegram.org/js/telegram-web-app.js',r=>r.fulfill({contentType:'application/javascript',body:''}));
+ await page.addInitScript(()=>{window.Telegram={WebApp:{initData:'e2e-member',ready(){},expand(){},BackButton:{show(){},hide(){},onClick(){},offClick(){}},HapticFeedback:{impactOccurred(){}}}};});
+ await page.route(/\/functions\/v1\/growth-referral-v1/,r=>r.fulfill({json:{ok:true,member:true}}));
+ await page.route(/\/functions\/v1\/onboarding-v1/,r=>r.fulfill({json:{onboarding_done:true,topics:[]}}));
+ await page.route(/\/functions\/v1\/related-content-v1/,r=>r.fulfill({json:{items:[]}}));
+ const items=[1,2,3,4].map(n=>({content_id:`33333333-3333-4333-8333-33333333333${n}`,title:`پست آزمایش ${n}`,text_content:`متن پست آزمایش ${n}`,content_type:n===2?'VIDEO':'TEXT',channel_username:'testchannel',source_url:`https://t.me/testchannel/${n}`,social:{likes:0,liked:false,comments:0}}));
+ await page.route('**/api/**',r=>r.fulfill({json:{ok:true,items:r.request().url().includes('/feed?')?items:[],likes:0,comments:0,liked:false}}));
+ let requests=0;
+ await page.route('https://cdn-telegram.org/test.webm',r=>r.fulfill({contentType:'video/webm',body:Buffer.from(require('fs').readFileSync(require('path').join(__dirname,'fixtures/video.webm.base64'),'utf8'),'base64')}));
+ await page.route(/\/functions\/v1\/telegram-media-v1/,r=>{if(r.request().url().includes('mode=video')){requests++;return r.fulfill({json:{ok:true,video_url:requests===1?null:'https://cdn-telegram.org/test.webm'}});}return r.fulfill({status:404,body:''});});
+ await page.goto('/');await page.locator('.postCard').filter({hasText:'پست آزمایش 1'}).click();
+ await expect(page.locator('[data-viewer-post]')).toHaveCount(3);expect(requests).toBe(0);
+ const second=page.locator('[data-viewer-post]').nth(1);await second.scrollIntoViewIfNeeded();
+ await expect(second.locator('section.viewer')).toHaveAttribute('aria-hidden','false');
+ await second.getByRole('button',{name:'پخش ویدئو داخل دیسکاوری'}).click();await expect(second.getByRole('status')).toContainText('قابل پخش نیست');expect(requests).toBe(1);
+ await expect(second.getByRole('button',{name:'دیدن ویدئو در کانال'})).toBeEnabled();
+ await second.getByRole('button',{name:'تلاش دوباره برای پخش'}).click();
+ const video=second.locator('video');await expect(video).toHaveAttribute('playsinline','');await expect(video).toHaveAttribute('preload','none');
+ await video.evaluate(v=>v.play());await expect.poll(()=>video.evaluate(v=>v.currentTime)).toBeGreaterThan(0);
+ const first=page.locator('[data-viewer-post]').first();await first.scrollIntoViewIfNeeded();await expect(first.locator('section.viewer')).toHaveAttribute('aria-hidden','false');
+ await expect.poll(()=>video.evaluate(v=>v.paused)).toBe(true);
+ await first.getByRole('button',{name:'بازگشت',exact:true}).click();await expect(page.locator('.postCard')).toHaveCount(4);
+});

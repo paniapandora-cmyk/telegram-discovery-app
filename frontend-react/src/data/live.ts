@@ -390,6 +390,7 @@ const normalizePost = (row: RawRow, index: number): Post => {
     tone: hashTone(String(id) + username),
     mediaUrl: media,
     date: formatDate(pick(row, ['published_at', 'posted_at', 'created_at', 'date', 'timestamp'])),
+    social: row.social && typeof row.social === 'object' ? row.social as Post['social'] : undefined,
     likes: compact(numberValue(row, ['reactions_count', 'reaction_count', 'likes', 'likes_count', 'reactions'])),
     comments: compact(numberValue(row, ['comments_count', 'replies_count', 'reply_count', 'comments'])),
     saved: boolValue(row, ['is_saved', 'saved']),
