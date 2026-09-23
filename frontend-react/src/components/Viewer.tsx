@@ -9,7 +9,6 @@ import {
   EyeOff,
   Layers3,
   MoreHorizontal,
-  Play,
   RefreshCw,
   Share2,
   ShieldAlert,
@@ -120,14 +119,14 @@ export default function Viewer({ active = true, post, onClose, onToggleSave, onF
         </div>
       )}
 
-      <div className={['viewerMedia', `tone-${post.tone}`, mediaReady ? 'viewerHasMedia' : 'viewerNoMedia', activeMedia && !mediaReady && !mediaExhausted ? 'viewerMediaLoading' : ''].filter(Boolean).join(' ')}>
+      {post.kind !== 'video' && <div className={['viewerMedia', `tone-${post.tone}`, mediaReady ? 'viewerHasMedia' : 'viewerNoMedia', activeMedia && !mediaReady && !mediaExhausted ? 'viewerMediaLoading' : ''].filter(Boolean).join(' ')}>
         {activeMedia && !mediaExhausted && <img key={activeMedia} src={activeMedia} alt="" decoding="async" onLoad={() => setMediaReady(true)} onError={failCurrentMedia} />}
         {!mediaReady && activeMedia && !mediaExhausted && <span className="viewerMediaShimmer" aria-hidden="true" />}
         <span className="categoryChip">{post.sponsored ? 'تبلیغ' : post.category}</span>
-        {post.kind === 'video' && <span className="playBadge viewerPlay"><Play fill="currentColor" /></span>}
         {!mediaReady && <span className="textQuoteMark viewerQuote">“</span>}
         <h2>{post.title}</h2>
-      </div>
+      </div>}
+      {post.kind === 'video' && <h2 className="viewer-video-title">{post.title}</h2>}
 
       {post.kind === 'video' && <PostVideo key={post.id} post={post} active={active}/>}
       <div className="viewerMeta viewerMetaV12">
@@ -161,7 +160,7 @@ export default function Viewer({ active = true, post, onClose, onToggleSave, onF
         </div>
       </article>
 
-      <button className="telegramCta" type="button" onClick={() => openTelegramPost(post)} disabled={!hasTelegram}><ExternalLink />{hasTelegram ? 'دیدن پست در تلگرام' : 'لینک تلگرام در دسترس نیست'}</button>
+      {post.kind !== 'video' && <button className="telegramCta" type="button" onClick={() => openTelegramPost(post)} disabled={!hasTelegram}><ExternalLink />{hasTelegram ? 'دیدن پست در تلگرام' : 'لینک تلگرام در دسترس نیست'}</button>}
 
       {active&&<section className="relatedSectionV12" aria-label="پست‌های مرتبط">
         <div className="relatedHeadV12">

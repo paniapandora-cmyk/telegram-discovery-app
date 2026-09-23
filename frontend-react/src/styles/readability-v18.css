@@ -1,0 +1,110 @@
+/* Focused usability pass on the existing design; no data or routing changes.
+   Loaded last to correct the legacy 5–9px labels and fixed viewer CTA. */
+.referenceBottomNav.bottomNav button span {
+  font-size: 11px !important;
+  line-height: 1.5;
+}
+.referenceHomeBrand small,
+.libraryStatsV12 small,
+.libraryCopyV12 > small,
+.historyCopyV12 > small,
+.viewerTopV12 > div small,
+.relatedHeadV12 p,
+.relatedEmptyV12 p,
+.sectionTitle > small {
+  font-size: 12px !important;
+  line-height: 1.7 !important;
+  color: #a5bacb !important;
+}
+.libraryCopyV12 > strong,
+.historyCopyV12 > strong {
+  font-size: 15px !important;
+  line-height: 1.7 !important;
+}
+.libraryCopyV12 > p,
+.historyCopyV12 > p {
+  font-size: 13px !important;
+  line-height: 1.8 !important;
+  color: #a5bacb !important;
+}
+.libraryCopyV12,
+.historyCopyV12,
+.referenceMenuCopy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.libraryStatsV12 article { height: auto; min-height: 96px; }
+.libraryToolbarV12 .referenceSavedFilters button,
+.historyFiltersV12 button,
+.librarySortV12,
+.librarySortV12 select,
+.relatedEmptyV12 button {
+  min-height: 44px !important;
+  font-size: 13px !important;
+}
+.viewerTop.viewerTopV12 { height: auto !important; min-height: 64px; }
+.viewerTop.viewerTopV12 button,
+.viewerActionsV12 button,
+.tdai-icon {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+/* Keep the action in the reading flow, not above video controls or comments. */
+.viewer .telegramCta {
+  position: static !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  min-height: 48px;
+  margin: 16px 0 !important;
+  font-size: 14px !important;
+}
+.tdai-launch {
+  bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+}
+.tdai-msg { font-size: 14px; line-height: 1.9; }
+.tdai-note, .tdai-title span { font-size: 12px; }
+.tdai-starter, .tdai-tools button, .tdai-source button,
+.tdai-copy, .tdai-page { min-height: 44px; font-size: 13px; }
+.appShell :is(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid #73d5ff;
+  outline-offset: 3px;
+}
+@media (max-width: 380px) {
+  .libraryToolbarV12, .historyToolbarV12 { flex-wrap: wrap; }
+  .libraryToolbarV12 .referenceSavedFilters { max-width: 100%; }
+  .libraryStatsV12 { gap: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .appShell *, .appShell *::before, .appShell *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Shared legibility for account, creator and discovery surfaces. */
+.referenceMenuCopy b, .referenceSupportList b, .referenceAdsIntro b {
+  font-size: 15px !important; line-height: 1.7;
+}
+.referenceMenuCopy small, .referenceProfileHero p,
+.referenceProfileStats small, .referenceSupportList small,
+.referenceSupportThanks span, .referenceAdsIntro small,
+.channelHeroCopyV14 small, .searchChannelCardV11 small {
+  font-size: 12px !important; line-height: 1.8; color: #a5bacb !important;
+}
+.pageHeader h1, .referenceListHeader h1, .referenceSubHeader h1 {
+  font-size: clamp(23px, 6vw, 28px) !important; line-height: 1.5;
+}
+.pageHeader p, .referenceListHeader p, .referenceSubHeader p {
+  font-size: 13px !important; line-height: 1.8 !important;
+}
+.page input, .page textarea, .page select { font-size: 16px !important; }
+.referenceFeedTabs.feedTabs button { min-height: 44px; font-size: 13px !important; }
+.exploreCategoryRail button, .searchFiltersV11 button,
+.notificationFiltersV9 button { min-height: 44px; font-size: 13px !important; }
+.viewer-video-title { margin: 16px 0; font-size: 20px; line-height: 1.8; overflow-wrap: anywhere; }
+.referenceBottomNav.bottomNav {
+  max-width: 740px !important; margin-inline: auto !important;
+}

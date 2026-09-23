@@ -15,6 +15,7 @@ import './styles/detail-pass-v8.css';
 import './styles/detail-micro-v8.css';
 import './styles/library-viewer-v12.css';
 import './styles/feed-pagination-v17.css';
+import './styles/readability-v18.css';
 
 const PRODUCTION_WORKER =
     'https://telegram-discovery-app.paniapandora.workers.dev';
