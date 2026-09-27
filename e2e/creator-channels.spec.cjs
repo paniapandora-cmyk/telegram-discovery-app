@@ -17,8 +17,17 @@ for (const width of [320, 390]) {
       id: `22222222-2222-4222-8222-22222222222${i}`,
       username, title: i === 2 ? 'هویت' : `کانال ${i + 1}`, verified: true, is_bot_admin: true,
     }));
-    await page.route('**/api/**', r => r.fulfill({ json: r.request().url().includes('/creator/channels')
-      ? { ok: true, channels } : { ok: true, items: [], channels: [] } }));
+    let failChannels = false;
+    let metricRequests = 0;
+    await page.route('**/api/**', r => {
+      const url = r.request().url();
+      if (url.includes('/creator/dashboard')) metricRequests++;
+      if (url.includes('/creator/channels') && failChannels) {
+        return r.fulfill({ status: 503, json: { error: 'unavailable' } });
+      }
+      return r.fulfill({ json: url.includes('/creator/channels')
+        ? { ok: true, channels } : { ok: true, items: [], channels: [] } });
+    });
     await page.goto('/');
     await page.getByRole('navigation', { name: 'ناوبری اصلی' }).getByRole('button', { name: 'پروفایل', exact: true }).click();
     await page.getByRole('button', { name: /Creator Center/ }).click();
@@ -32,6 +41,20 @@ for (const width of [320, 390]) {
     }
     const hoviat = picker.getByRole('button', { name: /هویت/ });
     await hoviat.click();
+    await expect(hoviat).toHaveAttribute('aria-pressed', 'true');
+    const refresh = page.getByRole('button', { name: 'تازه‌سازی کانال‌ها و آمار' });
+    await expect(refresh).toBeEnabled();
+    const previousRequests = metricRequests;
+    failChannels = true;
+    await refresh.click();
+    await expect(page.getByRole('alert')).toContainText('دریافت فهرست کانال‌ها انجام نشد');
+    await expect(picker.getByRole('button')).toHaveCount(3);
+    await expect(page.getByText('کانال مالکیتی پیدا نشد', { exact: true })).toHaveCount(0);
+    await expect.poll(() => metricRequests).toBeGreaterThan(previousRequests);
+    failChannels = false;
+    await expect(refresh).toBeEnabled();
+    await refresh.click();
+    await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(hoviat).toHaveAttribute('aria-pressed', 'true');
   });
 }

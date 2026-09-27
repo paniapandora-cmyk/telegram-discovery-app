@@ -18,6 +18,7 @@ import {
   LoaderCircle,
   CheckCircle2,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -37,6 +38,8 @@ type Props = {
   metrics: CreatorMetrics | null;
   content: CreatorContent[];
   state: LoadState;
+  channelsState: LoadState;
+  onRefresh: () => void;
   needsTelegram: boolean;
   days: number;
   onDays: (days: number) => void;
@@ -58,6 +61,8 @@ export default function CreatorPage({
   metrics,
   content,
   state,
+  channelsState,
+  onRefresh,
   needsTelegram,
   days,
   onDays,
@@ -129,9 +134,9 @@ export default function CreatorPage({
 
           <div className="creatorHeaderStatusV5">
             <span className={`liveBadge ${state}`}>
-              {state === 'live'
+              {channelsState === 'live' && state === 'live'
                 ? 'داده زنده'
-                : state === 'loading'
+                : channelsState === 'loading' || state === 'loading'
                   ? 'در حال دریافت…'
                   : needsTelegram
                     ? 'نیاز به تلگرام'
@@ -146,6 +151,15 @@ export default function CreatorPage({
           <ArrowRight />
         </button>
       </header>
+
+      <div className="creatorRefreshV19">
+        <button type="button" onClick={onRefresh} disabled={channelsState === 'loading' || state === 'loading'}>
+          <RefreshCw /> تازه‌سازی کانال‌ها و آمار
+        </button>
+        {channelsState === 'fallback' && !needsTelegram && (
+          <p role="alert">دریافت فهرست کانال‌ها انجام نشد. دوباره تلاش کن؛ کانال‌های قبلی، اگر موجود باشند، همچنان نمایش داده می‌شوند.</p>
+        )}
+      </div>
 
       <section className="creatorClaimV13 surface">
         <div className="creatorClaimHeadV13">
@@ -454,13 +468,14 @@ export default function CreatorPage({
               <BarChart3 />
               <h2>آمار این کانال دریافت نشد</h2>
               <p>
-                کانال در فهرست مالک نمایش داده می‌شود، اما برای این بازه هنوز
-                داده تحلیلی قابل نمایش برنگشته است.
+                دریافت آمار انجام نشد. برای دریافت دوباره از دکمهٔ تازه‌سازی بالا استفاده کن.
               </p>
             </div>
           )}
         </>
-      ) : (
+      ) : channelsState === 'loading' ? (
+        <div className="emptyState" role="status"><LoaderCircle className="spin" /><p>در حال دریافت کانال‌ها…</p></div>
+      ) : channelsState === 'fallback' && !needsTelegram ? null : (
         <div className="emptyState">
           <BarChart3 />
           <h2>
@@ -470,8 +485,8 @@ export default function CreatorPage({
           </h2>
           <p>
             {needsTelegram
-              ? 'این بخش به Telegram initData نیاز دارد تا فقط کانال‌های متعلق به همان مالک نمایش داده شوند.'
-              : 'بعد از اتصال کانال به Creator API، آمار رشد و عضویت اینجا نمایش داده می‌شود.'}
+              ? 'برای دیدن کانال‌های خودت، برنامه را از داخل ربات تلگرام باز کن.'
+              : 'نام کاربری کانالت را در بخش ثبت مالکیت بالا وارد کن تا اینجا نمایش داده شود.'}
           </p>
         </div>
       )}

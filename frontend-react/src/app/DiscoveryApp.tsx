@@ -271,10 +271,11 @@ export default function DiscoveryApp() {
       loadBotOwnerStats(controller.signal).catch(() => null),
     ])
       .then(([nextHub, nextBot]) => {
-        setHub(nextHub);
+        if (controller.signal.aborted) return;
+        setHub((previous) => ({ ...nextHub, creators: nextHub.channelsLive ? nextHub.creators : previous?.creators || [] }));
         setBotStats(nextBot);
         setHubState(nextHub.sourceLive ? 'live' : 'fallback');
-        setSelectedCreatorId((current) =>
+        if (nextHub.channelsLive) setSelectedCreatorId((current) =>
           current && nextHub.creators.some((item) => item.id === current)
             ? current
             : nextHub.creators[0]?.id || '',
@@ -290,11 +291,14 @@ export default function DiscoveryApp() {
     if (page !== 'creator' || !selectedCreatorId) return;
     const controller = new AbortController();
     setCreatorState('loading');
+    setCreatorMetrics(null);
+    setCreatorContent([]);
     Promise.all([
       loadCreatorMetrics(selectedCreatorId, creatorDays, controller.signal),
       loadCreatorContent(selectedCreatorId, creatorDays, controller.signal),
     ])
       .then(([metrics, content]) => {
+        if (controller.signal.aborted) return;
         setCreatorMetrics(metrics);
         setCreatorContent(content);
         setCreatorState('live');
@@ -307,7 +311,7 @@ export default function DiscoveryApp() {
         }
       });
     return () => controller.abort();
-  }, [page, selectedCreatorId, creatorDays]);
+  }, [page, selectedCreatorId, creatorDays, hubNonce]);
 
   const applySaved = (id: string, value: boolean, target?: Post) => {
     const update = (current: Post[]) => current.map((post) => post.id === id ? { ...post, saved: value } : post);
@@ -480,6 +484,8 @@ export default function DiscoveryApp() {
                 metrics={creatorMetrics}
                 content={creatorContent}
                 state={creatorState}
+                channelsState={hubState === 'loading' ? 'loading' : hub?.channelsLive ? 'live' : 'fallback'}
+                onRefresh={() => setHubNonce((value) => value + 1)}
                 needsTelegram={hub?.needsTelegram ?? true}
                 days={creatorDays}
                 onDays={setCreatorDays}

@@ -122,3 +122,9 @@
 }
 .creatorChannelCopyV5 strong { font-size: 14px !important; }
 .creatorChannelCopyV5 small { font-size: 12px !important; }
+
+.creatorRefreshV19 { margin-block: 16px; }
+.creatorRefreshV19 button { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #375367; border-radius: 14px; background: #102536; color: #e7f2fa; font-size: 14px; }
+.creatorRefreshV19 button:disabled { opacity: .55; }
+.creatorRefreshV19 svg { width: 18px; height: 18px; }
+.creatorRefreshV19 p { color: #f5cf99; font-size: 14px; line-height: 1.9; }

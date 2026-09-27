@@ -156,6 +156,7 @@ export type HubData = {
   claimsCount: number;
   creators: CreatorChannel[];
   sourceLive: boolean;
+  channelsLive: boolean;
   needsTelegram: boolean;
 };
 
@@ -620,7 +621,8 @@ export async function loadProfileHub(
     topicsCount: candidateList(topics).length,
     claimsCount: candidateList(claims).length,
     creators,
-    sourceLive: settled.some((item) => item.status === 'fulfilled'),
+    sourceLive: settled.every((item) => item.status === 'fulfilled'),
+    channelsLive: settled[4].status === 'fulfilled',
     needsTelegram: !getTelegramInitData(),
   };
 }
