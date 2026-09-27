@@ -108,3 +108,17 @@
 .referenceBottomNav.bottomNav {
   max-width: 740px !important; margin-inline: auto !important;
 }
+
+/* Keep every owned channel discoverable without a hidden horizontal scroll. */
+.creatorChannelPickerV5 .creatorChannelRailV5 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  overflow: visible;
+  scroll-snap-type: none;
+}
+.creatorChannelPickerV5 .creatorChannelRailV5 > button {
+  width: 100%;
+  min-width: 0;
+}
+.creatorChannelCopyV5 strong { font-size: 14px !important; }
+.creatorChannelCopyV5 small { font-size: 12px !important; }

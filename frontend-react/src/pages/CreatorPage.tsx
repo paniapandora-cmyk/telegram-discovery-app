@@ -221,11 +221,12 @@ export default function CreatorPage({
               <Activity />
             </div>
 
-            <div className="creatorChannelRailV5">
+            <div className="creatorChannelRailV5" role="group" aria-label="کانال‌های من">
               {channels.map((channel) => (
                 <button
                   key={channel.id}
                   className={channel.id === selectedId ? 'active' : ''}
+                  aria-pressed={channel.id === selectedId}
                   onClick={() => onSelect(channel.id)}
                 >
                   <span className="creatorChannelInitialV5">
