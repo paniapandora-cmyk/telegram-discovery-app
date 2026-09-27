@@ -88,6 +88,7 @@ export default function DiscoveryApp() {
   const [creatorContent, setCreatorContent] = useState<CreatorContent[]>([]);
   const [creatorDays, setCreatorDays] = useState(30);
   const [creatorState, setCreatorState] = useState<LoadState>('idle');
+  const [creatorContentFailed, setCreatorContentFailed] = useState(false);
 
   const liveChannels = useMemo(() => decorateChannels(channels), []);
 
@@ -293,23 +294,17 @@ export default function DiscoveryApp() {
     setCreatorState('loading');
     setCreatorMetrics(null);
     setCreatorContent([]);
-    Promise.all([
+    setCreatorContentFailed(false);
+    Promise.allSettled([
       loadCreatorMetrics(selectedCreatorId, creatorDays, controller.signal),
       loadCreatorContent(selectedCreatorId, creatorDays, controller.signal),
-    ])
-      .then(([metrics, content]) => {
-        if (controller.signal.aborted) return;
-        setCreatorMetrics(metrics);
-        setCreatorContent(content);
-        setCreatorState('live');
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setCreatorMetrics(null);
-          setCreatorContent([]);
-          setCreatorState('fallback');
-        }
-      });
+    ]).then(([metrics, content]) => {
+      if (controller.signal.aborted) return;
+      setCreatorMetrics(metrics.status === 'fulfilled' ? metrics.value : null);
+      setCreatorContent(content.status === 'fulfilled' ? content.value : []);
+      setCreatorContentFailed(content.status === 'rejected');
+      setCreatorState(metrics.status === 'fulfilled' && content.status === 'fulfilled' ? 'live' : 'fallback');
+    });
     return () => controller.abort();
   }, [page, selectedCreatorId, creatorDays, hubNonce]);
 
@@ -483,6 +478,7 @@ export default function DiscoveryApp() {
                 selectedId={selectedCreatorId}
                 metrics={creatorMetrics}
                 content={creatorContent}
+                contentFailed={creatorContentFailed}
                 state={creatorState}
                 channelsState={hubState === 'loading' ? 'loading' : hub?.channelsLive ? 'live' : 'fallback'}
                 onRefresh={() => setHubNonce((value) => value + 1)}

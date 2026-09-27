@@ -19,9 +19,15 @@ for (const width of [320, 390]) {
     }));
     let failChannels = false;
     let metricRequests = 0;
+    let failContent = false;
     await page.route('**/api/**', r => {
       const url = r.request().url();
-      if (url.includes('/creator/dashboard')) metricRequests++;
+      if (url.includes('/creator/analytics')) {
+        metricRequests++;
+        const channelId = new URL(url).searchParams.get('channel_id');
+        return r.fulfill({ json: { channels: [{ channel_id: 'other-channel', views: 999 }, { channel_id: channelId, views: 123 }] } });
+      }
+      if (url.includes('/creator/content-performance') && failContent) return r.fulfill({ status: 503, json: { error: 'unavailable' } });
       if (url.includes('/creator/channels') && failChannels) {
         return r.fulfill({ status: 503, json: { error: 'unavailable' } });
       }
@@ -56,5 +62,12 @@ for (const width of [320, 390]) {
     await refresh.click();
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(hoviat).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.creatorSummaryV5 article').first()).toContainText('۱۲۳');
+    await expect(page.locator('.creatorSummaryV5')).not.toContainText('۹۹۹');
+    failContent = true;
+    await expect(refresh).toBeEnabled();
+    await refresh.click();
+    await expect(page.getByRole('alert')).toContainText('پست‌ها دریافت نشدند');
+    await expect(page.locator('.creatorSummaryV5 article').first()).toContainText('۱۲۳');
   });
 }

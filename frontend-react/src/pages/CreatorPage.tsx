@@ -37,6 +37,7 @@ type Props = {
   selectedId: string;
   metrics: CreatorMetrics | null;
   content: CreatorContent[];
+  contentFailed: boolean;
   state: LoadState;
   channelsState: LoadState;
   onRefresh: () => void;
@@ -60,6 +61,7 @@ export default function CreatorPage({
   selectedId,
   metrics,
   content,
+  contentFailed,
   state,
   channelsState,
   onRefresh,
@@ -424,7 +426,9 @@ export default function CreatorPage({
                   <Activity />
                 </div>
 
-                {content.length ? (
+                {contentFailed ? (
+                  <div className="inlineEmpty" role="alert">پست‌ها دریافت نشدند؛ آمار بالا در دسترس است. برای تلاش مجدد، تازه‌سازی را بزن.</div>
+                ) : content.length ? (
                   <div className="creatorContentList creatorContentListV5">
                     {content.map((item, index) => (
                       <article key={item.id}>
@@ -458,7 +462,7 @@ export default function CreatorPage({
                   </div>
                 ) : (
                   <div className="inlineEmpty">
-                    برای این بازه، داده عملکرد محتوا برنگشت.
+                    در این بازه هنوز پستی برای نمایش وجود ندارد.
                   </div>
                 )}
               </section>
