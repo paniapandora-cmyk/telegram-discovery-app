@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useEffect, useMemo, useRef, useState } from 'react';
 import { channels, posts as seedPosts } from '../data/demo';
 import {
   decorateChannels,
@@ -103,7 +103,20 @@ export default function DiscoveryApp() {
     viewerStarted.current = 0;
   };
 
+  const viewerOrigin = useRef<{top:number; focus:HTMLElement|null}>({top:0,focus:null});
+  const restoreViewerOrigin = useRef(false);
+  useLayoutEffect(() => {
+    if (viewer) {
+      window.scrollTo({top:0,behavior:'instant'});
+    } else if (restoreViewerOrigin.current) {
+      restoreViewerOrigin.current=false;
+      viewerOrigin.current.focus?.focus({preventScroll:true});
+      window.scrollTo({top:viewerOrigin.current.top,behavior:'instant'});
+    }
+  }, [Boolean(viewer)]);
+
   const closeViewer = () => {
+    restoreViewerOrigin.current=true;
     finalizeViewer();
     setViewer(null);
   };
@@ -353,6 +366,7 @@ export default function DiscoveryApp() {
     void trackPostOpen(post).catch(() => {});
   };
   const openViewer = (post:Post, source?:Post[]) => {
+    if (!viewer) viewerOrigin.current={top:window.scrollY,focus:document.activeElement instanceof HTMLElement?document.activeElement:null};
     const list=source || (page==='saved'?savedPosts:page==='explore'?explorePosts:page==='history'?historyPosts:posts);
     const index=list.findIndex(item=>item.id===post.id);
     const after=index>=0?list.slice(index+1):list;
@@ -396,7 +410,7 @@ export default function DiscoveryApp() {
   return (
     <main className="appShell">
       {saveNotice&&<div className="socialToast" role="status">{saveNotice}</div>}
-      {resolvedViewer ? (
+      {resolvedViewer && (
         <ViewerStream
           key={viewerQueue[0]?.id}
           posts={viewerQueue.map(item=> item.id===resolvedViewer.id?resolvedViewer:item)}
@@ -408,8 +422,8 @@ export default function DiscoveryApp() {
           onOpenRelated={openViewer}
           onOpenChannel={openChannel}
         />
-      ) : (
-        <>
+      )}
+        <div style={{display:resolvedViewer ? 'none' : undefined}}>
           <div className="pageViewport">
             {page === 'home' && (
               <HomePage
@@ -518,8 +532,7 @@ export default function DiscoveryApp() {
             )}
           </div>
           <BottomNav page={page} onChange={changePage} />
-        </>
-      )}
+        </div>
       <AddChannelSheet open={addOpen} onClose={() => setAddOpen(false)} onAdded={() => setHubNonce((value) => value + 1)} />
     </main>
   );
