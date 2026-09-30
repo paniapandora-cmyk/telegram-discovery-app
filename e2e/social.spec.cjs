@@ -5,6 +5,9 @@ test('comments, reply, report, own delete, likes and failed saves work on mobile
  await page.route(/\/functions\/v1\/growth-referral-v1/,r=>r.fulfill({json:{ok:true,member:true}}));
  await page.route(/\/functions\/v1\/onboarding-v1/,r=>r.fulfill({json:{onboarding_done:true,topics:[]}}));
  const id='33333333-3333-4333-8333-333333333333';let liked=false,items=[],failComment=true,failSave=true,saveCalls=0,replyParent;
+ let releaseFirstLoad;
+ const firstLoadGate=new Promise(resolve=>{releaseFirstLoad=resolve;});
+ let firstLoad=true;
  const stats=()=>({likes:liked?1:0,liked,comments:items.length});
  await page.route('**/api/**',async r=>{
   const u=new URL(r.request().url()),path=u.pathname,method=r.request().method();
@@ -14,7 +17,10 @@ test('comments, reply, report, own delete, likes and failed saves work on mobile
   if(path.endsWith('/like')){liked=body.liked;return ok({ok:true,...stats()});}
   if(path.endsWith('/comments/report')){items=items.map(c=>c.id===body.comment_id?{...c,reported:true}:c);return ok({ok:true});}
   if(path.endsWith('/comments')){
-   if(method==='GET')return ok({ok:true,items,has_more:false,...stats()});
+   if(method==='GET'){
+    if(firstLoad){firstLoad=false;const initial={ok:true,items:[],has_more:false,...stats()};await firstLoadGate;return ok(initial);}
+    return ok({ok:true,items,has_more:false,...stats()});
+   }
    if(method==='POST'){
     if(failComment){failComment=false;return r.fulfill({status:503,json:{error:'unavailable'}});}
     replyParent=body.parent_id;
@@ -31,6 +37,9 @@ test('comments, reply, report, own delete, likes and failed saves work on mobile
  const dialog=page.getByRole('dialog',{name:'نظرات دیسکاوری'});await expect(dialog).toBeVisible();await expect(page.getByText('جزئیات پست',{exact:true})).toHaveCount(0);
  const input=dialog.getByRole('textbox');await input.fill('<script>alert(1)</script> نظر من');await dialog.getByRole('button',{name:'ارسال نظر',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('متن حفظ شده');await expect(input).toHaveValue('<script>alert(1)</script> نظر من');
  await dialog.getByRole('button',{name:'ارسال نظر',exact:true}).click();await expect(dialog.locator('.commentBody')).toHaveText('<script>alert(1)</script> نظر من');await expect(dialog.locator('script')).toHaveCount(0);
+ const staleResponse=page.waitForResponse(r=>r.url().includes('/comments?')&&r.request().method()==='GET');
+ releaseFirstLoad();await staleResponse;
+ await expect(dialog.locator('.commentBody')).toHaveText('<script>alert(1)</script> نظر من');
  await dialog.getByRole('button',{name:'پاسخ',exact:true}).click();await input.fill('پاسخ من');await dialog.getByRole('button',{name:'ارسال نظر',exact:true}).click();await expect(dialog.locator('.commentItem')).toHaveCount(2);expect(replyParent).toBeTruthy();
  await dialog.getByRole('button',{name:'حذف نظر من',exact:true}).first().click();await dialog.getByRole('button',{name:'بله، حذف کن'}).click();await expect(dialog.locator('.commentItem')).toHaveCount(1);
  items.push({id:crypto.randomUUID(),body:'نظر کاربر دیگر',author:'دیگری',mine:false,created_at:new Date().toISOString()});

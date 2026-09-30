@@ -6,15 +6,16 @@ export default function CommentsSheet({contentId,title,onClose}:{contentId:strin
  const [items,setItems]=useState<Comment[]>([]),[loading,setLoading]=useState(true),[more,setMore]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [text,setText]=useState(''),[reply,setReply]=useState<Comment|null>(null),[busy,setBusy]=useState(false),[deleteId,setDeleteId]=useState('');
  const panel=useRef<HTMLDivElement>(null),input=useRef<HTMLTextAreaElement>(null),lock=useRef(false),requestId=useRef(crypto.randomUUID());
- const alive=useRef(true);
+ const alive=useRef(true),loadSequence=useRef(0);
  const load=async(append=false)=>{
+  const sequence=++loadSequence.current;
   setLoading(true);setError('');
   const last=append?items[items.length-1]:null;
   try {
    const data=await socialRequest(`/comments?content_id=${contentId}${last?`&before=${encodeURIComponent(last.created_at)}&before_id=${last.id}`:''}`);
-   if(!alive.current)return;
+   if(!alive.current||sequence!==loadSequence.current)return;
    setItems(old=>append?[...old,...data.items.filter((c:Comment)=>!old.some(x=>x.id===c.id))]:data.items);setMore(data.has_more);publishSocial(contentId,data);
-  }catch{if(alive.current)setError('نظرات دریافت نشد. دوباره تلاش کن.');}finally{if(alive.current)setLoading(false);}
+  }catch{if(alive.current&&sequence===loadSequence.current)setError('نظرات دریافت نشد. دوباره تلاش کن.');}finally{if(alive.current&&sequence===loadSequence.current)setLoading(false);}
  };
  useEffect(()=>{
   alive.current=true;void load();const previous=document.activeElement as HTMLElement;panel.current?.focus();
@@ -26,7 +27,7 @@ export default function CommentsSheet({contentId,title,onClose}:{contentId:strin
     if(e.shiftKey&&(document.activeElement===first||document.activeElement===panel.current)){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
    }
   };
-  document.addEventListener('keydown',key,true);return()=>{alive.current=false;document.body.style.overflow=overflow;document.removeEventListener('keydown',key,true);previous?.focus();};
+  document.addEventListener('keydown',key,true);return()=>{alive.current=false;loadSequence.current++;document.body.style.overflow=overflow;document.removeEventListener('keydown',key,true);previous?.focus();};
  },[contentId]);
  const send=async()=>{
   if(lock.current||!text.trim())return;lock.current=true;setBusy(true);setError('');setNotice('');
