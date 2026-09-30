@@ -1,3 +1,4 @@
+import { foldSearch as fold } from '../lib/searchText';
 import { requestJson } from './live';
 
 type Row = Record<string, unknown>;
@@ -46,15 +47,6 @@ const number = (row: Row, keys: string[]) => {
   }
   return 0;
 };
-
-const fold = (value: string) =>
-  value
-    .toLocaleLowerCase('fa-IR')
-    .replace(/[يى]/g, 'ی')
-    .replace(/ك/g, 'ک')
-    .replace(/\u200c/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
 
 const normalizeHistory = (rows: Row[]): SearchHistoryItem[] => {
   const seen = new Set<string>();
@@ -151,16 +143,8 @@ export async function recordSearchHistory(query: string, resultCount: number) {
 }
 
 export async function clearSearchHistory() {
-  try {
-    localStorage.removeItem(LOCAL_HISTORY_KEY);
-  } catch {
-    // Ignore local storage failures.
-  }
-
-  await requestJson('/api/discovery/search-history', {
-    method: 'DELETE',
-    body: {},
-  }).catch(() => {});
+  await requestJson('/api/discovery/search-history', { method: 'DELETE', body: {} });
+  try { localStorage.removeItem(LOCAL_HISTORY_KEY); } catch { /* Storage may be unavailable. */ }
 }
 
 export async function loadSearchTopics(signal?: AbortSignal): Promise<string[]> {

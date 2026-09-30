@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useViewState } from '../hooks/useViewState';
+import { matchesSearch } from '../lib/searchText';
 import {
   ArrowDownUp,
   Bookmark,
@@ -18,7 +20,8 @@ type LoadState = 'idle' | 'loading' | 'live' | 'fallback';
 type Props = {
   posts: Post[];
   state: LoadState;
-  onOpen: (post: Post) => void;
+  onOpen: (post: Post, source?: Post[]) => void;
+  onRefresh: () => void;
   onToggleSave: (id: string) => void;
 };
 
@@ -31,15 +34,6 @@ const filters: Array<{ id: Filter; label: string; icon: typeof Bookmark }> = [
   { id: 'video', label: 'ویدیو', icon: PlayCircle },
   { id: 'image', label: 'تصویر', icon: ImageIcon },
 ];
-
-const fold = (value: string) =>
-  value
-    .toLocaleLowerCase('fa-IR')
-    .replace(/[يى]/g, 'ی')
-    .replace(/ك/g, 'ک')
-    .replace(/\u200c/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
 
 const savedTime = (post: Post) => {
   const time = post.savedAt ? new Date(post.savedAt).getTime() : 0;
@@ -58,20 +52,20 @@ const savedDateLabel = (post: Post) => {
   }).format(date);
 };
 
-export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props) {
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<Filter>('all');
-  const [sort, setSort] = useState<Sort>('newest');
+export default function SavedPage({ posts, state, onOpen, onToggleSave, onRefresh }: Props) {
+  const [query, setQuery] = useViewState('saved-query', '');
+  const [filter, setFilter] = useViewState<Filter>('saved-filter', 'all');
+  const [sort, setSort] = useViewState<Sort>('saved-sort', 'newest');
+  const [channel, setChannel] = useViewState('saved-channel', '');
+  const resetFilters = () => { setQuery(''); setFilter('all'); setChannel(''); };
   const saved = useMemo(() => posts.filter((post) => post.saved !== false), [posts]);
 
   const filtered = useMemo(() => {
-    const normalized = fold(query);
+
     const next = saved.filter((post) => {
       if (filter !== 'all' && post.kind !== filter) return false;
-      if (!normalized) return true;
-      return [post.title, post.excerpt, post.channel.title, post.channel.username, post.category]
-        .filter(Boolean)
-        .some((value) => fold(String(value)).includes(normalized));
+      if (channel && post.channel.username !== channel) return false;
+      return matchesSearch(query, [post.title, post.excerpt, post.channel.title, post.channel.username, post.category]);
     });
 
     return [...next].sort((a, b) => {
@@ -79,7 +73,7 @@ export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props)
       if (sort === 'channel') return a.channel.title.localeCompare(b.channel.title, 'fa');
       return savedTime(b) - savedTime(a);
     });
-  }, [saved, query, filter, sort]);
+  }, [saved, query, filter, sort, channel]);
 
   const metrics = useMemo(() => {
     const channels = new Set(saved.map((post) => post.channel.username || post.channel.title));
@@ -108,6 +102,10 @@ export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props)
         </span>
       </header>
 
+      <div className="creatorRefreshV19">
+        <button type="button" onClick={onRefresh} disabled={state === 'loading'}>تازه‌سازی ذخیره‌ها</button>
+        {state === 'fallback' && <p role="alert">دریافت ذخیره‌ها انجام نشد؛ ممکن است فهرست کامل نباشد. دوباره تلاش کن.</p>}
+      </div>
       <section className="libraryStatsV12" aria-label="خلاصه ذخیره‌ها">
         <article><Bookmark /><strong>{fa.format(metrics.total)}</strong><small>کل ذخیره‌ها</small></article>
         <article><ImageIcon /><strong>{fa.format(metrics.media)}</strong><small>محتوای تصویری</small></article>
@@ -156,9 +154,16 @@ export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props)
         </label>
       </div>
 
-      <div className="libraryResultMetaV12">
+      <label className="librarySortV12">کانال
+        <select aria-label="فیلتر کانال ذخیره‌ها" value={channel} onChange={event => setChannel(event.target.value)}>
+          <option value="">همه کانال‌ها</option>
+          {[...new Map(saved.map(post => [post.channel.username, post.channel.title])).entries()].filter(([id]) => id).map(([id, title]) => <option key={id} value={id}>{title}</option>)}
+          {channel && !saved.some(post => post.channel.username === channel) && <option value={channel}>{channel}</option>}
+        </select>
+      </label>
+      <div className="libraryResultMetaV12" role="status">
         <span>{count} مورد</span>
-        {(query || filter !== 'all') && <small>فیلتر فعال است</small>}
+        {(query || filter !== 'all' || channel) && <button type="button" onClick={resetFilters}>پاک کردن فیلترها</button>}
       </div>
 
       {state === 'loading' && !saved.length ? (
@@ -169,11 +174,12 @@ export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props)
             <article
               key={post.id}
               className="referenceSavedCard libraryCardV12"
-              onClick={() => onOpen(post)}
+              onClick={() => onOpen(post, filtered)}
               onKeyDown={(event) => {
+                if (event.target !== event.currentTarget) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
-                  onOpen(post);
+                  onOpen(post, filtered);
                 }
               }}
               role="button"
@@ -208,9 +214,9 @@ export default function SavedPage({ posts, state, onOpen, onToggleSave }: Props)
           <Search />
           <h2>چیزی با این فیلتر پیدا نشد</h2>
           <p>عبارت جست‌وجو یا نوع محتوا را تغییر بده.</p>
-          <button type="button" onClick={() => { setQuery(''); setFilter('all'); }}>نمایش همه ذخیره‌ها</button>
+          <button type="button" onClick={resetFilters}>نمایش همه ذخیره‌ها</button>
         </div>
-      ) : (
+      ) : state === 'fallback' ? null : (
         <div className="emptyState referenceSavedEmpty">
           <Bookmark />
           <h2>هنوز چیزی ذخیره نکردی</h2>

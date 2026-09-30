@@ -235,6 +235,7 @@ export default function DiscoveryApp() {
     setSavedState('loading');
     loadLibrarySaved(controller.signal)
       .then((next) => {
+        if (controller.signal.aborted) return;
         setSavedPosts(next);
         setSavedState('live');
       })
@@ -449,7 +450,7 @@ export default function DiscoveryApp() {
               />
             )}
             {page === 'search' && <SearchPage channels={liveChannels} onOpen={openViewer} onOpenChannel={openChannel} />}
-            {page === 'saved' && <SavedPage posts={savedDisplay} state={savedState} onOpen={openViewer} onToggleSave={toggleSave} />}
+            {page === 'saved' && <SavedPage onRefresh={() => setSavedNonce(value => value + 1)} posts={savedDisplay} state={savedState} onOpen={openViewer} onToggleSave={toggleSave} />}
             {page === 'profile' && (
               <ProfilePage
                 hub={hub}
