@@ -1,3 +1,4 @@
+import { publicVideo } from '../_shared/public-video.ts';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS',
@@ -160,6 +161,18 @@ Deno.serve(async (request: Request) => {
       `https://t.me/s/${post.channel}/${post.messageId}`,
     ];
 
+    if (incoming.searchParams.get('mode') === 'video') {
+      // Metadata only: video bytes go directly from Telegram CDN to the player.
+      for (const page of pages.slice(0,2)) {
+       try {
+        const response = await fetch(page, {headers:{'User-Agent':'Mozilla/5.0'},redirect:'error',signal:AbortSignal.timeout(6000)});
+        if(!response.ok)continue;
+        const video = publicVideo(await response.text());
+        if(video)return json({ok:true,video_url:video,source:'telegram_public'});
+       } catch { /* Try the other public representation on timeout/redirect. */ }
+      }
+      return json({ok:true,video_url:null,reason:'public_video_unavailable'});
+    }
     const candidates: string[] = [];
     for (const page of pages) {
       const html = await fetchPage(page);

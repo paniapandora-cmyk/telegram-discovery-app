@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { checkHoviatMembership } from '../_shared/hoviat.ts';
 
 declare const Deno: any;
 
@@ -252,6 +253,22 @@ Deno.serve(async (request: Request) => {
       const startMatch = text.match(/^\/start(?:@\w+)?(?:\s+([\s\S]*))?$/i);
 
       if (startMatch || /^\/(?:menu|home)(?:@\w+)?$/i.test(text)) {
+        let member = false;
+        try { member = await checkHoviatMembership(BOT_TOKEN, userId); } catch {
+          await tg('sendMessage', { chat_id: chatId, text: 'بررسی عضویت فعلاً ممکن نیست. کمی بعد /start را دوباره بزن.' });
+          return new Response(JSON.stringify({ ok: true, type: 'membership_unavailable' }), { headers: H });
+        }
+        if (!member) {
+          await tg('sendMessage', {
+            chat_id: chatId,
+            text: 'به کشف خوش آمدی! برای ورود ابتدا عضو کانال هویت شو، سپس «عضو شدم؛ بررسی و ورود» را بزن.',
+            reply_markup: { inline_keyboard: [
+              [{ text: 'عضویت در کانال هویت', url: 'https://t.me/hoviateman' }],
+              [{ text: 'عضو شدم؛ بررسی و ورود', web_app: { url: MINI_APP_URL } }],
+            ] },
+          });
+          return new Response(JSON.stringify({ ok: true, type: 'membership_required' }), { headers: H });
+        }
         await forward(CORE_URL, update);
         await configureChatMenu(chatId);
 

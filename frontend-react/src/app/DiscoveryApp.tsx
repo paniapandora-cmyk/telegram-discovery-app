@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useEffect, useMemo, useRef, useState } from 'react';
 import { channels, posts as seedPosts } from '../data/demo';
 import {
   decorateChannels,
@@ -29,7 +29,7 @@ import {
 import type { Channel, Page, Post } from '../types';
 import BottomNav from '../components/BottomNav';
 import AddChannelSheet from '../components/AddChannelSheet';
-import Viewer from '../components/Viewer';
+import ViewerStream from '../components/ViewerStream';
 import HomePage from '../pages/HomePage';
 import ExplorePage from '../pages/ExplorePage';
 import SearchPage from '../pages/SearchPage';
@@ -56,12 +56,16 @@ const mergeSaved = (next: Post[], current: Post[]) => {
 };
 
 export default function DiscoveryApp() {
+  const savePending = useRef(new Set<string>());
+  const [saveNotice,setSaveNotice] = useState('');
+  useEffect(()=>{if(!saveNotice)return;const timer=setTimeout(()=>setSaveNotice(''),4500);return()=>clearTimeout(timer);},[saveNotice]);
   const [page, setPage] = useState<Page>('home');
   const [tab, setTab] = useState('for-you');
   const [posts, setPosts] = useState<Post[]>(seedPosts);
   const [explorePosts, setExplorePosts] = useState<Post[]>(seedPosts);
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [historyPosts, setHistoryPosts] = useState<Post[]>([]);
+  const [viewerQueue,setViewerQueue] = useState<Post[]>([]);
   const [viewer, setViewer] = useState<Post | null>(null);
   const viewerStarted = useRef(0);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
@@ -70,6 +74,7 @@ export default function DiscoveryApp() {
   const [feedState, setFeedState] = useState<FeedState>('loading');
   const [exploreState, setExploreState] = useState<FeedState>('loading');
   const [savedState, setSavedState] = useState<LoadState>('idle');
+  const [savedNonce, setSavedNonce] = useState(0);
   const [historyState, setHistoryState] = useState<LoadState>('idle');
   const [hub, setHub] = useState<HubData | null>(null);
   const [hubState, setHubState] = useState<LoadState>('idle');
@@ -83,12 +88,13 @@ export default function DiscoveryApp() {
   const [creatorContent, setCreatorContent] = useState<CreatorContent[]>([]);
   const [creatorDays, setCreatorDays] = useState(30);
   const [creatorState, setCreatorState] = useState<LoadState>('idle');
+  const [creatorContentFailed, setCreatorContentFailed] = useState(false);
 
   const liveChannels = useMemo(() => decorateChannels(channels), []);
 
   const findPost = (id: string) =>
     (viewer?.id === id ? viewer : undefined)
-    || [...posts, ...explorePosts, ...savedPosts, ...historyPosts].find((post) => post.id === id);
+    || [...posts, ...explorePosts, ...savedPosts, ...historyPosts, ...viewerQueue].find((post) => post.id === id);
 
   const finalizeViewer = () => {
     if (!viewer) return;
@@ -97,7 +103,20 @@ export default function DiscoveryApp() {
     viewerStarted.current = 0;
   };
 
+  const viewerOrigin = useRef<{top:number; focus:HTMLElement|null}>({top:0,focus:null});
+  const restoreViewerOrigin = useRef(false);
+  useLayoutEffect(() => {
+    if (viewer) {
+      window.scrollTo({top:0,behavior:'instant'});
+    } else if (restoreViewerOrigin.current) {
+      restoreViewerOrigin.current=false;
+      viewerOrigin.current.focus?.focus({preventScroll:true});
+      window.scrollTo({top:viewerOrigin.current.top,behavior:'instant'});
+    }
+  }, [Boolean(viewer)]);
+
   const closeViewer = () => {
+    restoreViewerOrigin.current=true;
     finalizeViewer();
     setViewer(null);
   };
@@ -115,6 +134,17 @@ export default function DiscoveryApp() {
     setPage(next);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    const navigate = (event: Event) => {
+      const next = (event as CustomEvent<{page:Page}>).detail?.page;
+      if (['search','explore','saved','creator','invite','personalization'].includes(next)) changePage(next);
+    };
+    const saved = () => { setSavedNonce(value => value + 1); setFeedNonce(value => value + 1); };
+    window.addEventListener('td-ai-navigate', navigate);
+    window.addEventListener('td-ai-saved', saved);
+    return () => { window.removeEventListener('td-ai-navigate', navigate); window.removeEventListener('td-ai-saved', saved); };
+  }, [viewer]);
 
   const openChannel = (channel: Channel) => {
     if (!channel.creatorId && !/^[0-9a-f-]{36}$/i.test(channel.id)) return;
@@ -205,6 +235,7 @@ export default function DiscoveryApp() {
     setSavedState('loading');
     loadLibrarySaved(controller.signal)
       .then((next) => {
+        if (controller.signal.aborted) return;
         setSavedPosts(next);
         setSavedState('live');
       })
@@ -212,7 +243,7 @@ export default function DiscoveryApp() {
         if (!controller.signal.aborted) setSavedState('fallback');
       });
     return () => controller.abort();
-  }, [page]);
+  }, [page, savedNonce]);
 
   useEffect(() => {
     if (page !== 'history') return;
@@ -255,10 +286,11 @@ export default function DiscoveryApp() {
       loadBotOwnerStats(controller.signal).catch(() => null),
     ])
       .then(([nextHub, nextBot]) => {
-        setHub(nextHub);
+        if (controller.signal.aborted) return;
+        setHub((previous) => ({ ...nextHub, creators: nextHub.channelsLive ? nextHub.creators : previous?.creators || [] }));
         setBotStats(nextBot);
         setHubState(nextHub.sourceLive ? 'live' : 'fallback');
-        setSelectedCreatorId((current) =>
+        if (nextHub.channelsLive) setSelectedCreatorId((current) =>
           current && nextHub.creators.some((item) => item.id === current)
             ? current
             : nextHub.creators[0]?.id || '',
@@ -274,27 +306,25 @@ export default function DiscoveryApp() {
     if (page !== 'creator' || !selectedCreatorId) return;
     const controller = new AbortController();
     setCreatorState('loading');
-    Promise.all([
+    setCreatorMetrics(null);
+    setCreatorContent([]);
+    setCreatorContentFailed(false);
+    Promise.allSettled([
       loadCreatorMetrics(selectedCreatorId, creatorDays, controller.signal),
       loadCreatorContent(selectedCreatorId, creatorDays, controller.signal),
-    ])
-      .then(([metrics, content]) => {
-        setCreatorMetrics(metrics);
-        setCreatorContent(content);
-        setCreatorState('live');
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setCreatorMetrics(null);
-          setCreatorContent([]);
-          setCreatorState('fallback');
-        }
-      });
+    ]).then(([metrics, content]) => {
+      if (controller.signal.aborted) return;
+      setCreatorMetrics(metrics.status === 'fulfilled' ? metrics.value : null);
+      setCreatorContent(content.status === 'fulfilled' ? content.value : []);
+      setCreatorContentFailed(content.status === 'rejected');
+      setCreatorState(metrics.status === 'fulfilled' && content.status === 'fulfilled' ? 'live' : 'fallback');
+    });
     return () => controller.abort();
-  }, [page, selectedCreatorId, creatorDays]);
+  }, [page, selectedCreatorId, creatorDays, hubNonce]);
 
   const applySaved = (id: string, value: boolean, target?: Post) => {
     const update = (current: Post[]) => current.map((post) => post.id === id ? { ...post, saved: value } : post);
+    setViewerQueue(update);
     setPosts(update);
     setExplorePosts(update);
     setHistoryPosts(update);
@@ -309,10 +339,13 @@ export default function DiscoveryApp() {
   };
 
   const toggleSavePost = (target: Post) => {
+    if(savePending.current.has(target.id))return;
+    if(!target.contentId){setSaveNotice('این پیش‌نمایش هنوز قابل ذخیره نیست.');return;}
+    savePending.current.add(target.id);
     const before = Boolean(target.saved);
     const next = !before;
     applySaved(target.id, next, target);
-    void persistSaved(target, next).catch(() => applySaved(target.id, before, target));
+    void persistSaved(target, next).then(()=>setSaveNotice(next?'پست ذخیره شد.':'پست از ذخیره‌ها حذف شد.')).catch(() => {applySaved(target.id, before, target);setSaveNotice('ذخیره‌سازی انجام نشد؛ دوباره امتحان کن.');}).finally(()=>savePending.current.delete(target.id));
   };
 
   const toggleSave = (id: string) => {
@@ -321,7 +354,8 @@ export default function DiscoveryApp() {
     toggleSavePost(target);
   };
 
-  const openViewer = (post: Post) => {
+  const activateViewer = (post: Post) => {
+    if(viewer?.id===post.id)return;
     if (viewer && viewer.id !== post.id) finalizeViewer();
     const openedAt = new Date().toISOString();
     setViewer(post);
@@ -331,7 +365,15 @@ export default function DiscoveryApp() {
       return [{ ...post, viewedAt: openedAt, historyEvent: 'open' }, ...without].slice(0, 100);
     });
     void trackPostOpen(post).catch(() => {});
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const openViewer = (post:Post, source?:Post[]) => {
+    if (!viewer) viewerOrigin.current={top:window.scrollY,focus:document.activeElement instanceof HTMLElement?document.activeElement:null};
+    const list=source || (page==='saved'?savedPosts:page==='explore'?explorePosts:page==='history'?historyPosts:posts);
+    const index=list.findIndex(item=>item.id===post.id);
+    const after=index>=0?list.slice(index+1):list;
+    setViewerQueue([post,...after.filter(item=>item.id!==post.id)].slice(0,100));
+    activateViewer(post);
+    window.scrollTo({top:0,behavior:'instant'});
   };
 
   const clearHistory = async () => {
@@ -368,17 +410,21 @@ export default function DiscoveryApp() {
 
   return (
     <main className="appShell">
-      {resolvedViewer ? (
-        <Viewer
-          post={resolvedViewer}
+      {saveNotice&&<div className="socialToast" role="status">{saveNotice}</div>}
+      {resolvedViewer && (
+        <ViewerStream
+          key={viewerQueue[0]?.id}
+          posts={viewerQueue.map(item=> item.id===resolvedViewer.id?resolvedViewer:item)}
+          activeId={resolvedViewer.id}
+          onActive={activateViewer}
           onClose={closeViewer}
           onToggleSave={toggleSave}
           onFeedback={feedbackPost}
           onOpenRelated={openViewer}
           onOpenChannel={openChannel}
         />
-      ) : (
-        <>
+      )}
+        <div style={{display:resolvedViewer ? 'none' : undefined}}>
           <div className="pageViewport">
             {page === 'home' && (
               <HomePage
@@ -404,7 +450,7 @@ export default function DiscoveryApp() {
               />
             )}
             {page === 'search' && <SearchPage channels={liveChannels} onOpen={openViewer} onOpenChannel={openChannel} />}
-            {page === 'saved' && <SavedPage posts={savedDisplay} state={savedState} onOpen={openViewer} onToggleSave={toggleSave} />}
+            {page === 'saved' && <SavedPage onRefresh={() => setSavedNonce(value => value + 1)} posts={savedDisplay} state={savedState} onOpen={openViewer} onToggleSave={toggleSave} />}
             {page === 'profile' && (
               <ProfilePage
                 hub={hub}
@@ -447,7 +493,10 @@ export default function DiscoveryApp() {
                 selectedId={selectedCreatorId}
                 metrics={creatorMetrics}
                 content={creatorContent}
+                contentFailed={creatorContentFailed}
                 state={creatorState}
+                channelsState={hubState === 'loading' ? 'loading' : hub?.channelsLive ? 'live' : 'fallback'}
+                onRefresh={() => setHubNonce((value) => value + 1)}
                 needsTelegram={hub?.needsTelegram ?? true}
                 days={creatorDays}
                 onDays={setCreatorDays}
@@ -484,8 +533,7 @@ export default function DiscoveryApp() {
             )}
           </div>
           <BottomNav page={page} onChange={changePage} />
-        </>
-      )}
+        </div>
       <AddChannelSheet open={addOpen} onClose={() => setAddOpen(false)} onAdded={() => setHubNonce((value) => value + 1)} />
     </main>
   );

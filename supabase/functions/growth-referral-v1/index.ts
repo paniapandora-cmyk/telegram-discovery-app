@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { checkHoviatMembership, REQUIRED_CHANNEL } from '../_shared/hoviat.ts';
 
 declare const Deno: any;
 
@@ -217,14 +218,20 @@ async function invitationStats(ownerId: number, token: string) {
     countRows(`growth_events?${open7dParams.toString()}`),
   ]);
 
+  const verifiedParams = new URLSearchParams({ inviter_id: `eq.${ownerId}` });
+  const verifiedWeekParams = new URLSearchParams({ inviter_id: `eq.${ownerId}`, verified_at: `gte.${since}` });
+  const [verifiedTotal, verifiedWeek] = await Promise.all([
+    countRows(`discovery_verified_invites_v1?${verifiedParams}`),
+    countRows(`discovery_verified_invites_v1?${verifiedWeekParams}`),
+  ]);
   return {
-    successful_invites: unique.size,
+    successful_invites: verifiedTotal,
     bot_starts: starters.length,
     share_clicks: shares,
     miniapp_opens: opens,
-    last_success_at: lastSuccessAt,
+    last_success_at: null,
     last_7d: {
-      successful_invites: unique7d.size,
+      successful_invites: verifiedWeek,
       bot_starts: starts7d,
       share_clicks: shares7d,
       miniapp_opens: opens7d,
@@ -272,10 +279,24 @@ Deno.serve(async (req: Request) => {
     if (!auth.ok) return json({ ok: false, error: auth.error }, 401);
 
     const ownerId = Number(auth.user.id);
+    if (req.method === 'POST') {
+      const input = await req.clone().json().catch(() => ({}));
+      if (input.action === 'access') {
+        const member = await checkHoviatMembership(BOT_TOKEN, ownerId);
+        if (!member) return json({ ok: false, error: 'membership_required', channel: REQUIRED_CHANNEL }, 403);
+        const { body: access } = await rest('rpc/discovery_access_v1', {
+          method: 'POST', body: JSON.stringify({ p_user_id: ownerId, p_verify: true }),
+        });
+        return json({ ok: true, member: true, channel: REQUIRED_CHANNEL, access });
+      }
+    }
     const bot = await botIdentity();
 
     if (req.method === "GET") {
       const invite = await createLink(ownerId, "invite", null, { username: auth.user?.username || null });
+      const { body: access } = await rest('rpc/discovery_access_v1', {
+        method: 'POST', body: JSON.stringify({ p_user_id: ownerId }),
+      });
       const [stats, activeUsers, botStarts, sources, contents] = await Promise.all([
         invitationStats(ownerId, invite.token),
         countRows("users?is_active=eq.true"),
@@ -285,10 +306,12 @@ Deno.serve(async (req: Request) => {
       ]);
       return json({
         ok: true,
+        access,
         invite: {
           token: invite.token,
           url: `https://t.me/${bot.username}?start=${encodeURIComponent(invite.token)}`,
           ...stats,
+          successful_invites: access.verified_invites,
         },
         social_proof: {
           active_users: activeUsers,
@@ -339,6 +362,9 @@ Deno.serve(async (req: Request) => {
 
     return json({ ok: false, error: "unknown_action" }, 400);
   } catch (error) {
+    if (error instanceof Error && error.message === 'membership_check_unavailable') {
+      return json({ ok: false, error: 'membership_check_unavailable' }, 503);
+    }
     console.error("growth-referral-v1", error);
     return json({ ok: false, error: error instanceof Error ? error.message : String(error) }, 500);
   }

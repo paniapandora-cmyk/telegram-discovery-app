@@ -1,5 +1,7 @@
 const WORKER_ORIGIN =
   'https://telegram-discovery-app.paniapandora.workers.dev';
+const AI_ORIGIN =
+  'https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/ai-gateway-v1';
 
 const jsonRows = (value: unknown, depth = 0): unknown[] => {
   if (Array.isArray(value)) return value;
@@ -70,6 +72,28 @@ const decorateResponse = (
 export async function onRequest(context: { request: Request }) {
   const incoming = new URL(context.request.url);
   const headers = proxyHeaders(context.request);
+
+  if (incoming.pathname === '/api/ai/chat') {
+    if (context.request.method !== 'POST') {
+      return new Response(JSON.stringify({ ok: false, error: 'POST required' }), {
+        status: 405,
+        headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+      });
+    }
+    try {
+      const upstream = await fetch(AI_ORIGIN, buildInit(context.request, headers));
+      return new Response(upstream.body, {
+        status: upstream.status,
+        statusText: upstream.statusText,
+        headers: decorateResponse(upstream, { 'X-TD-Proxy': 'pages-ai-bridge-v1' }),
+      });
+    } catch {
+      return new Response(JSON.stringify({ ok: false, error: 'ai_provider_error' }), {
+        status: 502,
+        headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+      });
+    }
+  }
 
   // Creator Center:
   // no channel_id means "load the channel catalog", which belongs to /channels.

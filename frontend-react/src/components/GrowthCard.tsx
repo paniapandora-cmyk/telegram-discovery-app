@@ -23,15 +23,15 @@ import {
 import '../styles/growth.css';
 import '../styles/growth-rewards.css';
 import '../styles/invite-growth-v10.css';
+import '../styles/membership.css';
 
 const fa = new Intl.NumberFormat('fa-IR');
 const percent = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 1 });
 
 const milestones = [
   { count: 1, label: 'کاشف' },
-  { count: 3, label: 'کاشف فعال' },
-  { count: 10, label: 'سفیر کشف' },
-  { count: 25, label: 'پیشگام' },
+  { count: 2, label: 'کاشف فعال' },
+  { count: 3, label: 'VIP' },
 ];
 
 export default function GrowthCard() {
@@ -63,7 +63,7 @@ export default function GrowthCard() {
   }, []);
 
   const reward = useMemo(() => {
-    const success = summary?.invite.successful_invites || 0;
+    const success = summary?.access?.verified_invites || 0;
     const unlocked = [...milestones].reverse().find((item) => success >= item.count);
     const next = milestones.find((item) => success < item.count);
     const previousCount = unlocked?.count || 0;
@@ -155,7 +155,7 @@ export default function GrowthCard() {
           <span className="growthIcon"><Sparkles /></span>
           <div>
             <h3>مرکز رشد دعوت</h3>
-            <p>فقط دعوت‌های واقعی و یکتای تلگرام برای نشان‌ها محاسبه می‌شوند.</p>
+            <p>۳ دوست جدید + عضویت تأییدشده در هویت = VIP</p>
           </div>
         </div>
         <button
@@ -196,6 +196,16 @@ export default function GrowthCard() {
           </div>
 
           <div className="inviteLinkPanel">
+            <section className="vipLimits" aria-label="مراحل باز شدن امکانات">
+              <h4>مسیر تو تا VIP</h4>
+              {summary?.access?.legacy && <p>حساب قدیمی تو از محدودیت شروع معاف است و روزانه ۳۰ پیام دارد؛ نشان VIP همچنان با ۳ دعوت معتبر باز می‌شود.</p>}
+              <ul>{[5, 10, 15, 30].map((limit, level) => <li key={level} className={summary?.access && summary.access.level >= level ? 'unlocked' : ''}>
+                {level === 0 ? 'شروع' : `${fa.format(level)} دعوت معتبر`}{level === 3 ? ' · VIP' : ''} — روزانه {fa.format(limit)} پیام هوش مصنوعی
+              </li>)}</ul>
+              <p>{summary?.access ? `${fa.format(summary.access.ai_remaining)} پیام از ${fa.format(summary.access.ai_daily_limit)} پیام امروز باقی مانده است.` : 'وضعیت سهمیه هنوز دریافت نشده است.'}</p>
+              <p>پست‌ها، اکسپلور، جست‌وجو و ذخیره‌ها آزادند. سهمیه هر روز به وقت تهران نو می‌شود. VIP فعلاً انقضا ندارد. درخواست ارسال‌شده به هوش مصنوعی از سهمیه کم می‌شود.</p>
+              <p>دعوت معتبر: اولین استارت دوست جدید با لینک تو و تأیید عضویت هویت طی ۷ روز. دعوت خودت، کاربران قبلی و دعوت تکراری امتیاز ندارند.</p>
+            </section>
             <div className="inviteLinkLabel"><Link2 /><span>لینک اختصاصی دعوت</span></div>
             <div className="inviteLinkValue">
               <code>{summary?.invite.url || 'در حال دریافت لینک…'}</code>
@@ -269,7 +279,7 @@ export default function GrowthCard() {
 
           <div className="inviteTrustNote">
             <Sparkles />
-            <p><b>دعوت معتبر چیست؟</b> وقتی یک کاربر یکتای دیگر از لینک تو ربات را Start کند، دعوت موفق ثبت می‌شود. Startهای خودت یا تکراری به تعداد موفق‌ها اضافه نمی‌شوند.</p>
+            <p><b>دعوت معتبر چیست؟</b> دوست جدید باید با لینک تو برای اولین بار استارت بزند و طی ۷ روز عضویت هویت را تأیید کند. دعوت خودت، کاربران قبلی و دعوت تکراری امتیاز ندارند. دعوت‌های قبل از فعال‌شدن این برنامه امتیاز VIP نمی‌گیرند.</p>
           </div>
 
           {summary && (
