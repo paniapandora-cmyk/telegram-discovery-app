@@ -1,5 +1,5 @@
 import { foldSearch as fold } from '../lib/searchText';
-import { requestJson } from './live';
+import { getTelegramUser, requestJson } from './live';
 
 type Row = Record<string, unknown>;
 
@@ -10,7 +10,15 @@ export type SearchHistoryItem = {
   createdAt: string;
 };
 
-const LOCAL_HISTORY_KEY = 'td-search-history-v2';
+const LEGACY_HISTORY_KEY = 'td-search-history-v2';
+const revisions = new Map<string, number>();
+const historyKey = () => {
+  const id = getTelegramUser()?.id;
+  return id ? `td-search-history-v3:${id}` : '';
+};
+const revision = (key: string) => revisions.get(key) || 0;
+const changed = (key: string) => revisions.set(key, revision(key) + 1);
+
 
 const isRow = (value: unknown): value is Row =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -54,15 +62,15 @@ const normalizeHistory = (rows: Row[]): SearchHistoryItem[] => {
 
   for (const row of rows) {
     const query = text(row, ['query', 'q']);
-    const normalizedQuery = text(row, ['normalized_query']) || fold(query);
+    const normalizedQuery = text(row, ['normalized_query', 'normalizedQuery']) || fold(query);
     const key = fold(normalizedQuery || query);
     if (!query || query.length < 2 || !key || seen.has(key)) continue;
     seen.add(key);
     result.push({
       query,
       normalizedQuery,
-      resultCount: number(row, ['result_count', 'count']),
-      createdAt: text(row, ['created_at', 'date']),
+      resultCount: number(row, ['result_count', 'resultCount', 'count']),
+      createdAt: text(row, ['created_at', 'createdAt', 'date']),
     });
     if (result.length >= 10) break;
   }
@@ -70,9 +78,12 @@ const normalizeHistory = (rows: Row[]): SearchHistoryItem[] => {
   return result;
 };
 
-const readLocalHistory = (): SearchHistoryItem[] => {
+const readLocalHistory = (key: string): SearchHistoryItem[] => {
   try {
-    const raw = localStorage.getItem(LOCAL_HISTORY_KEY);
+    // Unscoped legacy history cannot safely be assigned to any account.
+    localStorage.removeItem(LEGACY_HISTORY_KEY);
+    if (!key) return [];
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? normalizeHistory(parsed.filter(isRow)) : [];
@@ -81,9 +92,10 @@ const readLocalHistory = (): SearchHistoryItem[] => {
   }
 };
 
-const writeLocalHistory = (items: SearchHistoryItem[]) => {
+const writeLocalHistory = (key: string, items: SearchHistoryItem[]) => {
+  if (!key) return;
   try {
-    localStorage.setItem(LOCAL_HISTORY_KEY, JSON.stringify(items.slice(0, 10)));
+    localStorage.setItem(key, JSON.stringify(items.slice(0, 10)));
   } catch {
     // Search still works when storage is unavailable.
   }
@@ -108,16 +120,21 @@ const mergeHistory = (
 };
 
 export async function loadSearchHistory(signal?: AbortSignal) {
-  const local = readLocalHistory();
+  const key = historyKey();
+  const version = revision(key);
+  const local = readLocalHistory(key);
 
   try {
     const raw = await requestJson('/api/discovery/search-history', { signal });
+    if (signal?.aborted || historyKey() !== key) return [];
+    if (revision(key) !== version) return readLocalHistory(key);
     const remote = normalizeHistory(rowsFrom(raw));
     const merged = mergeHistory(remote, local);
-    writeLocalHistory(merged);
+    writeLocalHistory(key, merged);
     return merged;
   } catch {
-    return local;
+    if (signal?.aborted || historyKey() !== key) return [];
+    return revision(key) === version ? local : readLocalHistory(key);
   }
 }
 
@@ -132,7 +149,9 @@ export async function recordSearchHistory(query: string, resultCount: number) {
     createdAt: new Date().toISOString(),
   };
 
-  writeLocalHistory(mergeHistory([localItem], readLocalHistory()));
+  const key = historyKey();
+  changed(key);
+  writeLocalHistory(key, mergeHistory([localItem], readLocalHistory(key)));
 
   await requestJson('/api/discovery/search-history', {
     method: 'POST',
@@ -143,8 +162,10 @@ export async function recordSearchHistory(query: string, resultCount: number) {
 }
 
 export async function clearSearchHistory() {
+  const key = historyKey();
   await requestJson('/api/discovery/search-history', { method: 'DELETE', body: {} });
-  try { localStorage.removeItem(LOCAL_HISTORY_KEY); } catch { /* Storage may be unavailable. */ }
+  changed(key);
+  try { if (key) localStorage.removeItem(key); localStorage.removeItem(LEGACY_HISTORY_KEY); } catch { /* Storage may be unavailable. */ }
 }
 
 export async function loadSearchTopics(signal?: AbortSignal): Promise<string[]> {

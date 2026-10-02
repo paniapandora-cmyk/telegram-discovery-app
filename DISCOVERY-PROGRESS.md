@@ -18,3 +18,13 @@ Ten implemented changes, pending frontend promotion:
 Validation: frontend typecheck and build; browser scenarios in e2e/library-search.spec.cjs, plus existing CI gates.
 
 Prior batches include comments response ordering, Creator Center reliability and returning to the previous scroll position. Physical-device referral and iPhone playback verification remain separate release checks (RELEASE-CHECKLIST.md).
+
+## Search history isolation and ordering — 2026-10-02
+
+- Browser history is now keyed per Telegram account; unidentified sessions do not persist it.
+- Legacy shared history is removed rather than attributed to the next account. Server history remains unchanged.
+- A request captures its account and local revision. Responses from another account, aborted requests and responses older than a local mutation are not applied.
+- Successful deletion invalidates earlier list requests, preventing local resurrection of deleted history.
+- Locally serialized result counts and timestamps now deserialize correctly.
+- Added automated tests for account isolation, delayed deletion responses, account changes during requests, newer local writes, failed deletion and unavailable storage.
+- This validates browser-side history behavior; it does not replace server authorization or constitute a full-system security audit.

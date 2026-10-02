@@ -58,7 +58,7 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
           if (next.length) setRecommended(next);
         })
         .catch(() => {}),
-      loadSearchHistory(controller.signal).then(setHistory).catch(() => {}),
+      loadSearchHistory(controller.signal).then(items => { if (!controller.signal.aborted) setHistory(items); }).catch(() => {}),
       loadSearchTopics(controller.signal).then(setTopics).catch(() => {}),
     ]);
 

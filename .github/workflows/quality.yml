@@ -81,6 +81,10 @@ jobs:
         working-directory: frontend-react
         run: node tests/public-video.mjs
 
+      - name: Verify search account isolation and races
+        working-directory: frontend-react
+        run: node tests/search-isolation.mjs
+
       - name: Build frontend
         working-directory: frontend-react
         run: npm run build
