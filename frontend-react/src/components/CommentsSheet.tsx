@@ -1,20 +1,20 @@
 import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {X,Send,RefreshCw} from 'lucide-react';
-import {publishSocial,socialRequest,type Comment} from '../data/social';
+import {publishSocial,socialSnapshot,socialRequest,type Comment} from '../data/social';
 export default function CommentsSheet({contentId,title,onClose}:{contentId:string;title:string;onClose:()=>void}) {
  const [items,setItems]=useState<Comment[]>([]),[loading,setLoading]=useState(true),[more,setMore]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [text,setText]=useState(''),[reply,setReply]=useState<Comment|null>(null),[busy,setBusy]=useState(false),[deleteId,setDeleteId]=useState('');
  const panel=useRef<HTMLDivElement>(null),input=useRef<HTMLTextAreaElement>(null),lock=useRef(false),requestId=useRef(crypto.randomUUID());
  const alive=useRef(true),loadSequence=useRef(0);
  const load=async(append=false)=>{
-  const sequence=++loadSequence.current;
+  const sequence=++loadSequence.current,snapshot=socialSnapshot(contentId);
   setLoading(true);setError('');
   const last=append?items[items.length-1]:null;
   try {
    const data=await socialRequest(`/comments?content_id=${contentId}${last?`&before=${encodeURIComponent(last.created_at)}&before_id=${last.id}`:''}`);
    if(!alive.current||sequence!==loadSequence.current)return;
-   setItems(old=>append?[...old,...data.items.filter((c:Comment)=>!old.some(x=>x.id===c.id))]:data.items);setMore(data.has_more);publishSocial(contentId,data);
+   setItems(old=>append?[...old,...data.items.filter((c:Comment)=>!old.some(x=>x.id===c.id))]:data.items);setMore(data.has_more);publishSocial(contentId,data,snapshot);
   }catch{if(alive.current&&sequence===loadSequence.current)setError('نظرات دریافت نشد. دوباره تلاش کن.');}finally{if(alive.current&&sequence===loadSequence.current)setLoading(false);}
  };
  useEffect(()=>{
