@@ -14,6 +14,10 @@ Production logs in the preceding 24 hours: channels/claims/analytics/content-per
 
 The live frontend still serves index-DuY2zbka.js, an earlier version. This incident's database fixes take effect without a Cloudflare promotion. Previous frontend fixes are not all live.
 
+## Empty period versus missing data
+
+Direct 30-day analytics returned zeros for Hoviat, Body Language and Piping, with no events for those channels in that window. At 90 days Hoviat has 36 views, 8 saves, 2 joins; Body Language has 115 views and 11 saves; Piping has 2 views. The previous UI only offered 7/30 days. Added a 90-day option and a successful-but-empty-period explanation. Browser coverage verifies both analytics and content use the 90-day query. This UI change needs the new Cloudflare version activated; the sync recovery is already live.
+
 ## Security and other findings
 
 The advisor found get_personalized_feed_v9 callable directly by anon/authenticated with caller-chosen user UUID, despite intended access through the identity-validating backend. Migration 20261017234857 restricts execute to service_role. Verified client denial, backend execute permission, and a nonempty feed result.

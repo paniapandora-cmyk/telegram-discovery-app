@@ -278,9 +278,10 @@ export default function CreatorPage({
               </div>
 
               <div className="periodSwitch">
-                {[7, 30].map((value) => (
+                {[7, 30, 90].map((value) => (
                   <button
                     key={value}
+                    aria-pressed={days === value}
                     className={days === value ? 'active' : ''}
                     onClick={() => onDays(value)}
                   >
@@ -328,6 +329,12 @@ export default function CreatorPage({
             </div>
           ) : metrics ? (
             <>
+              {metrics.views === 0 && metrics.saves === 0 && metrics.telegramOpens === 0 && metrics.joinClicks === 0 && metrics.telegramJoins === 0 && metrics.leaves === 0 && metrics.botStarts === 0 && metrics.activeJoins === 0 && (
+                <p className="creatorTrackingMessageV7" role="status">
+                  آمار دریافت شد؛ در بازهٔ انتخاب‌شده فعالیتی ثبت نشده است.
+                  {days < 90 && ' برای دیدن فعالیت‌های قدیمی‌تر، بازهٔ ۹۰ روز را انتخاب کن.'}
+                </p>
+              )}
               <section className="creatorSummaryV5">
                 <article>
                   <div>

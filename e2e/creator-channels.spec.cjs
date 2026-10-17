@@ -20,12 +20,13 @@ for (const width of [320, 390]) {
     let failChannels = false;
     let metricRequests = 0;
     let failContent = false;
+    let emptyRecent = false;
     await page.route('**/api/**', r => {
       const url = r.request().url();
       if (url.includes('/creator/analytics')) {
         metricRequests++;
         const channelId = new URL(url).searchParams.get('channel_id');
-        return r.fulfill({ json: { channels: [{ channel_id: 'other-channel', views: 999 }, { channel_id: channelId, views: 123 }] } });
+        return r.fulfill({ json: { channels: [{ channel_id: 'other-channel', views: 999 }, { channel_id: channelId, views: emptyRecent ? (new URL(url).searchParams.get('days') === '90' ? 36 : 0) : 123 }] } });
       }
       if (url.includes('/creator/content-performance') && failContent) return r.fulfill({ status: 503, json: { error: 'unavailable' } });
       if (url.includes('/creator/channels') && failChannels) {
@@ -69,5 +70,16 @@ for (const width of [320, 390]) {
     await refresh.click();
     await expect(page.getByRole('alert')).toContainText('پست‌ها دریافت نشدند');
     await expect(page.locator('.creatorSummaryV5 article').first()).toContainText('۱۲۳');
+    failContent = false;
+    emptyRecent = true;
+    await expect(refresh).toBeEnabled();
+    await refresh.click();
+    await expect(page.getByText(/آمار دریافت شد؛ در بازهٔ انتخاب‌شده/)).toBeVisible();
+    const metrics90 = page.waitForRequest(r => r.url().includes('/creator/analytics') && new URL(r.url()).searchParams.get('days') === '90');
+    const content90 = page.waitForRequest(r => r.url().includes('/creator/content-performance') && new URL(r.url()).searchParams.get('days') === '90');
+    await page.getByRole('button', {name:'۹۰ روز',exact:true}).click();
+    await Promise.all([metrics90,content90]);
+    await expect(page.locator('.creatorSummaryV5 article').first()).toContainText('۳۶');
+    await expect(page.getByText(/آمار دریافت شد؛ در بازهٔ انتخاب‌شده/)).toHaveCount(0);
   });
 }
