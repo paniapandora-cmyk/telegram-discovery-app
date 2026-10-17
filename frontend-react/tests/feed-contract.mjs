@@ -5,7 +5,7 @@ const { outputFiles } = await build({
   entryPoints: ['src/data/live.ts'], bundle: true, write: false,
   platform: 'node', format: 'esm',
 });
-globalThis.window = { setTimeout, clearTimeout };
+globalThis.window = { setTimeout, clearTimeout, location: {origin: 'https://telegram-discovery-app.paniapandora.workers.dev'} };
 let rows = [];
 globalThis.fetch = async () => new Response(JSON.stringify({ items: rows }));
 const api = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);

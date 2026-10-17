@@ -89,6 +89,14 @@ jobs:
         working-directory: frontend-react
         run: node tests/social-isolation.mjs
 
+      - name: Verify feed data contract
+        working-directory: frontend-react
+        run: node tests/feed-contract.mjs
+
+      - name: Verify explore pagination
+        working-directory: frontend-react
+        run: node tests/explore-v16.mjs
+
       - name: Build frontend
         working-directory: frontend-react
         run: npm run build

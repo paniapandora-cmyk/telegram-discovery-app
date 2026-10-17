@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 const { outputFiles } = await build({ entryPoints: ['src/data/explore.ts'], bundle: true, write: false, platform: 'node', format: 'esm' });
-globalThis.window = { setTimeout, clearTimeout };
+globalThis.window = { setTimeout, clearTimeout, location: {origin: 'https://telegram-discovery-app.paniapandora.workers.dev'} };
 const api = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
 const catalog = Array.from({length: 131}, (_, i) => ({content_id: `00000000-0000-4000-8000-${String(i).padStart(12,'0')}`, content_type: i === 0 ? 'VIDEO' : 'TEXT', text_content: `Text ${i}`, title: `Title ${i}`, source_url: `https://t.me/example_channel/${i+1}`}));
 let calls = 0;
