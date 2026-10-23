@@ -25,7 +25,7 @@ import '../styles/channel-profile-v14.css';
 type Props = {
   channel: Channel;
   onBack: () => void;
-  onOpenPost: (post: Post) => void;
+  onOpenPost: (post: Post, source?:Post[]) => void;
   onToggleSavePost: (post: Post) => void;
   onOpenChannel: (channel: Channel) => void;
   onChanged: () => void;
@@ -193,7 +193,7 @@ export default function ChannelPage({
             {currentPosts.length ? (
               <div className="channelPostGridV14">
                 {currentPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onOpen={onOpenPost} onToggleSave={toggleSave} />
+                  <PostCard key={post.id} post={post} onOpen={post=>onOpenPost(post,currentPosts)} onToggleSave={toggleSave} />
                 ))}
               </div>
             ) : (

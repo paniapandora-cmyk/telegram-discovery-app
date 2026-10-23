@@ -27,6 +27,7 @@ export type Post={
   tone:'blue'|'violet'|'amber'|'teal';
   mediaUrl?:string;
   date:string;
+  social?: {likes:number;comments:number;liked:boolean};
   likes:string;
   comments:string;
   saved?:boolean;

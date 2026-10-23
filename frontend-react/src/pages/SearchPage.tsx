@@ -1,3 +1,5 @@
+import { foldSearch as fold } from '../lib/searchText';
+import { useViewState } from '../hooks/useViewState';
 import {
   Clock3,
   FileText,
@@ -25,7 +27,7 @@ import '../styles/search-discovery-v11.css';
 
 type Props = {
   channels: Channel[];
-  onOpen: (post: Post) => void;
+  onOpen: (post: Post, source?:Post[]) => void;
   onOpenChannel?: (channel: Channel) => void;
 };
 
@@ -34,18 +36,9 @@ type SearchFilter = 'all' | 'channels' | 'posts';
 
 const fa = new Intl.NumberFormat('fa-IR');
 
-const fold = (value: string) =>
-  value
-    .toLocaleLowerCase('fa-IR')
-    .replace(/[يى]/g, 'ی')
-    .replace(/ك/g, 'ک')
-    .replace(/\u200c/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
 export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
-  const [q, setQ] = useState('');
-  const [filter, setFilter] = useState<SearchFilter>('all');
+  const [q, setQ] = useViewState('search-query', '');
+  const [filter, setFilter] = useViewState<SearchFilter>('search-filter', 'all');
   const [recommended, setRecommended] = useState<Channel[]>([]);
   const [liveChannels, setLiveChannels] = useState<Channel[]>([]);
   const [livePosts, setLivePosts] = useState<Post[]>([]);
@@ -53,6 +46,8 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [clearingHistory, setClearingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,7 +58,7 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
           if (next.length) setRecommended(next);
         })
         .catch(() => {}),
-      loadSearchHistory(controller.signal).then(setHistory).catch(() => {}),
+      loadSearchHistory(controller.signal).then(items => { if (!controller.signal.aborted) setHistory(items); }).catch(() => {}),
       loadSearchTopics(controller.signal).then(setTopics).catch(() => {}),
     ]);
 
@@ -99,7 +94,7 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
   }, [q, realFallbackChannels]);
 
   useEffect(() => {
-    const term = q.replace(/\s+/g, ' ').trim();
+    const term = fold(q);
 
     if (term.length < 2) {
       setLiveChannels([]);
@@ -108,12 +103,14 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
       return;
     }
 
+    setLiveChannels([]); setLivePosts([]); setState('loading');
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       setState('loading');
 
       searchLive(term, controller.signal)
         .then((result) => {
+          if (controller.signal.aborted) return;
           setLiveChannels(result.channels);
           setLivePosts(result.posts);
           setState('live');
@@ -131,7 +128,7 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [q, localMatches]);
+  }, [q, localMatches, retry]);
 
   const channelsToShow = (
     state === 'idle'
@@ -177,9 +174,12 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
   const clearRecent = async () => {
     if (clearingHistory) return;
     setClearingHistory(true);
-    setHistory([]);
+    setHistoryError('');
     try {
       await clearSearchHistory();
+      setHistory([]);
+    } catch {
+      setHistoryError('پاک کردن تاریخچه انجام نشد؛ دوباره تلاش کن.');
     } finally {
       setClearingHistory(false);
     }
@@ -193,7 +193,7 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
 
   const openPost = (post: Post) => {
     if (q.trim().length >= 2) pushRecent(q);
-    onOpen(post);
+    onOpen(post,postsToShow);
   };
 
   const filterItems: Array<{
@@ -282,6 +282,8 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
         )}
       </section>
 
+      {historyError && <p role="alert">{historyError}</p>}
+      {hasQuery && state === 'fallback' && <div className="creatorRefreshV19" role="alert"><p>جست‌وجوی آنلاین انجام نشد؛ پیشنهادهای محلی ممکن است کامل نباشند.</p><button onClick={() => setRetry(value => value + 1)}>تلاش دوباره برای جست‌وجو</button></div>}
       {!hasQuery && (
         <div className="searchStartV11">
           {history.length > 0 && (
@@ -417,7 +419,7 @@ export default function SearchPage({ channels, onOpen, onOpenChannel }: Props) {
         </>
       )}
 
-      {hasQuery && state !== 'loading' && !hasResults && (
+      {hasQuery && state === 'live' && !hasResults && (
         <div className="emptyState searchEmptyV11">
           <Search />
           <h2>نتیجه‌ای پیدا نشد</h2>

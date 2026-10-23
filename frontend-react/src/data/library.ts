@@ -138,6 +138,7 @@ const normalizePost = (source: Row, index: number): Post => {
     tone: hashTone(id),
     mediaUrl,
     date: dateLabel(text(source, ['published_at', 'created_at'])),
+    social: source.social && typeof source.social === 'object' ? source.social as Post['social'] : undefined,
     likes: '۰',
     comments: '۰',
     saved: boolean(source, ['is_saved', 'saved']) || Boolean(text(source, ['saved_at'])),

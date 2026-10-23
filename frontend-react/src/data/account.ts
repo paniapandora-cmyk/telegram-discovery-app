@@ -156,6 +156,7 @@ export type HubData = {
   claimsCount: number;
   creators: CreatorChannel[];
   sourceLive: boolean;
+  channelsLive: boolean;
   needsTelegram: boolean;
 };
 
@@ -380,7 +381,7 @@ const normalizeChannels = (raw: unknown): CreatorChannel[] => {
 const metricPayload = (raw: unknown, channelId = ''): Row => {
   if (Array.isArray(raw)) {
     const rows = raw.filter(isRow);
-    if (!rows.length) return {};
+    if (!rows.length) throw new Error('Channel metrics missing');
 
     if (channelId) {
       const matched = rows.find((item) =>
@@ -392,6 +393,7 @@ const metricPayload = (raw: unknown, channelId = ''): Row => {
       );
 
       if (matched) return matched;
+      throw new Error('Selected channel metrics missing');
     }
 
     return rows[0];
@@ -472,17 +474,6 @@ const normalizeMetrics = (
     ctr: number(metrics, ['ctr', 'click_through_rate']),
   };
 };
-
-const metricWeight = (metrics: CreatorMetrics) =>
-  metrics.views +
-  metrics.uniqueViewers +
-  metrics.telegramOpens +
-  metrics.joinClicks +
-  metrics.telegramJoins +
-  metrics.activeJoins +
-  metrics.leaves +
-  metrics.saves +
-  metrics.botStarts;
 
 const normalizeContent = (raw: unknown): CreatorContent[] => {
   const root = row(raw);
@@ -620,7 +611,8 @@ export async function loadProfileHub(
     topicsCount: candidateList(topics).length,
     claimsCount: candidateList(claims).length,
     creators,
-    sourceLive: settled.some((item) => item.status === 'fulfilled'),
+    sourceLive: settled.every((item) => item.status === 'fulfilled'),
+    channelsLive: settled[4].status === 'fulfilled',
     needsTelegram: !getTelegramInitData(),
   };
 }
@@ -633,44 +625,12 @@ export async function loadCreatorMetrics(
   const id = encodeURIComponent(channelId);
   const period = encodeURIComponent(String(days));
 
-  let dashboard: CreatorMetrics | null = null;
-
-  try {
-    dashboard = normalizeMetrics(
-      await requestJson(
-        `/api/creator/dashboard?channel_id=${id}&days=${period}`,
-        { signal },
-      ),
-      channelId,
-    );
-  } catch {
-    dashboard = null;
-  }
-
-  // creator-dashboard-v2 can legally answer 200 with an all-zero dashboard.
-  // If that happens, check the analytics compatibility route before accepting
-  // the zeros. This also handles array-shaped analytics responses.
-  if (!dashboard || metricWeight(dashboard) === 0) {
-    try {
-      const analytics = normalizeMetrics(
-        await requestJson(
-          `/api/creator/analytics?channel_id=${id}&days=${period}`,
-          { signal },
-        ),
-        channelId,
-      );
-
-      if (!dashboard || metricWeight(analytics) > metricWeight(dashboard)) {
-        return analytics;
-      }
-    } catch {
-      // Keep the dashboard response if it existed.
-    }
-  }
-
-  if (dashboard) return dashboard;
-
-  throw new Error('Creator metrics unavailable');
+  // This endpoint scopes both channel and date range. The legacy dashboard
+  // returns an account-wide list and cannot safely substitute for this result.
+  return normalizeMetrics(
+    await requestJson(`/api/creator/analytics?channel_id=${id}&days=${period}`, { signal }),
+    channelId,
+  );
 }
 
 export async function loadCreatorContent(
@@ -680,20 +640,6 @@ export async function loadCreatorContent(
 ) {
   const id = encodeURIComponent(channelId);
   const period = encodeURIComponent(String(days));
-
-  try {
-    const primary = normalizeContent(
-      await requestJson(
-        `/api/creator/content?channel_id=${id}&days=${period}&limit=50`,
-        { signal },
-      ),
-    );
-
-    if (primary.length) return primary;
-  } catch {
-    // Try compatibility route below.
-  }
-
   return normalizeContent(
     await requestJson(
       `/api/creator/content-performance?channel_id=${id}&days=${period}&limit=50`,

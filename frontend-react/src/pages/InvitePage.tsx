@@ -20,8 +20,8 @@ export default function InvitePage({ onBack }: Props) {
         <div className="inviteHeroGlow" aria-hidden="true" />
         <span className="inviteHeroBadge"><Sparkles /> برنامه رشد کشف</span>
         <div className="inviteHeroIconV10"><Users /></div>
-        <h2>دوستات رو دعوت کن، مسیر رشدت رو ببین</h2>
-        <p>لینک اختصاصی تو از لحظه اشتراک تا Start ربات و دعوت موفق ردیابی می‌شود؛ بدون ممبر یا آمار ساختگی.</p>
+        <h2>با ۳ دعوت معتبر، VIP شو</h2>
+        <p>با هر دوست جدیدی که عضو هویت شود و وارد کشف شود، سهمیه دستیار تو بیشتر می‌شود. امکانات اصلی از همان شروع آزادند.</p>
         <div className="inviteHeroPills">
           <span><Link2 /> لینک شخصی</span>
           <span><UserCheck /> دعوت واقعی</span>
@@ -34,7 +34,7 @@ export default function InvitePage({ onBack }: Props) {
         <i />
         <article><span>۲</span><div><Send /><b>برای دوستت بفرست</b><small>تلگرام یا Share Sheet گوشی</small></div></article>
         <i />
-        <article><span>۳</span><div><Sparkles /><b>دعوت ثبت می‌شود</b><small>Start یکتای کاربر دیگر ملاک موفقیت است</small></div></article>
+        <article><span>۳</span><div><Sparkles /><b>امکانات باز می‌شوند</b><small>پس از تأیید عضویت دوست جدید در هویت</small></div></article>
       </section>
 
       <GrowthCard />

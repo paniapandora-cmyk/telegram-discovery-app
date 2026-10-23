@@ -11,6 +11,7 @@ const GROWTH_API =
 
 export type GrowthSummary = {
   ok: true;
+  access?: { verified_invites: number; level: number; vip: boolean; legacy: boolean; ai_daily_limit: number; ai_used: number; ai_remaining: number };
   invite: {
     token: string;
     url: string;

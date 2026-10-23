@@ -1,0 +1,8 @@
+.membershipScreen{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;background:radial-gradient(ellipse at top,#142d48,#050b14 70%);color:#ecf5ff}
+.membershipCard{width:min(100%,440px);padding:32px 24px;border:1px solid #28425a;border-radius:28px;background:#0b1826;box-shadow:0 24px 80px #0005;text-align:center}
+.membershipBadge{display:grid;place-items:center;width:76px;height:76px;margin:0 auto 22px;border-radius:25px;background:linear-gradient(135deg,#219adc,#6561d9)}
+.membershipCard small{color:#82c9ef}.membershipCard h1{font-size:24px;margin:12px 0}.membershipCard p{font-size:14px;line-height:2;color:#adbed0}
+.membershipCard button{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;width:100%;min-height:52px;border-radius:15px;padding:12px;margin-top:12px;font-weight:700}
+.membershipJoin{border:0;color:white;background:#187bad}.membershipVerify{border:1px solid #3c637d;color:#def2ff;background:#162b3d}.membershipVerify:disabled{opacity:.6}
+.membershipCard button:focus-visible{outline:3px solid #99dbff;outline-offset:3px}.membershipCard .membershipError{color:#ffd1c8}.membershipCard footer{margin-top:24px;color:#8b9fb3;font-size:12px;line-height:2}
+.vipLimits{padding:16px;margin:16px 0;border:1px solid #294864;border-radius:18px;background:#0d2134}.vipLimits h4{margin:0 0 12px}.vipLimits ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}.vipLimits li{padding:10px;border-radius:10px;background:#122a40;color:#c6d9e8}.vipLimits li.unlocked{border:1px solid #379b83;color:#9bf0ce}.vipLimits p{font-size:12px;line-height:1.9;color:#a6bdce}
