@@ -147,3 +147,28 @@ test('personalization follow flow updates the UI end to end', async ({ page }) =
   await expect(page.getByRole('button', { name: /دنبال می‌کنی/ }).first()).toBeVisible();
   await expect(page.getByText('کانال دنبال شد و از این به بعد در «برای تو» وزن بیشتری می‌گیرد.')).toBeVisible();
 });
+
+// Exercise the actual gate, including a denied response and successful retry,
+// with APIs absent on older iOS WebViews removed in both browser engines.
+test('membership entry works without modern AbortSignal methods', async ({page}) => {
+  await stubTelegram(page, 'e2e-legacy-ios');
+  await page.addInitScript(() => {
+    Object.defineProperty(AbortSignal, 'any', {value: undefined, configurable: true});
+    Object.defineProperty(AbortSignal, 'timeout', {value: undefined, configurable: true});
+  });
+  let member = false;
+  let requests = 0;
+  await page.route(growthUrl, route => {
+    requests++;
+    expect(route.request().headers()['x-telegram-init-data']).toBe('e2e-legacy-ios');
+    return route.fulfill({status: member ? 200 : 403, contentType: 'application/json',
+      body: JSON.stringify(member ? {ok: true, member: true} : {ok: false, error: 'membership_required'})});
+  });
+  await page.goto('/');
+  await expect(page.getByRole('alert')).toContainText('هنوز عضویتت تأیید نشده');
+  await expect(page.getByRole('navigation', {name: 'ناوبری اصلی'})).toHaveCount(0);
+  expect(requests).toBeGreaterThan(0);
+  member = true;
+  await page.getByRole('button', {name: 'عضو شدم؛ بررسی و ورود'}).click();
+  await expect(page.getByRole('navigation', {name: 'ناوبری اصلی'})).toBeVisible();
+});

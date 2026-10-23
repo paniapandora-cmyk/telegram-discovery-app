@@ -10,15 +10,23 @@ export default function MembershipGate({ children }: { children: ReactNode }) {
   const check = useCallback(async (signal?: AbortSignal) => {
     setBusy(true);
     setError('');
+    // Older iOS WebViews lack AbortSignal.any/timeout. Keep cancellation
+    // and the deadline without requiring either static method.
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    if (signal?.aborted) controller.abort();
+    else signal?.addEventListener('abort', abort, { once: true });
+    const timer = window.setTimeout(abort, 15000);
     try {
       const initData = getTelegramInitData();
       if (!initData) throw new Error('برای تأیید عضویت، برنامه را از داخل ربات تلگرام باز کن.');
       const response = await fetch('https://jmxlwocemvjwkztbasja.supabase.co/functions/v1/growth-referral-v1', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-telegram-init-data': initData },
         body: JSON.stringify({ action: 'access' }), cache: 'no-store',
-        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+        signal: controller.signal,
       });
       const data = await response.json();
+      if (controller.signal.aborted) return;
       if (response.ok && data.ok === true && data.member === true) setAllowed(true);
       else {
         setAllowed(false);
@@ -30,7 +38,11 @@ export default function MembershipGate({ children }: { children: ReactNode }) {
         setAllowed(false);
         setError(e instanceof Error && !getTelegramInitData() ? e.message : 'ارتباط با سرویس عضویت برقرار نشد. دوباره تلاش کن.');
       }
-    } finally { if (!signal?.aborted) setBusy(false); }
+    } finally {
+      window.clearTimeout(timer);
+      signal?.removeEventListener('abort', abort);
+      if (!signal?.aborted) setBusy(false);
+    }
   }, []);
   useEffect(() => {
     const controller = new AbortController();

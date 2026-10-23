@@ -36,8 +36,8 @@ jobs:
       - name: Install Playwright test runner
         run: npm install --no-save --package-lock=false @playwright/test@1.55.0
 
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Start built frontend
         run: |
